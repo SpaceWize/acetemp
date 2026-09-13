@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" href="assets/icons/favicon-192.png">
+<title>Aces Running Group — Ace Spaders</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wdth,wght@62..125,400..700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="companion.css">
+<script>document.documentElement.classList.replace('no-js','js');</script>
+</head>
+<body>
+
+<svg class="sprite" aria-hidden="true" focusable="false" width="0" height="0"><defs>
+  <symbol id="i-spade" viewBox="0 0 24 24"><path d="M12 2.2c-.45 1.7-3.05 4.1-5.25 6C4.85 9.85 3.55 11.5 3.55 13.5c0 2.6 1.9 4.35 4.3 4.35 1.3 0 2.4-.5 3.1-1.5-.12 2.35-.9 4.05-2 5.05h6.1c-1.1-1-1.88-2.7-2-5.05.7 1 1.8 1.5 3.1 1.5 2.4 0 4.3-1.75 4.3-4.35 0-2-1.3-3.65-3.2-5.3-2.2-1.9-4.8-4.3-5.25-6Z"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h14M12.5 6l6 6-6 6"/></symbol>
+</defs></svg>
+
+<!-- The home hero, exactly: same stage, same spotlight, same type ramp. No
+     [data-hero], so heroChoreography() stays unbound — see styles.css.
+     One white title line, no gold second line.
+
+     Not linked from anywhere yet (nav, footer, homepage tiles) — the file
+     exists so the URL is real, but nothing on the live site points to it
+     until there is real copy and the go-ahead to surface it. -->
+<!-- ══════════════ NAV ══════════════
+     Same header as index.html. The in-page anchors are absolute here
+     (index.html#about) because the sections they name live on the
+     homepage, and both CTAs resolve to contact.html for the same
+     reason. -->
+<header class="site-head" data-head>
+  <div class="site-head__in">
+    <a class="brand" href="index.html" aria-label="Ace Spaders — home">
+      <span class="brand__mark"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-spade"></use></svg></span>
+      <span class="brand__word">ACE<span class="brand__word-b">SPADERS</span></span>
+    </a>
+
+    <nav class="nav" aria-label="Primary">
+      <ul class="nav__list" data-nav>
+        <li class="nav__item nav__item--sub">
+          <a href="advisory.html">Advisory</a>
+          <ul class="nav__sub">
+            <li><a href="meetings.html">Meetings</a></li>
+            <li><a href="scout.html">On-Site Assignments</a></li>
+          </ul>
+        </li>
+        <li class="nav__item nav__item--sub">
+          <a href="mastermind-membership.html">Mastermind</a>
+          <ul class="nav__sub">
+            <li><a href="mastermind-application.html">Apply</a></li>
+          </ul>
+        </li>
+        <li class="nav__item nav__item--sub">
+          <a href="group-activities.html">Activities</a>
+          <ul class="nav__sub">
+            <li><a href="aces-poker-night.html">Aces Poker Night</a></li>
+            <li><a href="aces-running-group.html">Aces Running Group</a></li>
+            <li><a href="all-aces-networking-events.html">All Aces Networking Events</a></li>
+          </ul>
+        </li>
+        <li class="nav__item nav__item--sub">
+          <a href="index.html#about">About</a>
+          <ul class="nav__sub">
+            <li><a href="public-speaking.html">Public Speaking</a></li>
+            <li><a href="premium-pickup-transport.html">Premium Pickup &amp; Transport</a></li>
+          </ul>
+        </li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </nav>
+
+    <a class="btn btn--gold btn--sm site-head__cta" href="contact.html">Start the Conversation</a>
+
+    <button class="burger" type="button" aria-expanded="false" aria-controls="mobile-nav" data-burger>
+      <span class="burger__bars" aria-hidden="true"><i></i><i></i></span>
+      <span class="sr-only">Open menu</span>
+    </button>
+  </div>
+</header>
+
+<div class="mnav" id="mobile-nav" hidden data-mnav>
+  <nav aria-label="Mobile">
+    <ul>
+      <li class="mnav__group">
+        <button class="mnav__toggle" type="button" aria-expanded="false"
+                aria-controls="msub-advisory" data-mtoggle>Advisory</button>
+        <ul class="mnav__sub" id="msub-advisory" hidden>
+          <li><a href="advisory.html">Private Advisory</a></li>
+          <li><a href="meetings.html">Meetings</a></li>
+          <li><a href="scout.html">On-Site Assignments</a></li>
+        </ul>
+      </li>
+      <li class="mnav__group">
+        <button class="mnav__toggle" type="button" aria-expanded="false"
+                aria-controls="msub-mastermind" data-mtoggle>Mastermind</button>
+        <ul class="mnav__sub" id="msub-mastermind" hidden>
+          <li><a href="mastermind-membership.html">Membership</a></li>
+          <li><a href="mastermind-application.html">Apply</a></li>
+        </ul>
+      </li>
+      <li class="mnav__group">
+        <button class="mnav__toggle" type="button" aria-expanded="false"
+                aria-controls="msub-activities" data-mtoggle>Activities</button>
+        <ul class="mnav__sub" id="msub-activities" hidden>
+          <li><a href="group-activities.html">Ace’s Group Activities</a></li>
+          <li><a href="aces-poker-night.html">Aces Poker Night</a></li>
+          <li><a href="aces-running-group.html">Aces Running Group</a></li>
+          <li><a href="all-aces-networking-events.html">All Aces Networking Events</a></li>
+        </ul>
+      </li>
+      <li class="mnav__group">
+        <button class="mnav__toggle" type="button" aria-expanded="false"
+                aria-controls="msub-about" data-mtoggle>About</button>
+        <ul class="mnav__sub" id="msub-about" hidden>
+          <li><a href="index.html#about">About Ace</a></li>
+          <li><a href="public-speaking.html">Public Speaking</a></li>
+          <li><a href="premium-pickup-transport.html">Premium Pickup &amp; Transport</a></li>
+        </ul>
+      </li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul>
+  </nav>
+  <a class="btn btn--gold mnav__cta" href="contact.html">Start the Conversation</a>
+</div>
+
+<section class="hero hero--page" aria-label="Aces Running Group">
+  <div class="hero__stage">
+
+    <div class="hero__content">
+      <a class="hero__back" href="index.html"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-arrow"></use></svg> Back</a>
+
+      <h1 class="hero__h1">
+        <span class="hero__line">Aces Running Group</span>
+      </h1>
+
+      <p class="hero__sub">A monthly group run with peers and professionals who value their time. The run takes place at a large local park and finishes with light refreshments and casual conversation.</p>
+
+      <p class="hero__sub"><strong>When:</strong> 2nd Saturday of each month</p>
+      <p class="hero__sub"><strong>Where:</strong> Williams Park, Langley Township</p>
+
+      <p class="hero__sub">This is a straightforward social run. No pressure, just movement and good company.</p>
+      <p class="hero__sub">Check out the Eventbrite for more event details or to RSVP.</p>
+
+      <h2 class="hero__h3">Mastermind Members</h2>
+      <p class="hero__sub">Email your RSVP to <a href="mailto:info@acespaders.com">info@acespaders.com</a> to receive your complimentary ticket.</p>
+
+      <h2 class="hero__h3">Non-Members</h2>
+      <div class="hero__cta">
+        <a class="btn btn--gold" href="https://www.eventbrite.ca/e/aces-running-group-tickets-1998266183948" target="_blank" rel="noopener noreferrer">RSVP on Eventbrite</a>
+      </div>
+      <a class="hero__back hero__back--bottom" href="index.html"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-arrow"></use></svg> Back</a>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════════ 11. FOOTER ══════════════ -->
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot__grid">
+      <div class="foot__brand">
+        <span class="brand__mark brand__mark--lg"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-spade"></use></svg></span>
+        <p class="foot__word">ACE SPADERS</p>
+        <blockquote class="foot__quote">"If you're going to suffer, suffer success. I Love Gold and Gold People."</blockquote>
+        <p class="foot__quote-by">- Matthew Ferguson</p>
+
+        <blockquote class="foot__quote">"Understanding people just takes a willingness to Listen."</blockquote>
+        <p class="foot__quote-by">- T. Queen of Hearts</p>
+      </div>
+      <div class="foot__col">
+        <nav class="foot__nav" aria-label="The work">
+          <p class="foot__h">The work</p>
+          <ul>
+            <li><a href="advisory.html">Private Advisory</a></li>
+            <li><a href="meetings.html">Meetings</a></li>
+            <li><a href="mastermind-membership.html">The Invested Aces Mastermind</a></li>
+            <li><a href="group-activities.html">Ace’s Group Activities</a></li>
+          </ul>
+        </nav>
+
+        <nav class="foot__nav foot__nav--stacked" aria-label="Make Life Better">
+          <p class="foot__h">Make Life Better</p>
+          <ul>
+            <li><a href="https://www.makelifebetter.today" target="_blank" rel="noopener noreferrer">www.makelifebetter.today</a></li>
+          </ul>
+        </nav>
+      </div>
+
+      <div class="foot__col">
+        <nav class="foot__nav" aria-label="Also available">
+          <p class="foot__h">Also available</p>
+          <ul>
+            <li><a href="scout.html">On-Site Assignments</a></li>
+            <li><a href="premium-pickup-transport.html">Premium Pickup &amp; Transport</a></li>
+            <li><a href="public-speaking.html">Public Speaking</a></li>
+          </ul>
+        </nav>
+
+        <nav class="foot__nav foot__nav--stacked" aria-label="Aces Group Activities">
+          <p class="foot__h">Aces Group Activities</p>
+          <ul>
+            <li><a href="aces-poker-night.html">Aces Poker Night</a></li>
+            <li><a href="aces-running-group.html">Aces Running Group</a></li>
+            <li><a href="all-aces-networking-events.html">All Aces Networking Events</a></li>
+          </ul>
+        </nav>
+      </div>
+
+      <div class="foot__col">
+        <nav class="foot__nav" aria-label="Start">
+          <p class="foot__h">Start</p>
+          <ul>
+             <li><a href="mastermind-application.html">Apply to the Mastermind</a></li>
+            <li><a href="index.html#contact">Book an Assessment Call</a></li>
+            <li><a href="mailto:info@acespaders.com">info@acespaders.com</a></li>
+          </ul>
+        </nav>
+
+        <nav class="foot__nav foot__nav--stacked" aria-label="Hire Ace's Webmaster">
+          <p class="foot__h">Hire Ace's Webmaster</p>
+          <ul>
+            <li><a href="https://spacewize.dev/webdev/" target="_blank" rel="noopener noreferrer">spacewize.dev<wbr>/webdev</a></li>
+          </ul>
+        </nav>
+
+        <nav class="foot__nav foot__nav--stacked" aria-label="Location">
+          <p class="foot__h">Location</p>
+          <ul>
+            <li><a href="https://www.google.com/maps/search/?api=1&amp;query=1281+Hornby+St%2C+Vancouver%2C+BC+V6Z+0G8" target="_blank" rel="noopener noreferrer">1281 Hornby St, Vancouver, BC</a><span class="foot__addr-note">By appointment only</span></li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+
+    <div class="foot__base">
+      <p>© <span data-year>2026</span> Ace Spaders. All rights reserved.</p>
+    </div>
+  </div>
+</footer>
+
+<script src="main.js" defer></script>
+<!-- Little Ace. knowledge and physics have to be parsed before
+     companion.js runs, and all three are deferred so none of them
+     block the page. -->
+<script src="knowledge.js" defer></script>
+<script src="physics.js" defer></script>
+<script src="companion.js" defer></script>
+</body>
+</html>

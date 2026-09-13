@@ -1,0 +1,1858 @@
+/* ═══════════════════════════════════════════════════════════════
+   ACE SPADERS — luxury executive single page
+   Motion budget (deliberately capped at four):
+     1. Pinned, scroll-choreographed hero            → .hero
+     2. Ordered staggered reveal, flagship cluster   → .four
+     3. Count-up proof counters, once                → .stats
+     4. Hover-only lift on secondary services        → .alsotile
+   Everything else is static by design.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── TOKENS ─────────────────────────────────────────────────── */
+:root{
+  /* surface */
+  --ink-900:#0A0908;
+  --ink-800:#121110;
+  --ink-700:#1A1816;
+  --ink-600:#252220;
+  --line-dark:#2E2A26;
+
+  /* The site is one dark surface now. Rather than rewrite ~70 declarations,
+     the light-side tokens are remapped onto the dark palette here — every
+     rule that asked for "cream" or "on-light" keeps working and simply
+     resolves dark. Names are legacy; the mapping is the truth. Flip these six
+     back to the hexes in the comment to restore the light sections. */
+  /* Genuinely light surfaces still exist as CARDS on the black page — the
+     testimonial checkerboard and the two outer pricing tiers. They need real
+     hexes, not the remapped tokens below, which all resolve dark now. */
+  --paper:#EFECE6;
+  --paper-2:#E6E2DA;
+  --on-paper:#14120F;
+  --on-paper-mute:#5C574F;
+  --line-paper:#D5CFC4;
+  --gold-on-paper:#7A5610;     /* gold that passes contrast on cream */
+
+  --cream:var(--ink-900);      /* was #EFECE6 */
+  --cream-2:var(--ink-800);    /* was #E6E2DA */
+  --line-light:var(--line-dark); /* was #D5CFC4 */
+
+  /* accent */
+  --gold:#D9A441;
+  --gold-hi:#EEBE63;
+  --gold-ink:var(--gold);      /* was #7A5610, the gold that passed on cream */
+  --gold-wash:rgba(217,164,65,.10);
+
+  /* text */
+  --on-dark:#F1EDE6;
+  --on-dark-mute:#A29C93;
+  --on-light:var(--on-dark);        /* was #14120F */
+  --on-light-mute:var(--on-dark-mute); /* was #5C574F */
+
+  /* type */
+  --f-display:"Archivo Black","Archivo",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-util:"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif;
+
+  /* vh cap keeps the four hero lines inside a short laptop viewport */
+  --fs-hero:clamp(2.6rem,min(7.4vw,11.4vh),6.6rem);
+  --fs-h2:clamp(2rem,4.6vw,3.9rem);
+  --fs-h3:clamp(1.5rem,2.7vw,2.3rem);
+  --fs-four:clamp(2rem,4.4vw,3.6rem);
+  --fs-lead:clamp(1.05rem,1.35vw,1.28rem);
+  --fs-body:1.0625rem;
+  --fs-sm:.9375rem;
+  --fs-label:.75rem;
+
+  /* space */
+  --sp-1:.5rem; --sp-2:1rem; --sp-3:1.5rem; --sp-4:2rem;
+  --sp-5:3rem;  --sp-6:4rem; --sp-7:6rem;   --sp-8:8rem;
+  --sp-sec:clamp(3rem,6vw,6rem);
+  --gutter:clamp(1.25rem,4vw,3rem);
+  --maxw:1240px;
+
+  /* motion */
+  --ease:cubic-bezier(.22,.61,.36,1);
+  --ease-soft:cubic-bezier(.33,0,.2,1);
+  --t-fast:180ms;
+  --t-mid:260ms;
+
+  /* choreography defaults = the settled, non-cinematic end state */
+  --o1:1; --o2:1; --o3:1; --o4:1;
+  --y1:0px; --y2:0px; --y3:0px; --y4:0px;
+  --scrim:.66; --cue:0; --cy:0px;
+}
+
+/* ── RESET / BASE ───────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;overflow-x:clip}
+/* The fixed header sits on top of every section (z-index:100, no reserved
+   space above the content), so a bare anchor jump lands each target's
+   heading partly hidden behind it — confirmed on #process, but every
+   nav-linked section shares the same fixed header and the same problem.
+   96px comfortably clears the header's ~72px at rest, across its own
+   responsive padding range. */
+/* .form[id] joins them: the mobile nav's "Appointment" targets the form
+   itself, not its section, so it needs the same header clearance. */
+section[id],.form[id]{scroll-margin-top:6rem}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{
+  margin:0;overflow-x:clip;
+  background:var(--ink-900);color:var(--on-dark);
+  font:400 var(--fs-body)/1.62 var(--f-body);
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+}
+/* ── PAGE SPADE REVEAL ────────────────────────────────────────
+   A fixed sheet of gold sitting just above the page's black and just
+   below the content, cut to a spade at the cursor. The gradient itself
+   is static and viewport-fixed, so the spade reads as a window onto one
+   continuous field rather than a shape carrying its own fill around.
+
+   It is only ever visible where nothing opaque is painted over it —
+   cards, trays and the form all have their own fills, so the reveal
+   stays on the page ground and never crawls across a panel. */
+.aop{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  --gx:-999px; --gy:-999px; --gr:clamp(130px,15vw,235px);
+  /* The gold-spades plate, not a gradient. The layer is position:fixed, so
+     the pattern is pinned to the viewport while only the mask moves — which
+     is the whole idea: one continuous field behind the page, seen through a
+     spade-shaped window that follows the cursor, rather than a shape
+     carrying its own fill around with it.
+
+     cover + no-repeat, not a tile: the source is a crop rather than a whole
+     number of periods, so repeating it shows a seam. Covering the viewport
+     avoids the question entirely, and at this aspect ratio it lands at
+     roughly 1:1 — about six columns of spades across a laptop.
+
+     Its ground is the same near-black as the page, so what reads through
+     the window is the gold spades themselves, and body copy passing under
+     it stays legible against the black between them — which the flat gold
+     gradient this replaces did not manage. */
+  background-color:var(--ink-900);
+  background-image:url('assets/images/gold-spades.jpg');
+  background-repeat:no-repeat;
+  background-size:cover;
+  background-position:center;
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cfilter id='s' x='-25%25' y='-25%25' width='150%25' height='150%25'%3E%3CfeGaussianBlur stdDeviation='0.7'/%3E%3C/filter%3E%3Cpath filter='url(%23s)' fill='%23000' transform='translate(4 4) scale(1)' d='M12 2.2c-.45 1.7-3.05 4.1-5.25 6C4.85 9.85 3.55 11.5 3.55 13.5c0 2.6 1.9 4.35 4.3 4.35 1.3 0 2.4-.5 3.1-1.5-.12 2.35-.9 4.05-2 5.05h6.1c-1.1-1-1.88-2.7-2-5.05.7 1 1.8 1.5 3.1 1.5 2.4 0 4.3-1.75 4.3-4.35 0-2-1.3-3.65-3.2-5.3-2.2-1.9-4.8-4.3-5.25-6Z'/%3E%3C/svg%3E");
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cfilter id='s' x='-25%25' y='-25%25' width='150%25' height='150%25'%3E%3CfeGaussianBlur stdDeviation='0.7'/%3E%3C/filter%3E%3Cpath filter='url(%23s)' fill='%23000' transform='translate(4 4) scale(1)' d='M12 2.2c-.45 1.7-3.05 4.1-5.25 6C4.85 9.85 3.55 11.5 3.55 13.5c0 2.6 1.9 4.35 4.3 4.35 1.3 0 2.4-.5 3.1-1.5-.12 2.35-.9 4.05-2 5.05h6.1c-1.1-1-1.88-2.7-2-5.05.7 1 1.8 1.5 3.1 1.5 2.4 0 4.3-1.75 4.3-4.35 0-2-1.3-3.65-3.2-5.3-2.2-1.9-4.8-4.3-5.25-6Z'/%3E%3C/svg%3E");
+  -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat;
+  -webkit-mask-size:calc(var(--gr) * 2) calc(var(--gr) * 2);
+  mask-size:calc(var(--gr) * 2) calc(var(--gr) * 2);
+  -webkit-mask-position:calc(var(--gx) - var(--gr)) calc(var(--gy) - var(--gr));
+  mask-position:calc(var(--gx) - var(--gr)) calc(var(--gy) - var(--gr));
+  opacity:0;transition:opacity var(--t-mid) var(--ease);
+}
+.aop.is-on{opacity:1}
+
+/* The layer is z-index:0, so everything the reader reads has to sit above
+   it. These are transparent, so the gold still shows through.
+
+   body>section rather than a list of page classes: only index.html wraps
+   its content in <main>. Every other page drops sections straight into
+   the body, and an unpositioned element paints below the fixed .aop
+   regardless of DOM order — the spade crawls over the text instead of
+   under it. Matching on structure covers each new page automatically. */
+main,.foot,body>section{position:relative;z-index:1}
+
+img,svg{display:block;max-width:100%}
+h1,h2,h3,p,ul,ol,dl,dd,figure,blockquote{margin:0}
+ul,ol{padding:0;list-style:none}
+a{color:inherit;text-decoration:none}
+button,input,select,textarea{font:inherit;color:inherit}
+
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:2px}
+
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
+
+.skip{position:absolute;left:-9999px;top:0;z-index:200;background:var(--gold);
+  color:#100E0B;padding:.75rem 1.25rem;font:600 var(--fs-sm) var(--f-util)}
+.skip:focus{left:1rem;top:1rem}
+
+.wrap{max-width:var(--maxw);margin-inline:auto;padding-inline:var(--gutter)}
+.section{padding-block:var(--sp-sec)}
+
+/* ── SHARED TYPE ────────────────────────────────────────────── */
+.eyebrow{
+  display:flex;align-items:flex-start;gap:.6em;
+  font-family:var(--f-util);font-variation-settings:"wdth" 118;
+  font-size:var(--fs-label);font-weight:600;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--on-light-mute);margin-bottom:var(--sp-3);
+}
+.eyebrow--gold{color:var(--gold)}
+/* Muted label variant — not currently used on any section (Also
+   available switched to eyebrow--gold, matching About's treatment). */
+.eyebrow--quiet{color:var(--on-dark-mute)}
+.eyebrow__spade{width:.85em;height:.85em;flex:none;fill:currentColor;margin-top:.3em}
+
+.h2{
+  font:400 var(--fs-h2)/1.0 var(--f-display);
+  letter-spacing:-.025em;color:var(--on-light);
+}
+.h2--light{color:var(--on-dark)}
+/* headings that live inside a half-width column need a smaller top end
+   so the authored line breaks survive */
+.about__copy .h2{font-size:clamp(1.9rem,3.4vw,3rem)}
+/* Smaller than About's — three short lines read as heavier at the shared
+   size than the sentence warrants. */
+.cta__copy .h2{font-size:clamp(1.6rem,2.6vw,2.4rem)}
+.h3{font:400 var(--fs-h3)/1.08 var(--f-display);letter-spacing:-.02em;color:var(--on-light)}
+.h3--light{color:var(--on-dark)}
+
+/* ── BUTTONS ────────────────────────────────────────────────── */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
+  min-height:52px;padding:.85rem 1.6rem;cursor:pointer;
+  font-family:var(--f-util);font-variation-settings:"wdth" 108;
+  font-size:.8125rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  border:1px solid transparent;background:none;
+  transition:background-color var(--t-mid) var(--ease),color var(--t-mid) var(--ease),
+             border-color var(--t-mid) var(--ease);
+}
+.btn--sm{min-height:44px;padding:.6rem 1.15rem;font-size:.72rem}
+.btn--wide{width:100%}
+
+/* ── TRAVELLING EDGE GLOW ─────────────────────────────────────
+   A single bright arc of a conic gradient, rotated forever and masked
+   down to a 1px ring, so the light appears to run around the button's
+   edge. The mask is the standard two-layer trick: paint the whole box,
+   punch out the content box, and only the border ring survives.
+
+   The rotation needs @property — a plain custom property is a string to
+   the animation engine and would jump rather than sweep. Where that is
+   unsupported the arc simply sits still, which is why the ring is drawn
+   in the button's own accent: a stationary version still reads as trim
+   rather than as something broken. */
+@property --orbit-a{syntax:'<angle>';initial-value:0deg;inherits:false}
+@keyframes orbitSpin{to{--orbit-a:360deg}}
+
+/* Everything that reads as a surface or a control carries the ring: the
+   buttons it started on, plus trays, cards, boxes and framed images.
+   One selector list so the arcs stay identical everywhere. */
+.btn,
+.tier,.quote,.tiers,.quotes,.form,.cta__copy,.cta__shot,.tiernotes,
+.alsotile,.plaque,.portrait,.circle__band{
+  position:relative;isolation:isolate;--orbit-glow:var(--gold-hi);
+}
+/* gold on gold is invisible — the filled button gets a pale arc instead */
+.btn--gold{--orbit-glow:#FFF6E0}
+/* The cream tiers are light surfaces; the pale arc vanishes on them, so
+   they take the deeper gold that already passes on cream elsewhere. */
+.tier:not(.tier--lead){--orbit-glow:var(--gold-on-paper)}
+
+.btn::after,
+.tier::after,.quote::after,.tiers::after,.quotes::after,.form::after,
+.cta__copy::after,.cta__shot::after,.tiernotes::after,
+.alsotile::after,.plaque::after,
+.portrait::after,.circle__band::after{
+  content:"";position:absolute;inset:0;border-radius:inherit;
+  pointer-events:none;padding:2px;
+  background:conic-gradient(from var(--orbit-a),
+    transparent 0deg,
+    transparent 62deg,
+    color-mix(in srgb,var(--orbit-glow) 35%,transparent) 82deg,
+    var(--orbit-glow) 96deg,
+    color-mix(in srgb,var(--orbit-glow) 35%,transparent) 110deg,
+    transparent 130deg,
+    transparent 360deg);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  mask-composite:exclude;
+  animation:orbitSpin 2.8s linear infinite;
+}
+/* The ring alone is a hairline. This is the same arc, blurred and pushed
+   past the edge, which is what turns it from trim into a glow. Sits behind
+   the button's own background so it only ever shows outside the box.
+   Buttons only: this layer is a blur per element, and running ~30 of them
+   across the page is what makes the effect expensive, so the surfaces
+   take the sharp ring alone. */
+.btn::before{
+  content:"";position:absolute;inset:-3px;border-radius:inherit;
+  pointer-events:none;padding:4px;z-index:-1;
+  background:conic-gradient(from var(--orbit-a),
+    transparent 0deg,
+    transparent 62deg,
+    color-mix(in srgb,var(--orbit-glow) 30%,transparent) 82deg,
+    var(--orbit-glow) 96deg,
+    color-mix(in srgb,var(--orbit-glow) 30%,transparent) 110deg,
+    transparent 130deg,
+    transparent 360deg);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  mask-composite:exclude;
+  filter:blur(5px);opacity:.85;
+  animation:orbitSpin 2.8s linear infinite;
+}
+.btn--gold{background:var(--gold);color:#100E0B}
+.btn--gold:hover{background:var(--gold-hi)}
+.btn--ghost{border-color:rgba(241,237,230,.34);color:var(--on-dark)}
+.btn--ghost:hover{border-color:var(--gold);color:var(--gold)}
+.btn--outline{border-color:var(--line-light);color:var(--on-light)}
+/* A button-shaped label for a destination that doesn't exist yet — a real
+   <a href="#"> here would silently jump the page to top, which reads as
+   broken. This is inert on purpose: no href, no hover motion, dimmed. */
+.btn[aria-disabled="true"]{opacity:.4;cursor:not-allowed;pointer-events:none}
+.btn--outline:hover{border-color:var(--gold-ink);color:var(--gold-ink)}
+
+/* text link */
+.tlink{
+  display:inline-flex;align-items:center;gap:.5rem;
+  font-family:var(--f-util);font-variation-settings:"wdth" 108;
+  font-size:.78rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--gold-ink);padding-block:.35rem;
+  text-underline-offset:.35em;
+}
+.tlink svg{width:1.15em;height:1.15em;flex:none;transition:transform var(--t-mid) var(--ease)}
+.tlink:hover{text-decoration:underline}
+.tlink:hover svg{transform:translateX(3px)}
+
+/* grain overlay (shared) */
+.grain{
+  position:absolute;inset:0;pointer-events:none;opacity:.05;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ═══ 1. HEADER ═══════════════════════════════════════════════ */
+.site-head{
+  position:fixed;inset:0 0 auto;z-index:100;
+  background:transparent;border-bottom:1px solid transparent;
+  transition:background-color var(--t-mid) var(--ease),border-color var(--t-mid) var(--ease);
+}
+.site-head.is-stuck{background:rgba(10,9,8,.94);border-bottom-color:var(--line-dark);
+  backdrop-filter:saturate(140%) blur(10px)}
+.site-head__in{
+  max-width:var(--maxw);margin-inline:auto;padding:.85rem var(--gutter);
+  display:flex;align-items:center;gap:var(--sp-4);
+}
+.brand{display:flex;align-items:center;gap:.7rem;margin-right:auto}
+.brand__mark{
+  width:30px;height:30px;flex:none;display:grid;place-items:center;
+  border:1px solid rgba(217,164,65,.5);
+}
+.brand__mark svg{width:15px;height:15px;fill:var(--gold)}
+.brand__word{
+  font-family:var(--f-display);font-size:.95rem;letter-spacing:.02em;color:var(--on-dark);
+  line-height:1;
+}
+.brand__word-b{color:var(--gold);margin-left:.14em}
+
+.nav__list{display:flex;gap:var(--sp-4)}
+.nav__list a{
+  font-family:var(--f-util);font-variation-settings:"wdth" 112;
+  font-size:var(--fs-label);font-weight:600;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--on-dark-mute);padding-block:.5rem;
+  transition:color var(--t-fast) var(--ease);
+}
+.nav__list a:hover,.nav__list a.is-current{color:var(--gold)}
+
+/* ── NAV DROPDOWNS ────────────────────────────────────────────
+   CSS-only. :focus-within alongside :hover so a keyboard tabbing
+   into the group opens it too — without that the child links are
+   reachable by Tab but invisible while focused.
+
+   The header is z-index:100 and the panel is inside it, so it
+   already clears the page. */
+.nav__item--sub{position:relative}
+/* display:block so the link's padding-block counts toward the item's
+   height. Left inline, the box stops at the text and top:100% would
+   drop the panel into a dead gap the cursor has to cross. */
+.nav__item--sub>a{display:block}
+.nav__sub{
+  position:absolute;top:100%;left:0;z-index:1;min-width:max-content;
+  background:rgba(10,9,8,.97);border:1px solid var(--line-dark);
+  opacity:0;visibility:hidden;transform:translateY(-.35rem);
+  transition:opacity var(--t-fast) var(--ease),
+             transform var(--t-fast) var(--ease),
+             visibility var(--t-fast) var(--ease);
+}
+.nav__item--sub:hover>.nav__sub,
+.nav__item--sub:focus-within>.nav__sub{
+  opacity:1;visibility:visible;transform:translateY(0);
+}
+.nav__sub li+li{border-top:1px solid var(--line-dark)}
+.nav__sub a{display:block;padding:.65rem 1.1rem;white-space:nowrap}
+.nav__sub a:hover{background:var(--ink-700)}
+
+.burger{display:none;width:44px;height:44px;border:1px solid var(--line-dark);
+  background:none;cursor:pointer;place-items:center}
+.burger__bars{display:block;width:16px}
+.burger__bars i{display:block;height:1px;background:var(--on-dark);margin:4px 0}
+
+/* mobile nav */
+.mnav{
+  position:fixed;inset:0;z-index:99;background:var(--ink-900);
+  padding:6rem var(--gutter) 2.5rem;display:flex;flex-direction:column;
+  justify-content:space-between;gap:var(--sp-5);
+}
+.mnav[hidden]{display:none}
+.mnav ul{display:grid;gap:.35rem}
+/* :not(.mnav__cta) so the panel's button keeps being a button. Without it
+   this rule outranks .btn on specificity and hands the CTA the display
+   face at 2.4rem, which overflows the panel's width. */
+.mnav a:not(.mnav__cta){
+  display:block;padding:.7rem 0;border-bottom:1px solid var(--line-dark);
+  font:400 clamp(1.6rem,7vw,2.4rem)/1.1 var(--f-display);letter-spacing:-.02em;
+}
+.mnav__cta{width:100%}
+
+/* ── MOBILE NAV GROUPS ────────────────────────────────────────
+   The label is a button, not a link: tapping it opens the group
+   rather than navigating, so the parent page gets its own row
+   inside the list instead. */
+.mnav__toggle{
+  display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  width:100%;padding:.7rem 0;border:0;border-bottom:1px solid var(--line-dark);
+  background:none;color:inherit;cursor:pointer;text-align:left;
+  font:400 clamp(1.6rem,7vw,2.4rem)/1.1 var(--f-display);letter-spacing:-.02em;
+}
+/* A chevron drawn from two rules rather than an icon, so it can rotate
+   without another sprite symbol. */
+.mnav__toggle::after{
+  content:"";width:.42em;height:.42em;flex:none;margin-right:.2em;
+  border-right:2px solid var(--gold);border-bottom:2px solid var(--gold);
+  transform:translateY(-.14em) rotate(45deg);
+  transition:transform var(--t-mid) var(--ease);
+}
+.mnav__toggle[aria-expanded="true"]::after{transform:translateY(.1em) rotate(225deg)}
+/* Scoped through .mnav to outrank `.mnav ul` and `.mnav a:not(.mnav__cta)`
+   above — both are (0,2,1) and would otherwise hand these rows the
+   full-size display face and the divider meant for top-level items. */
+.mnav .mnav__sub{display:grid;gap:0;padding:.35rem 0 .6rem 1rem}
+/* Must carry .mnav too, and sit after the rule above: at (0,2,0) it tied
+   with the display:grid and lost on source order, so a collapsed group
+   kept rendering while its toggle correctly reported aria-expanded=false. */
+.mnav .mnav__sub[hidden]{display:none}
+.mnav .mnav__sub a{
+  font:400 1.05rem/1.4 var(--f-body);letter-spacing:0;
+  padding:.5rem 0;border-bottom:0;color:var(--on-dark-mute);
+}
+.mnav .mnav__sub a:hover{color:var(--gold)}
+
+/* ═══ 2. HERO ═════════════════════════════════════════════════ */
+.hero{position:relative;background:var(--ink-900)}
+.hero__stage{
+  position:relative;min-height:100svh;overflow:hidden;
+  display:flex;align-items:flex-end;
+  /* the gold field itself — this is the "gold gradient" kept from the water
+     version. Everything below just adds a light moving over it. */
+  background:radial-gradient(78% 86% at 74% 4%,#2A2219,#0C0B0A 58%,#060505 100%);
+  /* Read by the two layers below and by heroSpotlight() in main.js. Off
+     canvas at rest, so nothing shows until the pointer actually enters.
+     --r is 20% down from clamp(175px,21vw,320px). */
+  --mx:-999px; --my:-999px; --r:clamp(140px,16.8vw,256px);
+}
+
+/* One layer now, centred on the --mx/--my/--r the stage inherits down.
+   Pointer events pass through it; the listener lives on the stage itself.
+
+   The warm bloom that used to sit over this is gone — with the clip pulled
+   in to a smaller frame the surrounding black is the point, and a glow
+   spilling past the aperture worked against that.
+
+   There is deliberately no third "beam edge" ring here any more. A bright
+   gold circle at the mask boundary drew the eye to the edge of the effect
+   rather than to what the effect was revealing, which matters much more now
+   that the plate is moving footage. */
+
+/* 1 — the plate the light opens onto: the clip, masked to a spade.
+   contain rather than cover, plus padding, so the frame sits smaller and
+   centred with black around it. Under a moving aperture that reads as a lit
+   object in a dark room rather than as full-bleed wallpaper you happen to be
+   cutting a hole in. */
+.hero__plate{
+  position:absolute;inset:0;z-index:0;pointer-events:none;
+  width:100%;height:100%;
+  /* object-fit:contain letterboxes the clip inside this box whenever its
+     aspect ratio doesn't match the stage — without a background here, that
+     gap shows the stage's own warm gradient behind it instead of black,
+     which reads as a hard seam right where the footage ends. #0a0705 is
+     the actual measured edge-pixel colour of the current clip (sampled
+     directly from the file across 5 timestamps, consistently 9-11/6-8/5
+     — not a guess), so the letterboxed edge disappears into real footage
+     rather than an approximated tone. */
+  background:
+    linear-gradient(90deg,transparent 82%,rgba(10,7,5,.9) 96%,#0a0705 100%),
+    #0a0705;
+  /* The BOX stays the full stage on purpose: --mx/--my are cursor positions
+     measured against the stage, and mask-position resolves against this
+     element's border box. Shrinking the element itself threw the spade out
+     of register with the cursor. Padding shrinks the picture inside a
+     full-size box instead, so the mask stays aligned — right stays tight
+     (picture hugs the stage's right edge) and left is pulled in a bit
+     from before to size the picture up; top is small and bottom is large,
+     pushing the picture up toward the top of the stage. */
+  object-fit:contain;
+  padding:25px .5% 16% 30%;
+  opacity:0;
+  /* The cutout is the spade itself, not a circle — the same glyph the brand
+     mark and eyebrows use. An SVG mask rather than a gradient, because a
+     gradient can only describe a radial falloff; the softness comes from a
+     feGaussianBlur baked into the SVG, so the edge still feathers.
+     --r stays the half-size, so the box is 2r square and centres on the
+     cursor exactly as the circle did. Single layer — no vignette gradient
+     intersected with it, so the reveal cuts clean to the spade's own edge. */
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cfilter id='s' x='-25%25' y='-25%25' width='150%25' height='150%25'%3E%3CfeGaussianBlur stdDeviation='0.7'/%3E%3C/filter%3E%3Cpath filter='url(%23s)' fill='%23000' transform='translate(4 4) scale(1)' d='M12 2.2c-.45 1.7-3.05 4.1-5.25 6C4.85 9.85 3.55 11.5 3.55 13.5c0 2.6 1.9 4.35 4.3 4.35 1.3 0 2.4-.5 3.1-1.5-.12 2.35-.9 4.05-2 5.05h6.1c-1.1-1-1.88-2.7-2-5.05.7 1 1.8 1.5 3.1 1.5 2.4 0 4.3-1.75 4.3-4.35 0-2-1.3-3.65-3.2-5.3-2.2-1.9-4.8-4.3-5.25-6Z'/%3E%3C/svg%3E");
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cfilter id='s' x='-25%25' y='-25%25' width='150%25' height='150%25'%3E%3CfeGaussianBlur stdDeviation='0.7'/%3E%3C/filter%3E%3Cpath filter='url(%23s)' fill='%23000' transform='translate(4 4) scale(1)' d='M12 2.2c-.45 1.7-3.05 4.1-5.25 6C4.85 9.85 3.55 11.5 3.55 13.5c0 2.6 1.9 4.35 4.3 4.35 1.3 0 2.4-.5 3.1-1.5-.12 2.35-.9 4.05-2 5.05h6.1c-1.1-1-1.88-2.7-2-5.05.7 1 1.8 1.5 3.1 1.5 2.4 0 4.3-1.75 4.3-4.35 0-2-1.3-3.65-3.2-5.3-2.2-1.9-4.8-4.3-5.25-6Z'/%3E%3C/svg%3E");
+  -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat;
+  -webkit-mask-size:calc(var(--r) * 2) calc(var(--r) * 2);
+  mask-size:calc(var(--r) * 2) calc(var(--r) * 2);
+  -webkit-mask-position:calc(var(--mx) - var(--r)) calc(var(--my) - var(--r));
+  mask-position:calc(var(--mx) - var(--r)) calc(var(--my) - var(--r));
+  transition:opacity var(--t-mid) var(--ease);
+}
+@media (hover:hover){
+  .hero__stage:hover .hero__plate{opacity:1}
+}
+/* No pointer to trail on touch, and reduced motion drops the whole
+   cursor-follow move — same rule the tile bloom already follows. Also means
+   the video is never decoded on those paths: display:none, and the JS that
+   drives it returns early. */
+@media (hover:none),(prefers-reduced-motion:reduce){
+  .hero__plate{display:none}
+}
+
+/* The bed is fixed and guarantees the headline a dark surface no matter what
+   the spotlight is doing under it; the ::after is the atmosphere that
+   deepens as you scroll. Right side stays open so the key light and the
+   spotlight are fully visible. */
+.hero__scrim{
+  position:absolute;inset:0;pointer-events:none;z-index:1;
+  /* The eyebrow's text runs to ~49% of the width, where the old ramp had
+     already thinned to .28 — with the crisp water underneath, 12px gold fell
+     to 4.08:1 there. Deepened through the mid-left so the type is protected
+     without touching the field: past 62% it still drops away fast, keeping
+     the key light and the spotlight fully open on the right. Pure black now
+     (was rgba(5,5,4,...), a near-black with a faint warm cast) — same
+     falloff distances, so the text-safety tuning above still holds. */
+  background:linear-gradient(90deg,
+    rgba(0,0,0,.90) 0%,rgba(0,0,0,.74) 34%,rgba(0,0,0,.22) 62%,rgba(0,0,0,0) 80%);
+}
+.hero__scrim::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(8,7,6,.72) 0%,rgba(8,7,6,.2) 34%,rgba(8,7,6,.92) 100%);
+  opacity:var(--scrim);
+}
+
+/* The block reserves space for beats that have not arrived yet, so it rides
+   down at the start and rises into its final position as it fills. */
+.hero__content{
+  position:relative;z-index:2;width:100%;
+  max-width:var(--maxw);margin-inline:auto;
+  padding:9rem var(--gutter) clamp(4rem,9vh,7rem);
+  transform:translate3d(0,var(--cy),0);
+  /* No scroll-driven fade-out here on purpose. Dimming the copy while the
+     hero still fills the screen reads as the page breaking, not as an
+     exit — the pin scrolling away is already the exit. */
+}
+.hero__eyebrow{
+  opacity:var(--o1);transform:translate3d(0,var(--y1),0);
+  color:var(--gold);margin-bottom:var(--sp-4);
+}
+/* Names the offer and the person before the headline gets to be oblique.
+   The rule is a decorative <i>, not a ::before, so the label can be read
+   as one string by a screen reader without a stray glyph in front of it. */
+.hero__eyebrow{
+  display:flex;align-items:center;gap:.7rem;
+  margin-bottom:var(--sp-3);
+  font-family:var(--f-util);font-variation-settings:"wdth" 112;
+  font-size:var(--fs-label);font-weight:600;letter-spacing:.17em;text-transform:uppercase;
+  color:var(--gold);
+  opacity:var(--o1);transform:translate3d(0,var(--y1),0);
+}
+.hero__eyebrow i{display:block;width:2rem;height:1px;background:currentColor;flex:none}
+.hero__h1{
+  font:400 var(--fs-hero)/.92 var(--f-display);
+  letter-spacing:-.035em;max-width:16ch;margin-bottom:var(--sp-4);
+}
+.hero__line{display:block}
+.hero__line:first-child{opacity:var(--o1);transform:translate3d(0,var(--y1),0)}
+.hero__line--gold{color:var(--gold);opacity:var(--o2);transform:translate3d(0,var(--y2),0)}
+.hero__sub{
+  max-width:56ch;font-size:var(--fs-lead);color:#CFC9C0;
+  opacity:var(--o3);transform:translate3d(0,var(--y3),0);
+}
+/* The service pages run several of these in a row. Home has exactly one, so
+   the gap goes between siblings rather than on the element — otherwise the
+   home hero gains a trailing space that throws off its beat spacing. */
+.hero__sub + .hero__sub{margin-top:var(--sp-2)}
+/* A short bulleted list inside hero copy — Premium Pickup & Transport and
+   Public Speaking both need one for their "ways to access this" lines.
+   Kept to the hero's own type scale rather than borrowing a denser list
+   style built for a boxed section. */
+.hero__list{
+  max-width:56ch;margin-top:var(--sp-2);
+  opacity:var(--o3);transform:translate3d(0,var(--y3),0);
+}
+.hero__list li{
+  position:relative;padding-left:1.15em;
+  font-size:var(--fs-lead);color:#CFC9C0;line-height:1.6;
+}
+.hero__list li+li{margin-top:.35rem}
+.hero__list li::before{content:"—";position:absolute;left:0;color:var(--gold)}
+/* Numbered variant, for lists where the order is part of the meaning
+   rather than a set of equal items — Commitments' "How It Works" steps.
+   A CSS counter rather than the browser's own list-marker because the
+   reset at the top of this file sets list-style:none on every ol. */
+.hero__list--num{counter-reset:step}
+.hero__list--num li{padding-left:1.7em;counter-increment:step}
+.hero__list--num li::before{content:counter(step) "."}
+.hero--page .hero__list{max-width:62ch}
+/* Group Activities links each item in its "currently available" list
+   straight to that activity's own page. */
+.hero__list a{color:var(--gold);text-decoration:underline;text-underline-offset:.25em}
+.hero__list a:hover{color:var(--gold-hi)}
+/* Inline links inside running body copy. The reset at the top of this
+   file strips colour and underline from every anchor, so without this a
+   link dropped mid-paragraph is invisible — identical to the text around
+   it. --gold-ink is aliased to --gold, so one colour serves both the
+   dark sections (.formats) and the light ones (.network). This also
+   picks up the mailto links that were already sitting unstyled inside
+   .hero__sub on the running-group and networking-events pages. */
+.hero__sub a,
+.formats__foot a,.formats__bridge a,
+.network__copy a,.network__list a{
+  color:var(--gold-ink);text-decoration:underline;text-underline-offset:.25em;
+}
+.hero__sub a:hover,
+.formats__foot a:hover,.formats__bridge a:hover,
+.network__copy a:hover,.network__list a:hover{color:var(--gold-hi)}
+/* A subhead inside hero copy, for pages long enough to need one (Group
+   Activities' "Currently Available" / "In Development" split). Sits
+   between the h1 and body-text scale — a full h2 would compete with the
+   page's own title. */
+.hero__h3{
+  font:400 clamp(1.3rem,2vw,1.7rem)/1.15 var(--f-display);
+  color:var(--on-dark);margin:var(--sp-4) 0 var(--sp-2);
+}
+/* A quiet divider for pages that carry two distinct bodies of copy under
+   one title (Advisory, which absorbed the Commitments terms). The reset
+   strips <hr>'s default border, so it needs one drawn back on. */
+.hero__rule{
+  border:0;border-top:1px solid var(--line-dark);
+  margin:var(--sp-5) 0 0;max-width:80ch;
+}
+.hero__cta{
+  display:flex;flex-wrap:wrap;gap:var(--sp-2);margin-top:var(--sp-4);
+  opacity:var(--o4);transform:translate3d(0,var(--y4),0);
+}
+/* The terms that qualify the buttons above, on the same beat so they arrive
+   together rather than as a separate afterthought. */
+.hero__micro{
+  margin-top:var(--sp-3);
+  font-family:var(--f-util);font-variation-settings:"wdth" 112;
+  font-size:var(--fs-label);letter-spacing:.12em;text-transform:uppercase;
+  color:var(--on-dark-mute);
+  opacity:var(--o4);transform:translate3d(0,var(--y4),0);
+}
+/* Home hero only: half the original clamp(4rem,9vh,7rem). Together with
+   the halved .formats top padding this halves the whole gap between the
+   CTAs and the top of the tiers tray. */
+.hero[data-hero] .hero__content{padding-bottom:clamp(2rem,4.5vh,3.5rem)}
+/* Home hero only — subpages share .hero__stage's flex-end via .hero--page
+   and should keep it. Once the choreography settles (--cy reaches 0), the
+   text was sitting low against the bottom edge; centring it reads better
+   at rest without touching the padding that controls the gap to the tray
+   below. */
+.hero[data-hero] .hero__stage{align-items:center}
+.hero__cue{
+  position:absolute;right:var(--gutter);bottom:clamp(4rem,9vh,7rem);z-index:2;
+  display:none;align-items:center;gap:.75rem;opacity:var(--cue);
+  font-family:var(--f-util);font-variation-settings:"wdth" 118;
+  font-size:.68rem;font-weight:600;letter-spacing:.28em;text-transform:uppercase;
+  color:var(--on-dark-mute);
+}
+.hero__cue i{display:block;width:64px;height:1px;background:linear-gradient(90deg,var(--gold),transparent)}
+
+/* ═══ 3. PROOF STRIP ══════════════════════════════════════════ */
+/* Black, same as the hero above it — the strip reads as the hero's closing
+   line rather than a separate band, and the top rule is what separates the
+   two. From #work down the page alternates black/white with no greys. */
+.proof{
+  background:var(--ink-900);
+  border-block:1px solid var(--line-dark);
+  padding-block:clamp(3rem,6vw,4.75rem);
+}
+.proof__head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;
+  gap:var(--sp-2);margin-bottom:var(--sp-5)}
+.proof__head .eyebrow{margin-bottom:0}
+.proof__note{font-size:var(--fs-sm);color:var(--on-dark-mute)}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-4)}
+.stat{border-left:1px solid var(--line-dark);padding-left:var(--sp-3)}
+.stat__num{
+  display:flex;align-items:baseline;
+  font-family:var(--f-util);font-variation-settings:"wdth" 106;
+  font-size:clamp(2.6rem,5.4vw,4.25rem);font-weight:700;line-height:1;
+  letter-spacing:-.03em;color:var(--on-dark);
+  font-variant-numeric:tabular-nums;
+}
+.stat__suf{color:var(--gold);font-size:.55em;margin-left:.08em}
+.stat__label{
+  margin-top:.85rem;font-family:var(--f-util);font-variation-settings:"wdth" 112;
+  font-size:var(--fs-label);font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--on-dark-mute);
+}
+
+/* ═══ 4. FLAGSHIP CLUSTER ═════════════════════════════════════ */
+.four-sec{background:var(--cream);color:var(--on-light)}
+.four-sec__head{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,26rem);
+  gap:var(--sp-5);align-items:end;margin-bottom:clamp(3rem,6vw,5rem);
+}
+.four-sec__intro{font-size:var(--fs-lead);color:var(--on-light-mute);max-width:44ch}
+
+.four{position:relative}
+/* the spine: one continuous gold thread proving the four are one group */
+.four::before{
+  content:"";position:absolute;left:16px;top:0;bottom:0;width:1px;
+  background:var(--line-light);
+}
+.four::after{
+  content:"";position:absolute;left:16px;top:0;bottom:0;width:1px;
+  background:linear-gradient(180deg,var(--gold),rgba(217,164,65,.35));
+  transform-origin:top;transform:scaleY(1);
+}
+
+.four__item{
+  position:relative;
+  display:grid;grid-template-columns:64px minmax(0,1fr) minmax(0,1.15fr);
+  gap:0 var(--sp-5);align-items:start;
+  padding-block:clamp(2.5rem,4.5vw,3.75rem);
+  border-top:1px solid var(--line-light);
+}
+.four__item:first-child{border-top:0;padding-top:0}
+.four__node{
+  grid-column:1;width:32px;height:32px;display:grid;place-items:center;
+  background:var(--cream);border:1px solid var(--gold-ink);border-radius:50%;
+  margin-top:.4em;
+}
+.four__item:first-child .four__node{margin-top:.15em}
+.four__node svg{width:13px;height:13px;fill:var(--gold-ink)}
+.four__title{
+  grid-column:2;font:400 var(--fs-four)/.96 var(--f-display);
+  letter-spacing:-.03em;color:var(--on-light);
+}
+.four__body{grid-column:3;display:grid;gap:var(--sp-2);justify-items:start}
+.four__body p{color:var(--on-light-mute);max-width:46ch}
+/* specificity: must out-rank `.four__body p` (0,1,1) */
+.four__body p.four__tag{
+  font-family:var(--f-util);font-variation-settings:"wdth" 112;
+  font-size:var(--fs-label);font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--gold-ink);
+}
+
+/* MOTION #2 — ordered stagger. Hidden only when motion is welcome + JS is on. */
+@media (prefers-reduced-motion:no-preference){
+  .js .four__item{
+    opacity:0;transform:translate3d(0,26px,0);
+    transition:opacity 720ms var(--ease),transform 720ms var(--ease);
+    transition-delay:calc(var(--i) * 620ms);
+  }
+  .js .four::after{
+    transform:scaleY(0);
+    transition:transform 2560ms var(--ease-soft);
+  }
+  .js .four.is-in .four__item{opacity:1;transform:none}
+  .js .four.is-in::after{transform:scaleY(1)}
+}
+
+/* ═══ 5. TIERS ════════════════════════════════════════════════ */
+/* Black across the full width now, so the tray that used to hold the cards
+   is gone — see .tiers below. No border-top either: #work above is cream, so
+   the colour change is the seam and a rule on top of it would only read as
+   a stray hairline. */
+.formats{
+  background:transparent;color:var(--on-dark);
+  /* Halved from clamp(3.5rem,7vw,6rem) — this padding is the whole gap
+     between the hero CTAs and the top of the tray. */
+  padding-top:clamp(1.75rem,3.5vw,3rem);
+  /* Halved from the --sp-sec default; pairs with .process' halved top
+     padding to halve the gap into "Four steps". */
+  padding-bottom:clamp(1.5rem,3vw,3rem);
+}
+/* Inside the tray now: a grid item, so it needs to span the row or it drops
+   into column one and reads as a fourth card. */
+.formats__head{
+  grid-column:1/-1;
+  margin-bottom:clamp(2rem,4vw,3rem);
+}
+
+.tiers{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-3);align-items:stretch;
+}
+
+/* ═══ CARD PANEL — the black tray the cards sit on ════════════
+   .quotes doubles as the tray: it was already the grid, so giving it a
+   background, border and padding avoids a wrapper element and keeps the
+   grid and its ground as one box.
+
+   .tiers no longer needs one. #formats is black edge to edge now, so a
+   black tray inside it would be an invisible box betrayed only by its
+   border — a hairline rectangle floating in matching black. It keeps the
+   inner padding so the cards stay off the section edges.
+
+   The tray is deliberately inert on hover — no glow, no lift. It is the
+   ground the cards are read against, and a ground that reacts competes
+   with the thing standing on it. The cards keep the full treatment. */
+/* Black, matching the section. At rest only the hairline border marks the
+   tray out; the glow on hover is what gives it presence. */
+.quotes{
+  background:var(--ink-900);
+  border:1px solid var(--line-dark);
+  /* Same inset as the tiers tray, and equal on all four sides — the old
+     88px squeezed the cards for no gain. */
+  padding:clamp(2.5rem,4.5vw,4rem);
+  /* ~6px wider than .wrap allows, matching the tiers tray */
+  margin-inline:-3px;
+}
+/* The tray is back. It sits on the same black as the section, so the border
+   is what draws it — that reads as a framed panel rather than a floating
+   rectangle, and it gives the cream cards inside something to sit on. */
+.tiers{
+  background:var(--ink-900);
+  border:1px solid var(--line-dark);
+  /* Top and bottom insets are the same measure, and both match the gap
+     above the tray, so the frame reads as one consistent margin. Sides
+     keep the wider original figure. */
+  padding:clamp(1.25rem,2.25vw,2rem) clamp(2.5rem,4.5vw,4rem);
+  /* ~6px wider than .wrap allows, without moving --maxw for the whole page */
+  margin-inline:-3px;
+}
+/* Two-up variant — the Meetings page offers a pair, not a trio, and three
+   columns holding two cards leaves a hole on the right. */
+.tiers--2{grid-template-columns:repeat(2,1fr)}
+/* The two outer tiers are cream cards on the black section; .tier--lead below
+   stays dark, so the trio reads light / dark / light. */
+.tier{
+  display:flex;flex-direction:column;
+  background:var(--paper-2);border:1px solid var(--line-paper);
+  color:var(--on-paper);
+  padding:clamp(1.6rem,2.6vw,2.25rem);
+}
+.tier .tier__name,.tier .spec dd{color:var(--on-paper)}
+.tier .tier__pitch{color:var(--on-paper-mute)}
+.tier .spec dt{color:var(--gold-on-paper)}
+.tier .spec>div{border-top-color:var(--line-paper)}
+.tier .spec dd.tier__inv{color:var(--gold-on-paper)}
+.tier .pips i.on{background:var(--gold-on-paper)}
+.tier .btn--outline{border-color:var(--line-paper);color:var(--on-paper)}
+.tier .btn--outline:hover{border-color:var(--gold-on-paper);color:var(--gold-on-paper)}
+/* --on-light is near-black, which was fine as a dark card on a cream section
+   but disappears into the black tray. The gold edge is what keeps it legible
+   as a separate object — and it still reads as the featured one. */
+/* Was the single dark card on a cream section. With everything dark that
+   read as nothing, so the emphasis is carried by a lifted surface and a
+   gold edge instead of by inversion. */
+.tier--lead{background:var(--ink-700);border-color:rgba(217,164,65,.55);color:var(--on-dark)}
+.tier--lead .tier__name{color:var(--on-dark)}
+.tier--lead .tier__pitch{color:#B8B2A8}
+.tier--lead .spec dt{color:var(--gold)}
+.tier--lead .spec dd{color:var(--on-dark)}
+.tier--lead .spec>div{border-top-color:#38332D}
+
+.tier__flag{
+  display:inline-block;margin-bottom:.9rem;padding:.3rem .65rem;
+  background:var(--gold);color:#100E0B;
+  font-family:var(--f-util);font-variation-settings:"wdth" 112;
+  font-size:.7rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+}
+.tier__name{font:400 clamp(1.35rem,2.1vw,1.75rem)/1.05 var(--f-display);
+  letter-spacing:-.02em;color:var(--on-light)}
+/* No size override on the lead card any more. It existed because "The
+   Invested Aces Mastermind (I AM)" was far longer than its neighbours and
+   wrapped to four lines; the three names are now comparable, and shrinking
+   the middle one made it read as the least important of the three. */
+/* flex:1 so the pitch absorbs the difference in card heights and the price
+   and button below it line up across the row. The .spec list used to do
+   this job; the cards carry a single paragraph now instead. */
+.tier__pitch{margin-top:.85rem;font-size:var(--fs-sm);color:var(--on-light-mute);flex:1}
+
+/* The price is the loudest thing on the card — three of these side by side
+   are what someone actually compares. Display face at heading size, with
+   the unit dropped underneath at body-label scale so the figure reads
+   alone. */
+.tier__price{
+  margin:var(--sp-3) 0 var(--sp-4);
+  font:400 clamp(1.9rem,3vw,2.5rem)/1.05 var(--f-display);
+  letter-spacing:-.02em;color:var(--gold-on-paper);
+  /* One figure line, the gap, and one unit line. Reserving that height on
+     every card means the third one — which carries a sentence instead of
+     a number — does not sit shorter and knock its button out of line with
+     the other two. Written as the sum of its parts so it tracks the clamp
+     above rather than needing a second magic number per breakpoint. */
+  min-height:calc(clamp(1.9rem,3vw,2.5rem) * 1.05 + .5rem + 1.15rem);
+  display:flex;flex-direction:column;justify-content:flex-end;
+}
+.tier__price small{
+  display:block;margin-top:.5rem;
+  font-family:var(--f-util);font-variation-settings:"wdth" 112;
+  font-size:var(--fs-label);font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--on-light-mute);
+}
+/* "Quoted by assignment" is a sentence, not a figure. At the full price
+   size it wraps to three lines and shouts louder than the two real
+   numbers it sits beside. */
+.tier__price--custom{font-size:clamp(1.15rem,1.7vw,1.4rem);line-height:1.25}
+.tier--lead .tier__price{color:var(--gold)}
+.tier--lead .tier__price small{color:#B8B2A8}
+
+.spec{margin-block:var(--sp-3) var(--sp-4);flex:1}
+/* Label above value, not beside it. Side-by-side at a fixed 8.5rem label
+   column left too little room in a three-across card: a value like
+   "In person, on phone, or online" wrapped to three lines and ran past
+   its row into the next label. Stacking removes the narrow column
+   entirely, so the value gets the card's full width to wrap into. */
+.spec>div{display:grid;grid-template-columns:1fr;gap:.3rem;
+  padding-block:.7rem;border-top:1px solid var(--line-light)}
+.spec dt{
+  font-family:var(--f-util);font-variation-settings:"wdth" 112;
+  font-size:var(--fs-label);font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--on-light-mute);
+}
+.spec dd{margin:0;font-size:var(--fs-sm);color:var(--on-light)}
+/* specificity: must out-rank `.spec dd` (0,1,1) and `.tier--lead .spec dd` (0,2,1) */
+.spec dd.tier__inv{font-weight:600;color:var(--gold-ink)}
+.tier--lead .spec dd.tier__inv{color:var(--gold)}
+
+/* The same spec list, standing on a page instead of inside a card — the
+   "At a Glance" summary each service page opens with, carrying the rows
+   its card on the homepage used to show.
+
+   Every colour in .spec above is one of the legacy light-side tokens,
+   which the palette at the top of this file remaps onto the dark scale,
+   so the list needs no recolouring to sit on a black page. What it does
+   need is a second column: stacking label above value suits a 324px card
+   and looks thin across a page. */
+.spec--page{max-width:72ch}
+.spec--page>div{
+  grid-template-columns:minmax(7.5rem,auto) 1fr;
+  gap:.3rem var(--sp-3);
+  padding-block:.85rem;
+}
+.spec--page dt{padding-top:.15em}
+/* A card's own border closes the last row off. Out on the page there is
+   nothing underneath it, so the list needs its own bottom rule. */
+.spec--page>div:last-child{border-bottom:1px solid var(--line-dark)}
+@media (max-width:620px){
+  .spec--page>div{grid-template-columns:1fr}
+  .spec--page dt{padding-top:0}
+}
+
+.pips{display:inline-flex;gap:.35rem;padding-top:.35em}
+.pips i{width:9px;height:9px;display:block;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2.2c-.45 1.7-3.05 4.1-5.25 6C4.85 9.85 3.55 11.5 3.55 13.5c0 2.6 1.9 4.35 4.3 4.35 1.3 0 2.4-.5 3.1-1.5-.12 2.35-.9 4.05-2 5.05h6.1c-1.1-1-1.88-2.7-2-5.05.7 1 1.8 1.5 3.1 1.5 2.4 0 4.3-1.75 4.3-4.35 0-2-1.3-3.65-3.2-5.3-2.2-1.9-4.8-4.3-5.25-6Z'/%3E%3C/svg%3E") center/contain no-repeat;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2.2c-.45 1.7-3.05 4.1-5.25 6C4.85 9.85 3.55 11.5 3.55 13.5c0 2.6 1.9 4.35 4.3 4.35 1.3 0 2.4-.5 3.1-1.5-.12 2.35-.9 4.05-2 5.05h6.1c-1.1-1-1.88-2.7-2-5.05.7 1 1.8 1.5 3.1 1.5 2.4 0 4.3-1.75 4.3-4.35 0-2-1.3-3.65-3.2-5.3-2.2-1.9-4.8-4.3-5.25-6Z'/%3E%3C/svg%3E") center/contain no-repeat;
+  background:currentColor;opacity:.22}
+.pips i.on{background:var(--gold-ink);opacity:1}
+.tier--lead .pips i.on{background:var(--gold)}
+.tier--lead .pips i{color:var(--on-dark)}
+
+.tier__cta{margin-top:auto}
+
+/* A bulleted list inside a .spec value — the membership tiers list several
+   benefits per row where the homepage cards carry a single sentence. Uses
+   the same em-dash marker as .hero__list so the two lists match, but takes
+   its colour from the dd it sits in rather than a fixed one: these cards
+   are cream, except .tier--lead which is dark. */
+.tier__benefits li{position:relative;padding-left:1.1em;line-height:1.5}
+.tier__benefits li+li{margin-top:.4rem}
+.tier__benefits li::before{content:"—";position:absolute;left:0;opacity:.65}
+
+/* The tray and the step columns both come from homepage sections that
+   supply their own vertical rhythm. Dropped into a subpage's flowing hero
+   copy they have none, so they sit flush against the paragraph above. */
+.hero__content .tiers,
+.hero__content .steps{margin-top:var(--sp-4)}
+
+/* Notes under the tiers tray: the scheduling line plus the * and **
+   footnotes the tier bullets point at. Framed like the tray above it so
+   the two read as one unit, and carries the same orbit ring and hover
+   lift as every other panel on the site — it takes the dialled-back tray
+   halo rather than the card dose, since at panel width the stronger one
+   reads as a lit rectangle instead of depth.
+
+   Deliberately NOT set smaller or dimmer than the body copy. These are
+   terms that bind a paying member, and shrinking them into fine print
+   would work against the reader at exactly the moment they need to
+   take it in. */
+.tiernotes{
+  margin-top:var(--sp-3);
+  background:var(--ink-900);border:1px solid var(--line-dark);
+  padding:clamp(1.25rem,2.5vw,1.75rem);
+}
+.tiernotes p{color:var(--on-dark);max-width:80ch}
+.tiernotes p + p{margin-top:var(--sp-2)}
+
+/* Closing line inside the tray, under the three cards. Spans the row or it
+   would drop into column one and read as a fourth card. */
+.formats__foot{
+  grid-column:1/-1;
+  /* matches padding-top below — the divider sits centred between the cards
+     and the copy rather than hugging the copy */
+  margin-top:var(--sp-3);
+  padding-top:var(--sp-3);
+  border-top:1px solid var(--line-dark);
+  font-size:var(--fs-sm);color:var(--on-dark-mute);max-width:62ch;
+}
+/* Sits outside and under the tray, leading into "Four steps". Centred so it
+   reads as a bridge between the two blocks rather than as more tray copy. */
+.formats__bridge{
+  margin-top:clamp(2.5rem,5vw,4rem);
+  text-align:center;
+  font-size:var(--fs-lead);color:var(--on-dark-mute);
+  max-width:56ch;margin-inline:auto;
+}
+
+/* The step label above each card's name. Not .tier__flag — that is a solid
+   gold chip, and three of them across the row would shout over the names
+   they introduce. This is the same utility label as .spec dt, sitting at
+   the top of the card instead of inside it. */
+.tier__step{
+  font-family:var(--f-util);font-variation-settings:"wdth" 112;
+  font-size:var(--fs-label);font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--gold-on-paper);margin-bottom:.9rem;
+}
+.tier--lead .tier__step{color:var(--gold)}
+
+/* ═══ 5b. THE CIRCLE — INVESTED ACES ══════════════════════════
+   The single gold surface on an otherwise black page, so the Mastermind
+   reads as its own thing rather than a fourth pricing card. Everything
+   inside is dark ink on gold — the inverse of the rest of the site — so
+   the colours are set locally instead of taken from the dark tokens. */
+.circle{background:transparent;padding-block:clamp(2rem,4vw,3.5rem)}
+.circle__band{
+  display:grid;
+  grid-template-columns:auto 1.6fr 1fr;
+  gap:clamp(1.5rem,3vw,2.5rem);
+  align-items:center;
+  background:linear-gradient(115deg,#F0BC52,#FFE0A0 50%,#E1A035);
+  border:1px solid #FFDF95;
+  padding:clamp(2rem,4vw,3.25rem) clamp(1.75rem,3.5vw,2.75rem);
+  box-shadow:0 20px 45px rgba(0,0,0,.5);
+  color:#1B1409;
+  /* pale gold on gold is invisible; same reasoning as .tier:not(.tier--lead) */
+  --orbit-glow:#8A5C10;
+}
+.circle__mark{color:#B9862A;line-height:0}
+.circle__mark svg{width:clamp(3.5rem,7vw,6rem);height:auto;fill:currentColor;
+  filter:drop-shadow(0 3px 1px rgba(255,233,185,.5))}
+
+.circle__eyebrow{
+  font-family:var(--f-util);font-variation-settings:"wdth" 112;
+  font-size:var(--fs-label);font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  color:#5F4118;margin-bottom:var(--sp-2);
+}
+.circle__h{
+  font:400 clamp(2rem,4vw,3.4rem)/1.02 var(--f-display);
+  letter-spacing:-.02em;color:#1B1409;margin-bottom:var(--sp-2);
+}
+.circle__copy p{color:#503615;max-width:46ch}
+
+.circle__schedule dt{
+  font-family:var(--f-util);font-variation-settings:"wdth" 112;
+  font-size:var(--fs-label);font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  color:#6B4A1C;
+}
+.circle__schedule dd{margin:.2rem 0 0;font-weight:600;color:#1B1409}
+.circle__schedule dd + dt{margin-top:var(--sp-3)}
+/* The rule is on the wrapper, not the list, so it runs the full height of
+   the column including the link beneath it. */
+.circle__side{border-left:1px solid #9B7332;padding-left:clamp(1.25rem,2.5vw,1.75rem)}
+
+/* Underlined rather than a button: two gold buttons on a gold ground would
+   have to be drawn in some other colour to be seen at all. */
+.circle__link{
+  display:inline-block;margin-top:var(--sp-3);
+  font-family:var(--f-util);font-variation-settings:"wdth" 112;
+  font-size:var(--fs-sm);font-weight:600;
+  color:#281B0A;border-bottom:1px solid rgba(40,27,10,.45);padding-bottom:.3rem;
+  transition:border-color var(--t-fast) var(--ease);
+}
+.circle__link:hover{border-bottom-color:#281B0A}
+/* The schedule and its link share one wrapper so the band stays a single
+   row of three columns — align-items:center then has one row to centre,
+   and the column rule runs past the list to the link below it. */
+
+/* ═══ 6. PROCESS ══════════════════════════════════════════════ */
+/* Pulled up: #formats above is black too, so the usual full section gap
+   between them just reads as dead space rather than as a separation. */
+.process{background:transparent;padding-top:clamp(1rem,2vw,1.625rem)}
+.process__head{margin-bottom:clamp(3rem,6vw,4.5rem)}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:0}
+.step{padding:0 var(--sp-3);border-left:1px solid var(--line-dark)}
+.step:first-child{padding-left:0;border-left:0}
+.step__n{
+  font-family:var(--f-util);font-variation-settings:"wdth" 118;
+  font-size:.8rem;font-weight:700;letter-spacing:.24em;color:var(--gold);
+  margin-bottom:var(--sp-3);
+}
+.step__t{font:400 1.35rem/1.15 var(--f-display);letter-spacing:-.02em;
+  color:var(--on-dark);margin-bottom:.75rem}
+.step p{font-size:var(--fs-sm);color:var(--on-dark-mute)}
+
+/* ═══ 7. ABOUT ════════════════════════════════════════════════ */
+.about{background:transparent;color:var(--on-light)}
+/* Gold at full saturation fails contrast on cream — that is what --gold-ink
+   exists for. Same swap in #results, the other section that flipped light. */
+.about .eyebrow--gold{color:var(--gold-ink)}
+.about__grid{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1fr);
+  gap:clamp(2.5rem,5vw,5rem);align-items:start}
+/* The portrait plate stays dark by design, so only its frame follows the
+   section — a --line-dark edge would vanish into the cream around it. */
+/* Pushed down to clear the eyebrow AND the heading above the copy
+   column: with align-items:start the grid lines up the image with the
+   eyebrow label at the very top of the column, not with the first line
+   of actual body copy several elements down. Measured at desktop width;
+   the h2 above uses a vw-based clamp, so this drifts slightly at other
+   viewport widths rather than holding exactly everywhere. */
+.portrait{position:relative;overflow:hidden;border:1px solid var(--ink-600);margin-top:12.13rem}
+.portrait__art{
+  position:relative;aspect-ratio:4/5;
+  background:
+    var(--plate-src,
+      linear-gradient(114deg,transparent 40%,rgba(238,196,120,.16) 45%,rgba(238,196,120,.03) 53%,transparent 60%),
+      radial-gradient(44% 36% at 64% 26%,rgba(238,196,120,.34),transparent 64%),
+      radial-gradient(122% 112% at 48% 56%,transparent 16%,rgba(0,0,0,.88) 100%),
+      linear-gradient(196deg,#251F19 0%,#0B0A09 66%));
+  background-size:cover;background-position:center;
+}
+.portrait__art::after{
+  content:"";position:absolute;inset:0;opacity:.6;
+  background:
+    linear-gradient(90deg,transparent,rgba(238,198,132,.28) 48%,transparent) 0 76%/100% 1px no-repeat,
+    repeating-linear-gradient(90deg,rgba(233,196,132,.06) 0 1px,transparent 1px 62px);
+  -webkit-mask-image:radial-gradient(70% 60% at 66% 30%,#000,transparent 76%);
+  mask-image:radial-gradient(70% 60% at 66% 30%,#000,transparent 76%);
+}
+.portrait__cap{
+  position:absolute;left:0;right:0;bottom:0;padding:1rem 1.15rem;
+  background:linear-gradient(180deg,transparent,rgba(8,7,6,.9));
+  font-family:var(--f-util);font-variation-settings:"wdth" 112;
+  font-size:var(--fs-label);font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--on-dark-mute);
+}
+.about__copy p{color:var(--on-light-mute);margin-bottom:var(--sp-2);max-width:56ch}
+.about__copy .h2{margin-bottom:var(--sp-3)}
+
+/* ═══ 7b. NETWORK ═════════════════════════════════════════════ */
+/* Narrative section between About and the Reservoir tiles — same "light"
+   family as About/Results (transparent ground, cream text via the
+   --on-light remap), just body copy with no image or card grid. */
+.network{background:transparent;color:var(--on-light)}
+/* Halved from the --sp-sec default; pairs with .also' halved top padding
+   to halve the gap into "Also available". */
+.network{padding-bottom:clamp(1.5rem,3vw,3rem)}
+/* No max-width: the heading is one line by design and the 52ch cap was
+   folding it to three. At the shared --fs-h2 it still needed 1159px in a
+   1144px column, so this one heading is sized to hold on a single line. */
+.network__head{margin-bottom:clamp(2rem,4vw,3rem)}
+/* No nowrap: the clamp floor is 24px, which would need ~458px of line on a
+   375px phone and blow out the page. The size alone holds one line on
+   desktop; narrow viewports are allowed to wrap. */
+.network__head .h2{font-size:clamp(1.5rem,4.3vw,3.6rem)}
+.network__copy{max-width:68ch}
+.network__copy p{color:var(--on-light-mute);margin-bottom:var(--sp-3)}
+.network__list{margin-top:var(--sp-3)}
+.network__list li{position:relative;padding-left:1.15em;color:var(--on-light-mute);line-height:1.6}
+.network__list li+li{margin-top:.5rem}
+.network__list li::before{content:"—";position:absolute;left:0;color:var(--gold-ink)}
+
+/* ═══ 8. SECONDARY / ALSO AVAILABLE ═══════════════════════════ */
+/* Sits between a cream #about and a cream #results, so the colour change is
+   the separator — the old top rule was there to split it from a grey. */
+.also{background:transparent;padding-top:clamp(1.5rem,3vw,3rem);padding-bottom:clamp(1.5rem,3vw,3rem)}
+.also__head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,24rem);
+  gap:var(--sp-4);align-items:end;margin-bottom:clamp(2.5rem,5vw,3.5rem)}
+.also__intro{font-size:var(--fs-sm);color:var(--on-dark-mute);max-width:42ch}
+
+.also__grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-2)}
+/* 70% opaque rather than solid, so the spade reveal passing behind the grid
+   shows faintly through the tiles instead of vanishing under them. The
+   alpha is on the fill, not on the tile: `opacity` would take the heading
+   and body copy down with it, and it is the ground that should thin out,
+   not the words. #also is already transparent and .aop paints below it, so
+   what bleeds through is the gold pattern where the cursor's window is
+   over it, and the page's own black everywhere else. */
+.alsotile{
+  padding:var(--sp-3);
+  /* Solid first: a browser without color-mix drops the line below and would
+     otherwise be left with no fill at all, which is a worse failure than
+     no bleed-through. */
+  background:var(--ink-800);
+  background:color-mix(in srgb,var(--ink-800) 70%,transparent);
+  border:1px solid var(--line-dark);
+  transition:transform var(--t-mid) var(--ease),border-color var(--t-mid) var(--ease),
+             box-shadow var(--t-mid) var(--ease),background-color var(--t-mid) var(--ease);
+}
+.alsotile__ico{display:block;margin-bottom:var(--sp-2)}
+.alsotile__ico svg{width:20px;height:20px;stroke:var(--on-dark-mute);
+  transition:stroke var(--t-mid) var(--ease)}
+.alsotile h3{
+  font-family:var(--f-util);font-variation-settings:"wdth" 108;
+  font-size:1rem;font-weight:700;letter-spacing:.01em;color:var(--on-dark);
+  margin-bottom:.4rem;
+}
+.alsotile p{font-size:var(--fs-sm);color:var(--on-dark-mute)}
+/* The whole tile is the hit area. The <a> carries no visual of its own — the
+   lift and border still live on .alsotile:hover, so the tile looks identical. */
+/* Tiles stretch to the tallest in their row, so the <a> has to be told to
+   fill or the bottom of a short tile is dead space that looks clickable. */
+.alsotile{padding:0;display:flex;position:relative;overflow:hidden}
+.alsotile__link{
+  flex:1;padding:var(--sp-3);
+  color:inherit;text-decoration:none;
+  position:relative;z-index:2;
+}
+.alsotile__link:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+
+/* The per-tile gold-spades bloom that used to live here is gone. The same
+   plate is now the page's own ground, revealed through the spade-shaped
+   window that follows the cursor everywhere — see .aop at the top of this
+   file. Running both meant the pattern lit up twice by two different
+   mechanics, and the small radial version on each tile was the weaker of
+   the two. The tiles keep their lift and gold edge below. */
+
+/* MOTION #4 — hover only, and only where hover is real */
+@media (hover:hover){
+  .alsotile:hover{
+    transform:translateY(-6px);
+    border-color:rgba(217,164,65,.55);
+    /* Same 70% as the resting fill, same fallback. A solid colour here
+       would slam the tile opaque the moment the cursor reached it — which
+       is exactly when the spade window is behind it and there is most to
+       see through. */
+    background:var(--ink-700);
+    background:color-mix(in srgb,var(--ink-700) 70%,transparent);
+    /* see the shared card-hover note further down: warm halo, then the
+       dark cast underneath that sells the lift. Carries more gold than the
+       cream cards can — ink gives the halo somewhere to fall off to. */
+    box-shadow:0 0 0 1px rgba(217,164,65,.55),
+               0 0 34px -2px rgba(217,164,65,.45),
+               0 0 72px 6px rgba(217,164,65,.20),
+               0 26px 46px -20px rgba(0,0,0,.95);
+  }
+  .alsotile:hover .alsotile__ico svg{stroke:var(--gold)}
+}
+/* ═══ SHARED CARD HOVER ═══════════════════════════════════════
+   .tier, .quote and .alsotile are the page's three card families —
+   the only elements that are genuinely a bounded object on a ground.
+   (.four__item, .step and .stat look card-ish but are bordered rows in
+   a list, so lifting them would break the spine and the column rules
+   they sit on.) All three share one gesture: a short lift plus a gold
+   halo, so a card reads as picked up rather than merely tinted.
+
+   Two shadows do that, and both are needed. The warm one hugs the edge
+   and is the glow; the dark one falls below and is the gap the card
+   just opened under itself. The glow alone reads as a highlight stuck
+   flat to the page — it is the second shadow that makes it float.
+
+   Gold is dosed per ground. On cream (.tier, .quote) it stays tight and
+   low-alpha: cream is already close to gold in hue, so a wide spread
+   turns to mud rather than light. On ink (.alsotile, above) it can
+   spread, because there is contrast to burn. */
+@media (hover:hover){
+  /* Everything that is a surface, a control or a picture lifts on the
+     same curve: cards, trays, the form, tiles, the plaque, buttons,
+     standalone links and images. One rule so nothing drifts out of step.
+     Four Steps is deliberately left out — those items are a numbered
+     sequence to read down, not cards to interact with individually. */
+  .tier,.quote,.portrait,
+  .tiers,.quotes,.form,.cta__copy,.cta__shot,.tiernotes,
+  .alsotile,.plaque,.circle__band,
+  .btn,
+  .nav__list a,.foot__grid a,.tlink,.cta__meta a,.cta__meta .copy{
+    transition:transform var(--t-mid) var(--ease),
+               box-shadow var(--t-mid) var(--ease),
+               border-color var(--t-mid) var(--ease);
+  }
+  /* .btn already carried its own transition for the colour swap; folding
+     transform and shadow in above would drop those, so they are restated. */
+  .btn{
+    transition:transform var(--t-mid) var(--ease),
+               box-shadow var(--t-mid) var(--ease),
+               background-color var(--t-mid) var(--ease),
+               color var(--t-mid) var(--ease),
+               border-color var(--t-mid) var(--ease);
+  }
+  /* Inline links inside body copy are left out on purpose: transform does
+     not apply to a non-replaced inline box, and forcing inline-block to
+     make it work re-flows the line it sits in. */
+  .nav__list a,.foot__grid a,.tlink,
+  .cta__meta a,.cta__meta .copy{display:inline-block}
+
+  .tier:hover,.quote:hover,.portrait:hover,
+  .tiers:hover,.quotes:hover,.form:hover,.cta__copy:hover,.cta__shot:hover,
+  .tiernotes:hover,
+  .alsotile:hover,.plaque:hover,.circle__band:hover,
+  .btn:hover,
+  .nav__list a:hover,.foot__grid a:hover,.tlink:hover,
+  .cta__meta a:hover,.cta__meta .copy:hover{
+    transform:translateY(-6px);
+    /* the 0-offset ring stands in for a border change: .quote's 2px gold
+       top rule and .tier--lead's dark edge both live on border-color, so
+       setting that here would flatten one or the other */
+    box-shadow:0 0 0 1px rgba(217,164,65,.70),
+               0 0 30px -2px rgba(217,164,65,.52),
+               0 0 64px 4px rgba(217,164,65,.22),
+               0 24px 42px -20px rgba(20,18,15,.44);
+  }
+  /* Trays are large, so the halo is dialled back and spread wider — the
+     card dose at panel size reads as a lit rectangle rather than depth.
+     They lift on the same 6px as everything else. */
+  .tiers:hover,.quotes:hover,.form:hover,.cta__copy:hover,.tiernotes:hover{
+    border-color:rgba(217,164,65,.45);
+    box-shadow:0 0 0 1px rgba(217,164,65,.30),
+               0 0 40px -6px rgba(217,164,65,.30),
+               0 0 90px 8px rgba(217,164,65,.14);
+  }
+  /* Links and buttons are small; the card halo swamps them. */
+  .btn:hover,
+  .nav__list a:hover,.foot__grid a:hover,.tlink:hover,
+  .cta__meta a:hover,.cta__meta .copy:hover{
+    box-shadow:0 0 18px -4px rgba(217,164,65,.45),
+               0 10px 18px -12px rgba(20,18,15,.5);
+  }
+}
+/* Must stay AFTER the lifts above, not before: these selectors tie on
+   specificity with the :hover rules, so source order is the only thing
+   deciding it. Placed earlier, the lift silently wins and reduced motion
+   gets the movement anyway. The glow is kept — it is a colour change,
+   not motion. */
+@media (prefers-reduced-motion:reduce){
+  .tier:hover,.quote:hover,.portrait:hover,
+  .tiers:hover,.quotes:hover,.form:hover,.cta__copy:hover,.cta__shot:hover,
+  .tiernotes:hover,
+  .alsotile:hover,.plaque:hover,.circle__band:hover,
+  .btn:hover,
+  .nav__list a:hover,.foot__grid a:hover,.tlink:hover,
+  .cta__meta a:hover,.cta__meta .copy:hover{
+    transform:none;
+  }
+}
+
+/* ═══ 9. RESULTS ══════════════════════════════════════════════ */
+.results{background:transparent;color:var(--on-light);padding-top:clamp(1.5rem,3vw,3rem)}
+.results .eyebrow--gold{color:var(--gold-ink)}
+.results__head{margin-bottom:clamp(2.5rem,5vw,4rem)}
+.quotes{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-3)}
+/* The card is a step off the section rather than a step up: on cream the
+   lift has to come from --cream-2 going slightly darker, where on ink it
+   came from --ink-800 going slightly lighter. */
+/* Even cards are cream, odd are black (rule below) — a real checkerboard
+   rather than two dark tones, which is what it collapsed to when the page
+   went all-dark. */
+.quote{
+  display:flex;flex-direction:column;
+  padding:clamp(1.5rem,2.4vw,2rem);
+  background:var(--paper-2);border:1px solid var(--line-paper);
+  border-top:2px solid var(--gold-on-paper);
+  color:var(--on-paper);
+}
+.quote__body{font-size:1.05rem;line-height:1.6;color:var(--on-paper);flex:1}
+.quote__by{
+  margin-top:var(--sp-3);padding-top:var(--sp-2);border-top:1px solid var(--line-paper);
+  display:grid;gap:.15rem;font-size:var(--fs-sm);
+}
+.quote__by span:first-child{color:var(--on-paper);font-weight:600}
+.quote__by span:last-child{color:var(--on-paper-mute)}
+
+/* Every second card keeps the cream above; the odd ones go dark so the tray
+   shows through between them. The grid is 3 across, so alternating by
+   nth-child lands the darks on a diagonal rather than in columns — which is
+   what stops it reading as three striped columns.
+
+   border-color has to come before border-top-color here: the first resets
+   all four sides, and the gold top rule would go with them otherwise. On ink
+   that rule can be full --gold; --gold-ink only exists to survive cream. */
+/* The alternation survived the page going all-dark only because these two
+   are now set apart explicitly. Base (.quote, even) was --cream-2 and this
+   was --ink-800; after the remap both resolved to the same value and the
+   checkerboard vanished. Two dark tones rather than dark/light, to stay with
+   the all-black page — swap this back to a cream fill if the harder contrast
+   is wanted. */
+.quote:nth-child(odd){
+  background:var(--ink-900);
+  border-color:var(--line-dark);
+  border-top-color:var(--gold);
+}
+.quote:nth-child(odd) .quote__body{color:#DAD4CB}
+.quote:nth-child(odd) .quote__by{border-top-color:var(--line-dark)}
+.quote:nth-child(odd) .quote__by span:first-child{color:var(--on-dark)}
+.quote:nth-child(odd) .quote__by span:last-child{color:var(--on-dark-mute)}
+
+/* ═══ 10. BY APPOINTMENT ═════════════════════════════════════
+   The one centred block on the page. Everything else is left-aligned
+   editorial, so centring reads as a formal notice — a gate you pass
+   through on the way to the form rather than another pitch. */
+/* Black between a cream #results above and the cream final CTA below, so it
+   needs no rule to separate it — the colour change already does that. */
+/* 25% off the --sp-sec default, top and bottom. */
+.appt{background:transparent;padding-block:clamp(2.25rem,4.5vw,4.5rem)}
+.plaque{
+  position:relative;max-width:62rem;margin-inline:auto;text-align:center;
+  /* Bottom trimmed on its own — the top keeps the fuller measure for
+     headroom above the heading, only the gap under the button shrinks. */
+  padding:clamp(2.5rem,5vw,4rem) clamp(1.5rem,4vw,3.5rem) clamp(1.5rem,3vw,2.25rem);
+  /* Opaque, same reasoning as the footer: .appt (its section) is
+     transparent so the page-wide spade reveal can pass through, but the
+     plaque itself is a bordered panel and the spade showing through it
+     read as a mistake rather than the intended page-ground effect. */
+  background:var(--ink-900);border:1px solid var(--line-dark);
+}
+/* Engraved corner ticks, opposite corners only. Both corners are drawn as
+   background lines on a single pseudo-element rather than one each — the
+   orbit ring above needs ::after, and this frees it without changing how
+   the ticks land. */
+.plaque::before{
+  content:"";position:absolute;inset:-1px;pointer-events:none;
+  background:
+    linear-gradient(var(--gold),var(--gold)) 0 0/20px 1px no-repeat,
+    linear-gradient(var(--gold),var(--gold)) 0 0/1px 20px no-repeat,
+    linear-gradient(var(--gold),var(--gold)) 100% 100%/20px 1px no-repeat,
+    linear-gradient(var(--gold),var(--gold)) 100% 100%/1px 20px no-repeat;
+}
+
+.plaque__brow{justify-content:center;margin-bottom:var(--sp-2)}
+/* Never actually carried a heading treatment before — the h2 in the
+   markup had no class, so it rendered at browser-default size (25.5px)
+   with no spacing of its own. Full section h2 scale, not scaled down —
+   the smaller size read as too quiet against the rest of the page's
+   headings. Given real headroom above it, on top of the plaque's own
+   padding. */
+.plaque__h{margin-top:var(--sp-3);margin-bottom:var(--sp-3)}
+/* Had no margin at all — inherits the site's p{margin:0} reset — so the
+   button sat flush against the paragraph above it while the plaque's own
+   bottom padding opened up a gap below. Matching that padding as
+   margin-top centers the button in the gap instead of hugging the text. */
+.plaque__cta{margin-top:clamp(1.5rem,3vw,2.25rem)}
+/* Scoped to this one button rather than the shared .btn rule — tightens
+   the border-to-text padding a bit so it reads less loose here, without
+   resizing every gold button site-wide. */
+.plaque__cta .btn{padding:.85rem 2.4rem;min-height:56px}
+.plaque__lede{
+  max-width:52ch;margin-inline:auto;
+  font-size:var(--fs-lead);color:var(--on-dark-mute);
+}
+
+.terms{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-4);
+  margin-top:clamp(2.25rem,4vw,3rem);text-align:left;
+}
+.terms>div{padding-top:var(--sp-2);border-top:1px solid var(--line-dark)}
+.terms dt{
+  font-family:var(--f-util);font-variation-settings:"wdth" 112;
+  font-size:var(--fs-label);font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--gold);margin-bottom:.5rem;
+}
+.terms dd{margin:0;font-size:var(--fs-sm);color:var(--on-dark-mute)}
+
+.addr{
+  margin-top:clamp(2.25rem,4vw,3rem);padding-top:var(--sp-3);
+  border-top:1px solid var(--line-dark);
+  font-style:normal;font-size:var(--fs-sm);line-height:1.75;color:var(--on-dark);
+}
+.addr__label{
+  display:block;margin-bottom:.6rem;
+  font-family:var(--f-util);font-variation-settings:"wdth" 112;
+  font-size:var(--fs-label);font-weight:600;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--on-dark-mute);
+}
+
+/* ═══ 11. FINAL CTA ═══════════════════════════════════════════ */
+.cta{background:transparent;color:var(--on-light)}
+.cta__grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);
+  gap:clamp(2.5rem,5vw,5rem);align-items:start}
+/* Same panel treatment as .form beside it, so "Start here" reads as the
+   other half of one paired unit rather than loose copy floating next to
+   a boxed form. */
+.cta__copy{
+  background:var(--ink-900);border:1px solid var(--line-dark);
+  padding:clamp(1.5rem,3vw,2.5rem);
+}
+.cta__lede{margin-top:var(--sp-3);font-size:var(--fs-lead);color:var(--on-light-mute);
+  max-width:48ch}
+.cta__meta{margin-top:var(--sp-4);display:grid;gap:0}
+.cta__meta>div{display:grid;grid-template-columns:8rem minmax(0,1fr);gap:var(--sp-2);
+  padding-block:.7rem;border-top:1px solid var(--line-light)}
+.cta__meta dt{
+  font-family:var(--f-util);font-variation-settings:"wdth" 112;
+  font-size:var(--fs-label);font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--on-light-mute);padding-top:.15em;
+}
+.cta__meta dd{margin:0;font-size:var(--fs-sm)}
+.cta__meta a{color:var(--gold-ink);text-decoration:underline;text-underline-offset:.25em}
+/* The direct address is a button that copies, not a mailto. It has to
+   read as the link it replaced or the tray's type shifts, so this is a
+   full reset back to inherited text plus the same gold underline. */
+.cta__meta .copy{
+  font:inherit;color:var(--gold-ink);
+  background:none;border:0;padding:0;text-align:left;
+  text-decoration:underline;text-underline-offset:.25em;
+  cursor:pointer;
+}
+.cta__fine{margin-top:var(--sp-3);font-size:var(--fs-sm);color:var(--on-light-mute)}
+
+/* ── COPY TOAST ───────────────────────────────────────────────
+   One shared element for the whole page, appended by main.js rather
+   than authored into each page's markup — same reasoning as .aop.
+   Fixed, so it is legible wherever the reader happens to be sitting
+   when they hit the button, and above .mnav's 99 but below .skip's
+   200: a toast must never cover the skip link. */
+.toast{
+  position:fixed;left:50%;bottom:2rem;z-index:150;
+  transform:translate(-50%,1rem);
+  padding:.7rem 1.2rem;max-width:calc(100vw - 2 * var(--gutter));
+  background:var(--ink-800);border:1px solid var(--gold);
+  color:var(--on-dark);
+  font-family:var(--f-util);font-variation-settings:"wdth" 108;
+  font-size:var(--fs-label);font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  /* pointer-events:none so it can never swallow a click aimed at the
+     page underneath during the two seconds it is up. */
+  opacity:0;pointer-events:none;
+  transition:opacity var(--t-mid) var(--ease),transform var(--t-mid) var(--ease);
+}
+.toast.is-on{opacity:1;transform:translate(-50%,0)}
+/* Failure drops the gold: the border is the only thing distinguishing
+   the two states, since both carry the same weight of text. */
+.toast.is-bad{border-color:var(--line-dark)}
+/* The left column's tray is shorter than the form beside it, which left an
+   empty well underneath. The office shot fills it and doubles as a visual
+   for the address in the tray directly above. */
+.cta__shot{
+  margin-top:var(--sp-3);
+  border:1px solid var(--line-dark);
+  overflow:hidden;
+}
+.cta__shot img{display:block;width:100%;height:auto}
+/* Link out to the standalone copy of this form. */
+.cta__alt{margin-top:var(--sp-3);font-size:var(--fs-sm);color:var(--on-light-mute)}
+.cta__alt a{color:var(--gold);text-decoration:underline;text-underline-offset:.25em}
+.cta__alt a:hover{color:var(--gold-hi)}
+/* Two-column only. The form is the tall item, so it spans both rows of
+   column 2 while the tray and the shot stack down column 1 — that puts
+   the shot in the well beside the form rather than below the whole grid.
+   Below 901px the grid is a single column and source order (tray, shot,
+   form) takes over, so these must not apply there. */
+@media (min-width:901px){
+  .cta__grid > .cta__copy{grid-column:1;grid-row:1}
+  .cta__grid > .cta__shot{grid-column:1;grid-row:2}
+  .cta__grid > .form{grid-column:2;grid-row:1 / span 2}
+
+  /* contact.html leads with the shot instead. Done by swapping the two
+     rows rather than reordering the markup, because the single-column
+     layout below 901px follows source order and already reads the way
+     it should — moving the elements would have changed mobile too. */
+  .cta__grid--shot-first > .cta__shot{grid-row:1}
+  .cta__grid--shot-first > .cta__copy{grid-row:2}
+}
+
+/* contact.html opens straight onto this section — no hero to absorb the
+   fixed header's height the way every other page has. Matches the top
+   padding .hero__content uses for exactly the same reason. */
+.cta--standalone{padding-top:clamp(7.5rem,10vw,9rem)}
+
+/* contact.html — the standalone form. Single column: the head tray sits
+   above the form rather than beside it, since there is no second column
+   of page content to balance against. */
+.contactpage{max-width:46rem}
+.contactpage__head{margin-top:var(--sp-3)}
+.contactpage .form{margin-top:var(--sp-4)}
+
+/* Its own panel on the black page, so it reads as the thing you act on
+   rather than as loose fields on a background. */
+.form{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3) var(--sp-3);
+  background:var(--ink-900);border:1px solid var(--line-dark);
+  padding:clamp(1.5rem,3vw,2.5rem)}
+.field{display:grid;gap:.45rem}
+.field--full{grid-column:1/-1}
+.field label{
+  font-family:var(--f-util);font-variation-settings:"wdth" 112;
+  font-size:var(--fs-label);font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--on-light-mute);
+}
+.field input,.field select,.field textarea{
+  width:100%;min-height:50px;padding:.75rem .9rem;
+  /* Not var(--cream) any more: that now resolves to the section colour and
+     the field disappeared into it. A lifted fill plus a brighter edge is what
+     makes a control look like a control on an all-dark page. */
+  background:var(--ink-800);border:1px solid var(--ink-600);border-radius:0;
+  color:var(--on-dark);font-size:var(--fs-body);
+  transition:border-color var(--t-fast) var(--ease);
+}
+.field textarea{min-height:auto;resize:vertical}
+.field select{appearance:none;cursor:pointer;
+  background-image:linear-gradient(45deg,transparent 50%,var(--on-light-mute) 50%),
+                   linear-gradient(135deg,var(--on-light-mute) 50%,transparent 50%);
+  background-position:calc(100% - 20px) 22px,calc(100% - 14px) 22px;
+  background-size:6px 6px,6px 6px;background-repeat:no-repeat}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold-ink)}
+.field.is-bad input,.field.is-bad select,.field.is-bad textarea{border-color:#A32E1E}
+.hint{font-size:.8125rem;color:var(--on-light-mute)}
+.err{font-size:.8125rem;color:#A32E1E;min-height:0}
+.err:empty{display:none}
+
+/* "Regarding" checkbox group. Everything above is written for text controls —
+   full width, 50px tall, cream fill, uppercase micro-type labels — so the boxes
+   and their option labels have to out-specify all of it rather than inherit it. */
+.checks{border:0;padding:0;margin:0;min-width:0}
+.checks legend{
+  padding:0;
+  font-family:var(--f-util);font-variation-settings:"wdth" 112;
+  font-size:var(--fs-label);font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--on-light-mute);
+}
+.checks .hint{margin:.45rem 0 .8rem}
+.checks__grid{
+  display:grid;gap:.1rem var(--sp-3);
+  grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));
+}
+/* .field label is (0,1,1); this needs to beat it, hence the descendant form. */
+.field .check{
+  display:flex;align-items:flex-start;gap:.6rem;
+  padding:.35rem 0;cursor:pointer;
+  font-family:var(--f-body);font-size:var(--fs-sm);font-weight:400;
+  letter-spacing:0;text-transform:none;color:var(--on-light);
+}
+.field .check input[type="checkbox"]{
+  width:1.05rem;height:1.05rem;min-height:0;flex:none;
+  margin:.15rem 0 0;padding:0;
+  background:none;border:0;
+  accent-color:var(--gold-ink);cursor:pointer;
+}
+@media (hover:hover){.field .check:hover{color:var(--gold-ink)}}
+.checks.is-bad .check input[type="checkbox"]{outline:2px solid #A32E1E;outline-offset:2px}
+.checks .err{margin-top:.6rem}
+.form__foot{grid-column:1/-1;display:grid;gap:.75rem}
+.form__status{font-size:var(--fs-sm);color:var(--on-light-mute)}
+.form__status:empty{display:none}
+
+/* Appears only after a valid submit, listing where to open the composed
+   application. Set apart with a rule and a lifted panel so it reads as the
+   next step rather than as more form. */
+.mailpick{
+  margin-top:var(--sp-2);padding-top:var(--sp-3);
+  border-top:1px solid var(--line-dark);
+  display:grid;gap:var(--sp-2);
+}
+.mailpick__lead{
+  font-family:var(--f-util);font-variation-settings:"wdth" 112;
+  font-size:var(--fs-label);font-weight:700;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--gold);
+}
+.mailpick__row{display:flex;flex-wrap:wrap;gap:var(--sp-2)}
+/* The outline button was drawn for a cream ground: on black its --ink-600
+   border sits DARKER than the panel's own rule and the button stops looking
+   like one. These are the action, so they carry gold. */
+.mailpick .btn--outline{
+  border-color:rgba(217,164,65,.45);color:var(--on-dark);
+  transition:border-color var(--t-mid) var(--ease),
+             color var(--t-mid) var(--ease),
+             box-shadow var(--t-mid) var(--ease);
+}
+.mailpick .btn--outline:hover,
+.mailpick .btn--outline:focus-visible{
+  border-color:var(--gold);color:var(--gold);
+  box-shadow:0 0 18px -4px rgba(217,164,65,.5);
+}
+.mailpick__note{font-size:.8125rem;color:var(--on-dark-mute);max-width:52ch}
+
+/* ═══ 11. FOOTER ══════════════════════════════════════════════ */
+/* Opaque again: the page-wide spade reveal is meant for the body copy
+   sections, not the footer — an opaque ground here blocks it from
+   showing through since .aop sits at z-index:0, below every section. */
+.foot{background:var(--ink-900);border-top:1px solid var(--line-dark);
+  padding-block:clamp(3rem,6vw,5rem) 2rem}
+.foot__grid{display:grid;grid-template-columns:1.4fr repeat(3,1fr);gap:var(--sp-4);
+  padding-bottom:var(--sp-5)}
+/* Pairs "The work"+"Make Life better" and "Start"+"My Webmaster" into
+   one grid cell each, stacked — the second nav in each pair sits below
+   the end of the first's list rather than beside it as its own column. */
+.foot__col{display:flex;flex-direction:column}
+.foot__nav--stacked{margin-top:var(--sp-4)}
+.brand__mark--lg{width:40px;height:40px;margin-bottom:var(--sp-2)}
+.brand__mark--lg svg{width:20px;height:20px}
+.foot__word{font:400 1.35rem/1 var(--f-display);letter-spacing:.02em;color:var(--on-dark)}
+.foot__tag{margin-top:.6rem;font-size:var(--fs-sm);color:var(--on-dark-mute);max-width:26ch}
+.foot__addr{
+  margin-top:var(--sp-3);font-style:normal;
+  font-size:var(--fs-sm);line-height:1.8;color:var(--on-dark-mute);
+}
+.foot__addr-note{
+  display:inline-block;margin-top:.35rem;
+  font-family:var(--f-util);font-variation-settings:"wdth" 112;
+  font-size:var(--fs-label);font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--gold);
+}
+.foot__h{
+  font-family:var(--f-util);font-variation-settings:"wdth" 112;
+  font-size:var(--fs-label);font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--gold);margin-bottom:var(--sp-2);
+}
+.foot__nav li,.foot__nav+div li{margin-bottom:.5rem}
+.foot__grid a{font-size:var(--fs-sm);color:var(--on-dark-mute);
+  overflow-wrap:break-word;
+  transition:color var(--t-fast) var(--ease)}
+.foot__grid a:hover{color:var(--on-dark)}
+/* Brand-column pull quote. Sits under the wordmark, so it stays quiet —
+   the gold is spent on the column headings, not here. */
+.foot__quote{
+  margin-top:var(--sp-3);max-width:30ch;
+  font-size:var(--fs-sm);line-height:1.7;font-style:italic;
+  color:var(--on-dark-mute);
+  padding-left:var(--sp-2);border-left:2px solid var(--line-dark);
+}
+.foot__quote-by{
+  margin-top:.5rem;padding-left:calc(var(--sp-2) + 2px);
+  font-family:var(--f-util);font-variation-settings:"wdth" 112;
+  font-size:var(--fs-label);letter-spacing:.14em;text-transform:uppercase;
+  color:#8B857C;
+}
+.foot__base{display:flex;flex-wrap:wrap;justify-content:space-between;gap:var(--sp-2);
+  padding-top:var(--sp-3);border-top:1px solid var(--line-dark);
+  font-size:.8125rem;color:#8B857C}
+
+/* ═══ CINEMATIC MODE ══════════════════════════════════════════
+   Pinned hero only where it can be done well: real pointer,
+   room to breathe, and motion not refused by the visitor.      */
+@media (min-width:901px) and (pointer:fine){
+  @media (prefers-reduced-motion:no-preference){
+    /* Reduced from 200vh — the beats still land clearly (still several
+       wheel notches apiece), it just takes noticeably less scrolling to
+       clear the hero. */
+    .js .hero{height:150vh}
+    .js .hero__stage{position:sticky;top:0;height:100vh;min-height:100vh}
+    .js .hero__cue{display:flex}
+    .js .hero__content{padding-top:7rem;padding-bottom:clamp(4.5rem,10vh,7rem)}
+  }
+}
+
+/* ═══ RESPONSIVE ══════════════════════════════════════════════ */
+@media (max-width:1080px){
+  .four__item{grid-template-columns:56px minmax(0,1fr);gap:0 var(--sp-3)}
+  .four__title{grid-column:2;margin-bottom:var(--sp-2)}
+  .four__body{grid-column:2}
+  .four-sec__head{grid-template-columns:1fr;align-items:start}
+  .steps{grid-template-columns:repeat(2,1fr);gap:var(--sp-4) 0}
+  .steps .step:nth-child(3){padding-left:0;border-left:0}
+  .also__grid{grid-template-columns:repeat(2,1fr)}
+  .quotes{grid-template-columns:1fr;gap:var(--sp-2)}
+  .quote{max-width:none}
+  .terms{grid-template-columns:1fr;gap:var(--sp-3)}
+  /* Drop the schedule column first — the headline and its link are what
+     the band is for, and two columns keep them side by side longer. */
+  .circle__band{grid-template-columns:auto 1fr}
+  .circle__side{display:none}
+}
+
+/* Four children: two tracks give a clean 2x2 instead of a 3-then-1 row. */
+@media (max-width:1100px){
+  .foot__grid{grid-template-columns:repeat(2,1fr)}
+}
+
+@media (max-width:900px){
+  .nav,.site-head__cta{display:none}
+  .burger{display:grid}
+  .site-head{background:rgba(10,9,8,.94);border-bottom-color:var(--line-dark)}
+
+  .hero__stage{min-height:auto;align-items:stretch}
+  .hero__content{padding-top:7.5rem;padding-bottom:5rem}
+  .hero__h1{max-width:14ch}
+
+  .stats{grid-template-columns:repeat(2,1fr);gap:var(--sp-4) var(--sp-3)}
+  .tiers{grid-template-columns:1fr}
+  /* The spade is decoration; at one column it would push the headline
+     down a full screen before it is read. */
+  .circle__band{grid-template-columns:1fr}
+  .circle__mark{display:none}
+  .about__grid{grid-template-columns:1fr}
+  /* margin-top:0 — the 12.13rem offset aligns the portrait with the copy
+     column beside it, and there is no column beside it here. Stacked, it
+     was just a dead band of black under the activities plaque. */
+  .portrait{max-width:26rem;margin-top:0}
+  .also__head{grid-template-columns:1fr}
+  .cta__grid{grid-template-columns:1fr}
+  .foot__grid{grid-template-columns:1fr 1fr}
+}
+
+@media (max-width:620px){
+  :root{--fs-body:1rem}
+  .four__item{grid-template-columns:40px minmax(0,1fr)}
+  .four__node{width:26px;height:26px}
+  .four__node svg{width:11px;height:11px}
+  .four::before,.four::after{left:13px}
+  .steps{grid-template-columns:1fr}
+  .step{padding-left:0;border-left:0;border-top:1px solid var(--line-dark);
+    padding-top:var(--sp-3)}
+  .step:first-child{border-top:0;padding-top:0}
+  .also__grid{grid-template-columns:1fr}
+  .form{grid-template-columns:1fr}
+  .cta__meta>div{grid-template-columns:1fr;gap:.25rem}   /* .spec>div is already stacked at every width */
+  .foot__grid{grid-template-columns:1fr}
+  .proof__head{flex-direction:column;align-items:flex-start}
+}
+
+/* ═══ REDUCED MOTION ══════════════════════════════════════════ */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms!important;animation-iteration-count:1!important;
+    transition-duration:.01ms!important;scroll-behavior:auto!important;
+  }
+}
+
+/* ── SERVICE PAGES ───────────────────────────────────────────
+   Exactly the home hero and nothing else: same stage, same spotlight, same
+   type ramp. One white title where the home page runs two lines, so the
+   description inherits the room the gold line used to take.
+
+   heroChoreography() is deliberately NOT wired here — these pages carry no
+   [data-hero], so it returns early. That matters: the choreography derives
+   its progress from (hero height - viewport height), which is zero on a
+   non-scrolling page, so it would drive every beat to p=0 and leave the
+   copy at opacity 0. With it unbound, the :root defaults (--o1..--o4 = 1)
+   hold everything visible at rest. heroSpotlight() only needs .hero__stage
+   in the page, so the light still tracks the cursor here too. */
+.js .hero--page{height:auto}          /* beats the 200vh cinematic rule */
+/* The cinematic block above pins .hero__stage (sticky, 100vh, clipped) for
+   the home hero's scroll-jacked reveal. That leaks onto every .hero--page
+   subpage too, since it targets .hero__stage with no exception for the
+   page variant — on any subpage with more than one viewport of content,
+   sticky+100vh+hidden was pinning the box to the screen and clipping
+   everything past the first fold. This wins on source order (after the
+   cinematic block) and puts the stage back in normal flow. */
+.hero--page .hero__stage{position:static;height:auto;min-height:100svh;overflow:visible}
+/* Transparent so the page-wide spade reveal reaches these pages at all.
+   A subpage is nothing but its hero, and .hero's ink-900 plus the stage's
+   gradient are both opaque and both sit above .aop — between them they
+   covered the layer for the whole scroll, which is why the reveal worked
+   on the homepage (transparent sections under <main>) and nowhere else.
+   Dropping them leaves the body's ink-900 as the ground, the same ground
+   the homepage sections reveal against. */
+.hero--page,.hero--page .hero__stage{background:transparent}
+/* No fixed header on these, so the home hero's 9rem top pad is dead space. */
+.hero--page .hero__content{padding-top:clamp(4.5rem,11vh,7rem)}
+/* Service names run longer than the home headline and are not hand-broken. */
+.hero--page .hero__h1{max-width:20ch;margin-bottom:var(--sp-3)}
+.hero--page .hero__sub{max-width:62ch}
+
+.hero__back{
+  display:inline-flex;align-items:center;gap:.55rem;
+  font-family:var(--f-util);font-variation-settings:"wdth" 112;
+  font-size:var(--fs-label);font-weight:600;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--on-dark-mute);
+  margin-bottom:var(--sp-4);
+  transition:color var(--t-fast) var(--ease);
+}
+.hero__back svg{width:1.1em;height:1.1em;flex:none;transform:rotate(180deg)}
+.hero__back:hover{color:var(--gold)}
+/* Bottom copy: pages with several paragraphs and multiple button rows lose
+   the top Back link off-screen well before the visitor reaches the end,
+   with no footer to land on after — landing there felt like a dead end.
+   Repeats the same link at the close of the content. */
+.hero__back--bottom{margin-top:var(--sp-4);margin-bottom:0}
+
+/* The mobile pulse that used to live here is gone: the orbit ring runs on
+   every viewport, so touch devices already get the light and two competing
+   animations on one element just read as noise. */
+

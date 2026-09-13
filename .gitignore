@@ -1,0 +1,11 @@
+# Local editor / agent tooling
+.claude/
+
+# OS cruft
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Packaged copies of the site for handing over. Build artifacts — rebuild
+# them rather than committing them.
+/*.zip

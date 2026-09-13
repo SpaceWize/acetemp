@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" href="assets/icons/favicon-192.png">
+<title>Private Advisory — Ace Spaders</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wdth,wght@62..125,400..700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="companion.css">
+<script>document.documentElement.classList.replace('no-js','js');</script>
+</head>
+<body>
+
+<svg class="sprite" aria-hidden="true" focusable="false" width="0" height="0"><defs>
+  <symbol id="i-spade" viewBox="0 0 24 24"><path d="M12 2.2c-.45 1.7-3.05 4.1-5.25 6C4.85 9.85 3.55 11.5 3.55 13.5c0 2.6 1.9 4.35 4.3 4.35 1.3 0 2.4-.5 3.1-1.5-.12 2.35-.9 4.05-2 5.05h6.1c-1.1-1-1.88-2.7-2-5.05.7 1 1.8 1.5 3.1 1.5 2.4 0 4.3-1.75 4.3-4.35 0-2-1.3-3.65-3.2-5.3-2.2-1.9-4.8-4.3-5.25-6Z"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h14M12.5 6l6 6-6 6"/></symbol>
+</defs></svg>
+
+<!-- ══════════════ NAV ══════════════
+     Same header as index.html. The in-page anchors are absolute here
+     (index.html#about) because the sections they name live on the
+     homepage, and both CTAs resolve to contact.html for the same
+     reason. -->
+<header class="site-head" data-head>
+  <div class="site-head__in">
+    <a class="brand" href="index.html" aria-label="Ace Spaders — home">
+      <span class="brand__mark"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-spade"></use></svg></span>
+      <span class="brand__word">ACE<span class="brand__word-b">SPADERS</span></span>
+    </a>
+
+    <nav class="nav" aria-label="Primary">
+      <ul class="nav__list" data-nav>
+        <li class="nav__item nav__item--sub">
+          <a href="advisory.html">Advisory</a>
+          <ul class="nav__sub">
+            <li><a href="meetings.html">Meetings</a></li>
+            <li><a href="scout.html">On-Site Assignments</a></li>
+          </ul>
+        </li>
+        <li class="nav__item nav__item--sub">
+          <a href="mastermind-membership.html">Mastermind</a>
+          <ul class="nav__sub">
+            <li><a href="mastermind-application.html">Apply</a></li>
+          </ul>
+        </li>
+        <li class="nav__item nav__item--sub">
+          <a href="group-activities.html">Activities</a>
+          <ul class="nav__sub">
+            <li><a href="aces-poker-night.html">Aces Poker Night</a></li>
+            <li><a href="aces-running-group.html">Aces Running Group</a></li>
+            <li><a href="all-aces-networking-events.html">All Aces Networking Events</a></li>
+          </ul>
+        </li>
+        <li class="nav__item nav__item--sub">
+          <a href="index.html#about">About</a>
+          <ul class="nav__sub">
+            <li><a href="public-speaking.html">Public Speaking</a></li>
+            <li><a href="premium-pickup-transport.html">Premium Pickup &amp; Transport</a></li>
+          </ul>
+        </li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </nav>
+
+    <a class="btn btn--gold btn--sm site-head__cta" href="contact.html">Start the Conversation</a>
+
+    <button class="burger" type="button" aria-expanded="false" aria-controls="mobile-nav" data-burger>
+      <span class="burger__bars" aria-hidden="true"><i></i><i></i></span>
+      <span class="sr-only">Open menu</span>
+    </button>
+  </div>
+</header>
+
+<div class="mnav" id="mobile-nav" hidden data-mnav>
+  <nav aria-label="Mobile">
+    <ul>
+      <li class="mnav__group">
+        <button class="mnav__toggle" type="button" aria-expanded="false"
+                aria-controls="msub-advisory" data-mtoggle>Advisory</button>
+        <ul class="mnav__sub" id="msub-advisory" hidden>
+          <li><a href="advisory.html">Private Advisory</a></li>
+          <li><a href="meetings.html">Meetings</a></li>
+          <li><a href="scout.html">On-Site Assignments</a></li>
+        </ul>
+      </li>
+      <li class="mnav__group">
+        <button class="mnav__toggle" type="button" aria-expanded="false"
+                aria-controls="msub-mastermind" data-mtoggle>Mastermind</button>
+        <ul class="mnav__sub" id="msub-mastermind" hidden>
+          <li><a href="mastermind-membership.html">Membership</a></li>
+          <li><a href="mastermind-application.html">Apply</a></li>
+        </ul>
+      </li>
+      <li class="mnav__group">
+        <button class="mnav__toggle" type="button" aria-expanded="false"
+                aria-controls="msub-activities" data-mtoggle>Activities</button>
+        <ul class="mnav__sub" id="msub-activities" hidden>
+          <li><a href="group-activities.html">Ace’s Group Activities</a></li>
+          <li><a href="aces-poker-night.html">Aces Poker Night</a></li>
+          <li><a href="aces-running-group.html">Aces Running Group</a></li>
+          <li><a href="all-aces-networking-events.html">All Aces Networking Events</a></li>
+        </ul>
+      </li>
+      <li class="mnav__group">
+        <button class="mnav__toggle" type="button" aria-expanded="false"
+                aria-controls="msub-about" data-mtoggle>About</button>
+        <ul class="mnav__sub" id="msub-about" hidden>
+          <li><a href="index.html#about">About Ace</a></li>
+          <li><a href="public-speaking.html">Public Speaking</a></li>
+          <li><a href="premium-pickup-transport.html">Premium Pickup &amp; Transport</a></li>
+        </ul>
+      </li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul>
+  </nav>
+  <a class="btn btn--gold mnav__cta" href="contact.html">Start the Conversation</a>
+</div>
+
+<!-- The home hero, exactly: same stage, same spotlight, same type ramp. No
+     [data-hero], so heroChoreography() stays unbound — see styles.css.
+     One white title line, no gold second line. -->
+<section class="hero hero--page" aria-label="Private Advisory">
+  <div class="hero__stage">
+
+    <div class="hero__content">
+      <a class="hero__back" href="index.html"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-arrow"></use></svg> Back</a>
+
+      <h1 class="hero__h1">
+        <span class="hero__line">Private Advisory</span>
+      </h1>
+
+      <p class="hero__sub">A continuing conversation for owners navigating people, sales, growth, and difficult decisions. Someone who already knows the context, so you are not explaining the background every time.</p>
+
+      <p class="hero__sub">Start with a <a href="meetings.html">Meeting</a>. If ongoing involvement makes sense, the scope, access, fee, and initial term are agreed before anything begins.</p>
+
+      <h2 class="hero__h3">At a Glance</h2>
+      <dl class="spec spec--page">
+        <div><dt>Fee</dt><dd class="tier__inv">From $2,500 CAD / month</dd></div>
+        <div><dt>Format</dt><dd>Two 60-minute private Meetings a month, plus up to two 30-minute calls between them</dd></div>
+        <div><dt>Best for</dt><dd>Owners navigating people, sales, growth, and difficult decisions who want someone who already knows the context.</dd></div>
+        <div><dt>Longer term</dt><dd>Formalised as a Commitment for a minimum of 90 days, scope and rate agreed in writing.</dd></div>
+      </dl>
+
+      <h2 class="hero__h3">The Starting Arrangement</h2>
+      <ul class="hero__list">
+        <li>Two scheduled 60-minute private Meetings each month</li>
+        <li>Up to two additional 30-minute conversations for questions between Meetings</li>
+        <li>A concise, reviewed recap of key decisions and next steps</li>
+        <li>Review of progress and changing priorities at the next Meeting</li>
+      </ul>
+
+      <p class="hero__sub">From CAD $2,500 per month. Appointments and between-Meeting calls are scheduled by agreement. Allow up to two business days for a scheduling response. This is not an emergency or unlimited-access service. More involved arrangements are quoted separately.</p>
+
+      <h2 class="hero__h3">The Approach</h2>
+      <!-- Same numbered-column pattern as "Four steps / No Surprises" on
+           the homepage. -->
+      <ol class="steps">
+        <li class="step"><p class="step__n">01</p><h3 class="step__t">Understand</h3>
+          <p>Explain the situation, what is at stake, and what you have already tried.</p></li>
+        <li class="step"><p class="step__n">02</p><h3 class="step__t">Examine</h3>
+          <p>Look at the assumptions, overlooked issues, and options together.</p></li>
+        <li class="step"><p class="step__n">03</p><h3 class="step__t">Decide</h3>
+          <p>Identify the next steps and what still needs to be established.</p></li>
+        <li class="step"><p class="step__n">04</p><h3 class="step__t">Follow Through</h3>
+          <p>Revisit what happened, what changed, and what comes next.</p></li>
+      </ol>
+
+      <h2 class="hero__h3">Scope</h2>
+      <p class="hero__sub">Advisory covers conversation, decision preparation, and progress review. Travel, on-site work, substantial research, and attendance at external meetings are scoped and quoted separately. You remain the decision-maker; your team retains implementation and specialist responsibilities.</p>
+
+      <div class="hero__cta">
+        <a class="btn btn--gold" href="contact.html">Discuss Advisory</a>
+      </div>
+
+      <hr class="hero__rule">
+
+      <!-- The Commitment structure, carried over intact from its own page
+           when Advisory absorbed it. Kept as written — these are the terms
+           of a signed agreement, not marketing copy to be paraphrased. -->
+      <h2 class="hero__h3">Commitments</h2>
+      <p class="hero__sub">A Commitment is the formal version of this working relationship: private, one-on-one, for a minimum of 90 days. It is designed for people who want consistent access to Ace’s time, insight, and support without the group setting of the <a href="mastermind-membership.html">Invested Aces Mastermind</a> or <a href="group-activities.html">Ace’s Group Activities</a>.</p>
+
+      <p class="hero__sub">The exact scope is built around what you need. It can include advisory, strategy, project oversight-style input, on-site visits, <a href="premium-pickup-transport.html">Premium Pickup &amp; Transport</a>, and other forms of direct support, depending on what is agreed.</p>
+
+      <h2 class="hero__h3">Minimum Structure</h2>
+      <ul class="hero__list">
+        <li>Three 2-hour Meetings per month</li>
+        <li>Two 1-hour calls per month for on-the-spot input or insights</li>
+      </ul>
+
+      <p class="hero__sub">Unused Meetings and on-the-spot calls do not carry over to the following month.</p>
+      <p class="hero__sub">This is the baseline. Anything beyond these minimums (or a different mix of time and support) is discussed and quoted separately.</p>
+
+      <h2 class="hero__h3">Pricing</h2>
+      <p class="hero__sub">The minimum Commitment is $1,000 per month for 3 months.</p>
+      <p class="hero__sub">Final pricing is based on the scope of access and support you request. You will be quoted a flat monthly rate for the agreed scope. Any requests that fall outside the signed agreement are billed additionally.</p>
+
+      <h2 class="hero__h3">How It Works</h2>
+      <!-- An ordered list rather than the unordered ones used elsewhere:
+           these are sequential steps and the numbering carries meaning.
+           See the .hero__list--num modifier in styles.css. -->
+      <ol class="hero__list hero__list--num">
+        <li>Pay the $200 deposit to secure an initial Meeting.</li>
+        <li>Ace’s Assistant will send you a short set of questions.</li>
+        <li>Once answered, a 60-Minute Meeting with Ace is scheduled (it may run longer at his discretion).</li>
+        <li>If you both decide to move forward into a Commitment within the following month, the $200 is credited toward your first month. If not, it is non-refundable.</li>
+        <li>Scope, frequency, and pricing are finalized in a signed agreement.</li>
+      </ol>
+
+      <p class="hero__sub">Ongoing Meetings and requests are scheduled through Ace’s Assistant (or directly with Ace when appropriate).</p>
+
+      <h2 class="hero__h3">Important Notes</h2>
+      <p class="hero__sub">Commitments do not include access to Mastermind Meetings or Group Activities (though you may hold both a Commitment and a Mastermind Membership at the same time).</p>
+      <p class="hero__sub">No refunds. Cancelling does not release you from the payment obligations in the agreement.</p>
+      <p class="hero__sub">At the end of the 90 days the Commitment is renewable, and the scope and rate can be adjusted by mutual agreement.</p>
+
+      <!-- STRIPE PLACEHOLDER — the $200 Commitment deposit button lived on
+           commitments.html before this page absorbed it. Drop the
+           <stripe-buy-button> back in here (and restore the buy-button.js
+           script tag in <head>) once the button is reconfigured. -->
+      <div class="hero__cta">
+        <a class="btn btn--gold" href="contact.html">Get Started</a>
+      </div>
+
+      <a class="hero__back hero__back--bottom" href="index.html"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-arrow"></use></svg> Back</a>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════════ 11. FOOTER ══════════════ -->
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot__grid">
+      <div class="foot__brand">
+        <span class="brand__mark brand__mark--lg"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-spade"></use></svg></span>
+        <p class="foot__word">ACE SPADERS</p>
+        <blockquote class="foot__quote">"If you're going to suffer, suffer success. I Love Gold and Gold People."</blockquote>
+        <p class="foot__quote-by">- Matthew Ferguson</p>
+
+        <blockquote class="foot__quote">"Understanding people just takes a willingness to Listen."</blockquote>
+        <p class="foot__quote-by">- T. Queen of Hearts</p>
+      </div>
+      <div class="foot__col">
+        <nav class="foot__nav" aria-label="The work">
+          <p class="foot__h">The work</p>
+          <ul>
+            <li><a href="advisory.html">Private Advisory</a></li>
+            <li><a href="meetings.html">Meetings</a></li>
+            <li><a href="mastermind-membership.html">The Invested Aces Mastermind</a></li>
+            <li><a href="group-activities.html">Ace’s Group Activities</a></li>
+          </ul>
+        </nav>
+
+        <nav class="foot__nav foot__nav--stacked" aria-label="Make Life Better">
+          <p class="foot__h">Make Life Better</p>
+          <ul>
+            <li><a href="https://www.makelifebetter.today" target="_blank" rel="noopener noreferrer">www.makelifebetter.today</a></li>
+          </ul>
+        </nav>
+      </div>
+
+      <div class="foot__col">
+        <nav class="foot__nav" aria-label="Also available">
+          <p class="foot__h">Also available</p>
+          <ul>
+            <li><a href="scout.html">On-Site Assignments</a></li>
+            <li><a href="premium-pickup-transport.html">Premium Pickup &amp; Transport</a></li>
+            <li><a href="public-speaking.html">Public Speaking</a></li>
+          </ul>
+        </nav>
+
+        <nav class="foot__nav foot__nav--stacked" aria-label="Aces Group Activities">
+          <p class="foot__h">Aces Group Activities</p>
+          <ul>
+            <li><a href="aces-poker-night.html">Aces Poker Night</a></li>
+            <li><a href="aces-running-group.html">Aces Running Group</a></li>
+            <li><a href="all-aces-networking-events.html">All Aces Networking Events</a></li>
+          </ul>
+        </nav>
+      </div>
+
+      <div class="foot__col">
+        <nav class="foot__nav" aria-label="Start">
+          <p class="foot__h">Start</p>
+          <ul>
+             <li><a href="mastermind-application.html">Apply to the Mastermind</a></li>
+            <li><a href="index.html#contact">Book an Assessment Call</a></li>
+            <li><a href="mailto:info@acespaders.com">info@acespaders.com</a></li>
+          </ul>
+        </nav>
+
+        <nav class="foot__nav foot__nav--stacked" aria-label="Hire Ace's Webmaster">
+          <p class="foot__h">Hire Ace's Webmaster</p>
+          <ul>
+            <li><a href="https://spacewize.dev/webdev/" target="_blank" rel="noopener noreferrer">spacewize.dev<wbr>/webdev</a></li>
+          </ul>
+        </nav>
+
+        <nav class="foot__nav foot__nav--stacked" aria-label="Location">
+          <p class="foot__h">Location</p>
+          <ul>
+            <li><a href="contact.html">1281 Hornby St, Vancouver, BC</a><span class="foot__addr-note">By appointment only</span></li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+
+    <div class="foot__base">
+      <p>© <span data-year>2026</span> Ace Spaders. All rights reserved.</p>
+    </div>
+  </div>
+</footer>
+
+<script src="main.js" defer></script>
+<!-- Little Ace. knowledge and physics have to be parsed before
+     companion.js runs, and all three are deferred so none of them
+     block the page. -->
+<script src="knowledge.js" defer></script>
+<script src="physics.js" defer></script>
+<script src="companion.js" defer></script>
+</body>
+</html>
+

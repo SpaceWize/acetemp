@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" href="assets/icons/favicon-192.png">
+<title>Invested Aces Mastermind — Ace Spaders</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wdth,wght@62..125,400..700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="companion.css">
+<script>document.documentElement.classList.replace('no-js','js');</script>
+</head>
+<body>
+
+<svg class="sprite" aria-hidden="true" focusable="false" width="0" height="0"><defs>
+  <symbol id="i-spade" viewBox="0 0 24 24"><path d="M12 2.2c-.45 1.7-3.05 4.1-5.25 6C4.85 9.85 3.55 11.5 3.55 13.5c0 2.6 1.9 4.35 4.3 4.35 1.3 0 2.4-.5 3.1-1.5-.12 2.35-.9 4.05-2 5.05h6.1c-1.1-1-1.88-2.7-2-5.05.7 1 1.8 1.5 3.1 1.5 2.4 0 4.3-1.75 4.3-4.35 0-2-1.3-3.65-3.2-5.3-2.2-1.9-4.8-4.3-5.25-6Z"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h14M12.5 6l6 6-6 6"/></symbol>
+</defs></svg>
+
+<!-- ══════════════ NAV ══════════════
+     Same header as index.html. The in-page anchors are absolute here
+     (index.html#about) because the sections they name live on the
+     homepage, and both CTAs resolve to contact.html for the same
+     reason. -->
+<header class="site-head" data-head>
+  <div class="site-head__in">
+    <a class="brand" href="index.html" aria-label="Ace Spaders — home">
+      <span class="brand__mark"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-spade"></use></svg></span>
+      <span class="brand__word">ACE<span class="brand__word-b">SPADERS</span></span>
+    </a>
+
+    <nav class="nav" aria-label="Primary">
+      <ul class="nav__list" data-nav>
+        <li class="nav__item nav__item--sub">
+          <a href="advisory.html">Advisory</a>
+          <ul class="nav__sub">
+            <li><a href="meetings.html">Meetings</a></li>
+            <li><a href="scout.html">On-Site Assignments</a></li>
+          </ul>
+        </li>
+        <li class="nav__item nav__item--sub">
+          <a href="mastermind-membership.html">Mastermind</a>
+          <ul class="nav__sub">
+            <li><a href="mastermind-application.html">Apply</a></li>
+          </ul>
+        </li>
+        <li class="nav__item nav__item--sub">
+          <a href="group-activities.html">Activities</a>
+          <ul class="nav__sub">
+            <li><a href="aces-poker-night.html">Aces Poker Night</a></li>
+            <li><a href="aces-running-group.html">Aces Running Group</a></li>
+            <li><a href="all-aces-networking-events.html">All Aces Networking Events</a></li>
+          </ul>
+        </li>
+        <li class="nav__item nav__item--sub">
+          <a href="index.html#about">About</a>
+          <ul class="nav__sub">
+            <li><a href="public-speaking.html">Public Speaking</a></li>
+            <li><a href="premium-pickup-transport.html">Premium Pickup &amp; Transport</a></li>
+          </ul>
+        </li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </nav>
+
+    <a class="btn btn--gold btn--sm site-head__cta" href="contact.html">Start the Conversation</a>
+
+    <button class="burger" type="button" aria-expanded="false" aria-controls="mobile-nav" data-burger>
+      <span class="burger__bars" aria-hidden="true"><i></i><i></i></span>
+      <span class="sr-only">Open menu</span>
+    </button>
+  </div>
+</header>
+
+<div class="mnav" id="mobile-nav" hidden data-mnav>
+  <nav aria-label="Mobile">
+    <ul>
+      <li class="mnav__group">
+        <button class="mnav__toggle" type="button" aria-expanded="false"
+                aria-controls="msub-advisory" data-mtoggle>Advisory</button>
+        <ul class="mnav__sub" id="msub-advisory" hidden>
+          <li><a href="advisory.html">Private Advisory</a></li>
+          <li><a href="meetings.html">Meetings</a></li>
+          <li><a href="scout.html">On-Site Assignments</a></li>
+        </ul>
+      </li>
+      <li class="mnav__group">
+        <button class="mnav__toggle" type="button" aria-expanded="false"
+                aria-controls="msub-mastermind" data-mtoggle>Mastermind</button>
+        <ul class="mnav__sub" id="msub-mastermind" hidden>
+          <li><a href="mastermind-membership.html">Membership</a></li>
+          <li><a href="mastermind-application.html">Apply</a></li>
+        </ul>
+      </li>
+      <li class="mnav__group">
+        <button class="mnav__toggle" type="button" aria-expanded="false"
+                aria-controls="msub-activities" data-mtoggle>Activities</button>
+        <ul class="mnav__sub" id="msub-activities" hidden>
+          <li><a href="group-activities.html">Ace’s Group Activities</a></li>
+          <li><a href="aces-poker-night.html">Aces Poker Night</a></li>
+          <li><a href="aces-running-group.html">Aces Running Group</a></li>
+          <li><a href="all-aces-networking-events.html">All Aces Networking Events</a></li>
+        </ul>
+      </li>
+      <li class="mnav__group">
+        <button class="mnav__toggle" type="button" aria-expanded="false"
+                aria-controls="msub-about" data-mtoggle>About</button>
+        <ul class="mnav__sub" id="msub-about" hidden>
+          <li><a href="index.html#about">About Ace</a></li>
+          <li><a href="public-speaking.html">Public Speaking</a></li>
+          <li><a href="premium-pickup-transport.html">Premium Pickup &amp; Transport</a></li>
+        </ul>
+      </li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul>
+  </nav>
+  <a class="btn btn--gold mnav__cta" href="contact.html">Start the Conversation</a>
+</div>
+
+<!-- The home hero, exactly: same stage, same spotlight, same type ramp. No
+     [data-hero], so heroChoreography() stays unbound — see styles.css.
+     One white title line, no gold second line. -->
+<section class="hero hero--page" aria-label="Invested Aces Mastermind">
+  <div class="hero__stage">
+
+    <div class="hero__content">
+      <a class="hero__back" href="index.html"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-arrow"></use></svg> Back</a>
+
+      <h1 class="hero__h1">
+        <span class="hero__line">Invested Aces Mastermind</span>
+      </h1>
+
+      <p class="hero__sub">The Invested Aces Mastermind is a private, application-only group for people who want consistent proximity to Ace and a vetted circle of others who take their own progress seriously. Members receive access to monthly Mastermind Meetings, <a href="group-activities.html">Ace's Group Activities</a>, and increasing levels of direct engagement with Ace depending on the tier they choose.</p>
+      <p class="hero__sub">Membership runs for 12 months and is renewable. Membership fees can be paid monthly or annually. All tiers require an application and approval.</p>
+
+      <!-- Same tray-and-cards pattern as "Three Ways Forward" on the
+           homepage: a .tiers tray holding three .tier articles. All three
+           are treated identically here — same cream card, same outline
+           CTA — rather than flagging a middle one the way the homepage
+           does: these are price points on one ladder, not a recommended
+           pick. Benefits and "Best for" become rows of the .spec list
+           rather than loose headings and bullets. -->
+      <div class="tiers">
+        <article class="tier">
+          <header class="tier__top">
+            <h3 class="tier__name">$1,000 / month</h3>
+          </header>
+          <dl class="spec">
+            <div><dt>Member benefits</dt><dd>
+              <ul class="tier__benefits">
+                <li>Access to one of the two monthly Mastermind Meetings</li>
+                <li>Complimentary access to Ace’s Group Activities (first-priority RSVP for Poker Night)</li>
+              </ul>
+            </dd></div>
+            <div><dt>Best for</dt><dd>People who primarily want to be part of the network, attend Group Activities, and take part in one Mastermind Meeting each month.</dd></div>
+          </dl>
+          <a class="btn btn--outline tier__cta" href="mastermind-application.html">Apply Now</a>
+        </article>
+
+        <article class="tier">
+          <header class="tier__top">
+            <h3 class="tier__name">$2,000 / month</h3>
+          </header>
+          <dl class="spec">
+            <div><dt>Member benefits</dt><dd>
+              <ul class="tier__benefits">
+                <li>All $1000 benefits, plus</li>
+                <li>Access to both monthly Mastermind Meetings</li>
+                <li>Up to two one-on-one Meetings with Ace per month *</li>
+                <li>Complimentary Premium Pickup &amp; Transport once per month **</li>
+              </ul>
+            </dd></div>
+            <div><dt>Best for</dt><dd>People who want regular group access plus consistent direct time with Ace.</dd></div>
+          </dl>
+          <a class="btn btn--outline tier__cta" href="mastermind-application.html">Apply Now</a>
+        </article>
+
+        <article class="tier">
+          <header class="tier__top">
+            <h3 class="tier__name">$4,000 / month</h3>
+          </header>
+          <dl class="spec">
+            <div><dt>Member benefits</dt><dd>
+              <ul class="tier__benefits">
+                <li>All $2000 benefits, plus</li>
+                <li>Up to two on-site visits per month to the member’s place of business for assessments or requested support (does carry over if availability fills up)</li>
+                <li>First priority when scheduling one-on-ones and on-site visits</li>
+              </ul>
+            </dd></div>
+            <div><dt>Best for</dt><dd>People who want the highest level of direct access and practical, on-the-ground support from Ace.</dd></div>
+          </dl>
+          <a class="btn btn--outline tier__cta" href="mastermind-application.html">Apply Now</a>
+        </article>
+      </div>
+
+      <!-- Sits under the tray, carrying the scheduling note and the two
+           footnotes the tier bullets mark with * and **. Plain paragraphs
+           on purpose — these are terms that bind, so they are set at the
+           same weight as the rest of the copy rather than shrunk into
+           fine print. -->
+      <div class="tiernotes">
+        <p>One-on-one Meetings and transport requests are scheduled through Ace’s Assistant.</p>
+        <p>* Meetings are typically 1 hour each, but can be longer at Ace’s discretion. Meetings for $2000 Members do not carry over if availability fills up.</p>
+        <p><a href="premium-pickup-transport.html">**Premium Pickup &amp; Transport</a> requests must be for the Lower Mainland only, for a maximum of 3 hours, and single-day use. Additional time is billed at the $175/hour Member rate. Terms and conditions apply for additional distance, days or frequency.</p>
+      </div>
+
+      <h2 class="hero__h3">Mastermind Meeting Details</h2>
+      <ul class="hero__list">
+        <li>Meetings are held on the 2nd Tuesday and 3rd Saturday of each month</li>
+        <li>Locations vary and are kept private. Exact details are shared by email two weeks in advance</li>
+      </ul>
+
+      <h2 class="hero__h3">Group Activities & RSVP</h2>
+      <p class="hero__sub">Members receive invites to all of <a href="group-activities.html">Ace's Group Activities</a> and must RSVP directly to Ace or his Assistant. Free Member tickets are issued only after an RSVP and are not visible to the public. Attendance without a confirmed RSVP is not permitted.</p>
+      <p class="hero__sub">RSVP for Aces Poker Night is free for Members and non-members, with the understanding that an RSVP means an agreement to a minimum $100 buy-in. Members get first priority for RSVPs.</p>
+      <p class="hero__sub">Full attendance and RSVP expectations are outlined in the Ace Community Code of Conduct.</p>
+
+      <h2 class="hero__h3">Application Process</h2>
+      <!-- Same numbered-column pattern as "Four steps / No Surprises" on
+           the homepage. The short titles are pulled from the wording of
+           each step's own sentence — the pattern needs a heading per--->
+
+      
+      <ol class="steps">
+        <li class="step"><p class="step__n">01</p><h3 class="step__t">Routine</h3>
+          <p>Fill out and submit a Membership application.</p></li>
+        <li class="step"><p class="step__n">02</p><h3 class="step__t">Application Fee</h3>
+          <p>Pay the $200 application fee (this covers a 1-hour Meeting with Ace).</p></li>
+        <li class="step"><p class="step__n">03</p><h3 class="step__t">60 Min Meeting</h3>
+          <p>Attend the Meeting so Ace can determine fit.</p></li>
+        <li class="step"><p class="step__n">04</p><h3 class="step__t">Approval</h3>
+          <p>If approved, the $200 is credited toward your first month’s Membership. If not approved, the fee is non-refundable.</p></li>
+      </ol>
+      <p class="hero__sub">Approval typically takes 2-5 days, depending on Meeting scheduling.</p>
+      <p class="hero__sub">All approved Members will sign a Membership agreement and be sent the Ace Community Code of Conduct to acknowledge before starting.</p>
+
+      <h2 class="hero__h3">Who This Is For</h2>
+      <p class="hero__sub">People who value direct conversation, personal responsibility, and being around others who are actively investing in themselves. Location in or near the Lower Mainland of BC is strongly preferred due to the in-person nature of the Meetings and Group Activities.</p>
+
+      <h2 class="hero__h3">Who This Is Not For</h2>
+      <p class="hero__sub">This is not for people looking for passive content, large unstructured networking events, or a place to promote their products and services. It is also not for those who are not prepared to show up consistently and contribute to the quality of the room.</p>
+
+      <div class="hero__cta">
+        <a class="btn btn--gold" href="mastermind-application.html">Apply Now</a>
+      </div>
+
+      <div class="hero__cta">
+        <a class="btn btn--outline" href="group-activities.html">Aces Group Activities</a>
+        <a class="btn btn--outline" href="premium-pickup-transport.html">Premium Pickup & Transport</a>
+      </div>
+      <a class="hero__back hero__back--bottom" href="index.html"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-arrow"></use></svg> Back</a>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════════ 11. FOOTER ══════════════ -->
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot__grid">
+      <div class="foot__brand">
+        <span class="brand__mark brand__mark--lg"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-spade"></use></svg></span>
+        <p class="foot__word">ACE SPADERS</p>
+        <blockquote class="foot__quote">"If you're going to suffer, suffer success. I Love Gold and Gold People."</blockquote>
+        <p class="foot__quote-by">- Matthew Ferguson</p>
+
+        <blockquote class="foot__quote">"Understanding people just takes a willingness to Listen."</blockquote>
+        <p class="foot__quote-by">- T. Queen of Hearts</p>
+      </div>
+      <div class="foot__col">
+        <nav class="foot__nav" aria-label="The work">
+          <p class="foot__h">The work</p>
+          <ul>
+            <li><a href="advisory.html">Private Advisory</a></li>
+            <li><a href="meetings.html">Meetings</a></li>
+            <li><a href="mastermind-membership.html">The Invested Aces Mastermind</a></li>
+            <li><a href="group-activities.html">Ace’s Group Activities</a></li>
+          </ul>
+        </nav>
+
+        <nav class="foot__nav foot__nav--stacked" aria-label="Make Life Better">
+          <p class="foot__h">Make Life Better</p>
+          <ul>
+            <li><a href="https://www.makelifebetter.today" target="_blank" rel="noopener noreferrer">www.makelifebetter.today</a></li>
+          </ul>
+        </nav>
+      </div>
+
+      <div class="foot__col">
+        <nav class="foot__nav" aria-label="Also available">
+          <p class="foot__h">Also available</p>
+          <ul>
+            <li><a href="scout.html">On-Site Assignments</a></li>
+            <li><a href="premium-pickup-transport.html">Premium Pickup &amp; Transport</a></li>
+            <li><a href="public-speaking.html">Public Speaking</a></li>
+          </ul>
+        </nav>
+
+        <nav class="foot__nav foot__nav--stacked" aria-label="Aces Group Activities">
+          <p class="foot__h">Aces Group Activities</p>
+          <ul>
+            <li><a href="aces-poker-night.html">Aces Poker Night</a></li>
+            <li><a href="aces-running-group.html">Aces Running Group</a></li>
+            <li><a href="all-aces-networking-events.html">All Aces Networking Events</a></li>
+          </ul>
+        </nav>
+      </div>
+
+      <div class="foot__col">
+        <nav class="foot__nav" aria-label="Start">
+          <p class="foot__h">Start</p>
+          <ul>
+             <li><a href="mastermind-application.html">Apply to the Mastermind</a></li>
+            <li><a href="index.html#contact">Book an Assessment Call</a></li>
+            <li><a href="mailto:info@acespaders.com">info@acespaders.com</a></li>
+          </ul>
+        </nav>
+
+        <nav class="foot__nav foot__nav--stacked" aria-label="Hire Ace's Webmaster">
+          <p class="foot__h">Hire Ace's Webmaster</p>
+          <ul>
+            <li><a href="https://spacewize.dev/webdev/" target="_blank" rel="noopener noreferrer">spacewize.dev<wbr>/webdev</a></li>
+          </ul>
+        </nav>
+
+        <nav class="foot__nav foot__nav--stacked" aria-label="Location">
+          <p class="foot__h">Location</p>
+          <ul>
+            <li><a href="contact.html">1281 Hornby St, Vancouver, BC</a><span class="foot__addr-note">By appointment only</span></li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+
+    <div class="foot__base">
+      <p>© <span data-year>2026</span> Ace Spaders. All rights reserved.</p>
+    </div>
+  </div>
+</footer>
+
+<script src="main.js" defer></script>
+<!-- Little Ace. knowledge and physics have to be parsed before
+     companion.js runs, and all three are deferred so none of them
+     block the page. -->
+<script src="knowledge.js" defer></script>
+<script src="physics.js" defer></script>
+<script src="companion.js" defer></script>
+</body>
+</html>
+

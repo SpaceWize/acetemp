@@ -1,0 +1,230 @@
+/* ═══════════════════════════════════════════════════════════════
+   LITTLE ACE — companion sprite, launcher and chat panel.
+   Kept out of styles.css: this is one self-contained feature with its
+   own markup built entirely in companion.js, and nothing else on the
+   site styles any of it.
+
+   Colours come from the same tokens as the rest of the site, so the
+   panel stays in step if the palette moves. z-index: the sprite sits
+   under the fixed header (100) and the panel above it, because the
+   panel is a dialog and the header is not.
+   ═══════════════════════════════════════════════════════════════ */
+
+.ace-companion{
+  position:fixed;left:0;top:0;width:120px;height:140px;
+  padding:0;border:0;background:none;z-index:80;cursor:pointer;
+  transform-origin:50% 100%;
+  filter:drop-shadow(0 5px 3px rgba(0,0,0,.6)) drop-shadow(0 0 9px rgba(217,164,65,.14));
+  touch-action:none;will-change:transform;transition:opacity .2s;outline-offset:-8px;
+}
+/* Scoped away from .ace-chat-pose, which is sized in JS from the panel and
+   has its own display rules — a bare `.ace-companion canvas` outranks a
+   lone class selector and was overriding both. */
+.ace-companion>canvas:not(.ace-chat-pose){display:block;width:120px;height:140px;pointer-events:none}
+/* Bottom-anchored by default, so any scale-up grows him from his own feet
+   rather than sliding them out from under him — what standing taller
+   should look like. */
+.ace-companion>canvas:not(.ace-chat-pose){transform-origin:50% 100%;transition:transform .12s ease-out}
+/* Picked up, he reads as slightly closer to you. Anchored at the hood
+   instead, which is where your hand is. */
+.ace-companion.is-dragging>canvas:not(.ace-chat-pose){transform-origin:50% 18%;transform:scale(1.15)}
+.ace-companion:focus-visible{outline:2px solid var(--gold-hi,#EEBE63);border-radius:12px}
+/* He still opens the chat on a click, so the resting cursor stays a pointer;
+   the grab only appears once you are actually pulling him about. */
+.ace-companion:active,.ace-companion.is-dragging{cursor:grabbing}
+.ace-companion.is-dragging{transition:none}
+.ace-companion.is-dragging::after{opacity:0}
+/* The prompt above his head. Shown on hover and focus, plus once on load
+   (.intro) so a visitor who never points at him still learns he talks. */
+.ace-companion::after{
+  content:'Ask Little Ace';position:absolute;top:-9px;left:50%;transform:translateX(-50%);
+  font-family:var(--f-util,"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif);font-variation-settings:"wdth" 112;
+  font-size:.6875rem;font-weight:500;line-height:1.4;
+  color:var(--on-dark,#F1EDE6);background:var(--ink-800,#121110);
+  border:1px solid rgba(217,164,65,.55);border-radius:20px;padding:7px 10px;
+  white-space:nowrap;opacity:0;transition:opacity .2s;pointer-events:none;
+}
+.ace-companion:hover::after,
+.ace-companion:focus-visible::after,
+.ace-companion.intro::after{opacity:1}
+/* He steps aside while the panel is open rather than standing over it —
+   the default, and what a narrow viewport keeps: there is no room to
+   stand a grown-up companion beside a near-full-width sheet. Widened out
+   below 900px+, where companion.js actually has somewhere to put him. */
+.ace-companion.is-chatting{opacity:0;pointer-events:none}
+/* The chat stance is a SECOND canvas, drawn from its own full-resolution
+   sheet — the atlas cell is 223px tall and he stands 700px beside the
+   panel, which no amount of scaling would survive. Bottom-anchored and
+   centred inside the button, because companion.js positions it by treating
+   the button's bottom edge as his feet and its centre as his. Sized in JS
+   from the panel's own height. */
+.ace-chat-pose{
+  position:absolute;left:50%;bottom:0;transform:translateX(-50%);
+  display:none;pointer-events:none;
+}
+@media (min-width:900px){
+  .ace-companion.is-chatting{opacity:1;pointer-events:none;z-index:109}
+  .ace-companion.is-chatting::after{opacity:0}
+  /* Swap which canvas is showing: the roaming atlas one out, the big
+     chat one in. */
+  .ace-companion.is-chatting>canvas:not(.ace-chat-pose){display:none}
+  .ace-companion.is-chatting .ace-chat-pose{display:block}
+}
+.ace-loading{opacity:0}
+
+/* Darkens the page behind the chat. Sits above the site header (100) so
+   nothing on the page stays bright, and below the companion (109) and the
+   panel (110) so both read against it. pointer-events:none — the panel is
+   non-modal and the site stays clickable behind it; this dims, it does not
+   trap. */
+.ace-scrim{
+  position:fixed;inset:0;z-index:105;
+  background:rgba(4,4,6,.74);
+  opacity:0;pointer-events:none;
+  transition:opacity .45s ease;
+}
+.ace-scrim.is-open{opacity:1}
+
+.ace-shadow{
+  position:fixed;left:0;top:0;width:52px;height:8px;border-radius:50%;
+  background:rgba(0,0,0,.45);box-shadow:0 0 10px rgba(217,164,65,.2);
+  z-index:79;pointer-events:none;will-change:transform;
+}
+
+.ace-launcher{
+  position:fixed;right:22px;bottom:20px;z-index:85;
+  border:1px solid rgba(217,164,65,.55);
+  background:var(--ink-800,#121110);color:var(--gold-hi,#EEBE63);
+  padding:11px 16px;display:flex;gap:10px;align-items:center;cursor:pointer;
+  box-shadow:0 5px 28px rgba(0,0,0,.6),0 0 18px rgba(217,164,65,.15);
+  font-family:var(--f-util,"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif);font-variation-settings:"wdth" 112;
+  font-size:.8125rem;font-weight:600;line-height:1.4;
+}
+.ace-launcher>span:first-child{font:24px/1 Georgia,serif}
+.ace-launcher:hover{border-color:var(--gold,#D9A441);box-shadow:0 6px 30px rgba(0,0,0,.7),0 0 22px rgba(217,164,65,.27)}
+/* [hidden] and .ace-launcher{display:flex} tie in specificity, so without
+   this the launcher was never actually hidden by companion.js setting the
+   attribute — it only ever LOOKED hidden because the chat panel used to
+   sit in the exact same corner and cover it. Moving the panel to
+   center-right (above) uncovers it, so this can no longer go unfixed. */
+.ace-launcher[hidden]{display:none}
+
+.ace-chat{
+  position:fixed;right:22px;bottom:20px;
+  width:390px;max-width:calc(100vw - 30px);
+  height:570px;max-height:calc(100dvh - 110px);
+  z-index:110;
+  background:var(--ink-900,#0A0908);border:1px solid rgba(217,164,65,.6);
+  box-shadow:0 24px 80px rgba(0,0,0,.8),0 0 45px rgba(217,164,65,.09);
+  display:flex;flex-direction:column;overflow:hidden;
+  font:400 .9375rem/1.55 var(--f-body,"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif);color:var(--on-dark,#F1EDE6);
+}
+.ace-chat[hidden]{display:none}
+/* On a wide enough viewport the panel grows into a bigger, vertically
+   centred spot on the right, with room for a grown-up companion to stand
+   beside it — chatStandTarget() in companion.js reads this rect back, so
+   the two never drift out of sync. Narrower than this, the panel stays
+   exactly where it always was (bottom-right, and smaller on phones per
+   the existing rule below); there is nowhere to put a giant companion.
+
+   The grow is opacity+scale only, not a change of position — he is meant
+   to see it swell into place, not slide across the page. Getting that to
+   actually animate needs two steps in JS: unhide at this (closed) state
+   first, THEN add .is-open on the next frame so the browser has a prior
+   frame to transition away from. Doing both in the same tick — unhide and
+   grown in one JS statement — skips the transition entirely. */
+@media (min-width:900px){
+  .ace-chat{
+    right:7%;bottom:auto;top:50%;
+    width:min(460px,38vw);height:min(700px,84dvh);
+    transform:translateY(-50%) scale(.82);opacity:0;
+    transition:transform .55s cubic-bezier(.16,.84,.44,1),opacity .4s ease;
+  }
+  .ace-chat.is-open{transform:translateY(-50%) scale(1);opacity:1}
+}
+
+.ace-chat-head{
+  padding:17px 18px;display:flex;align-items:center;gap:11px;
+  border-bottom:1px solid var(--line-dark,#2E2A26);background:var(--ink-700,#1A1816);flex-shrink:0;
+}
+.ace-chat-head h2{font:400 1.125rem/1.1 var(--f-display,"Archivo Black","Archivo",system-ui,-apple-system,"Segoe UI",sans-serif);letter-spacing:-.02em;margin:0;color:var(--gold-hi,#EEBE63)}
+.ace-chat-head p{font-size:.75rem;margin:4px 0 0;color:var(--on-dark-mute,#A29C93)}
+.ace-chat-symbol{font:34px/1 Georgia,serif;color:var(--gold,#D9A441)}
+.ace-chat-close{
+  margin-left:auto;background:none;border:1px solid var(--line-dark,#2E2A26);
+  color:var(--on-dark,#F1EDE6);width:32px;height:32px;cursor:pointer;font-size:22px;line-height:1;
+}
+.ace-chat-close:hover{border-color:var(--gold,#D9A441)}
+
+.ace-chat-messages{
+  padding:18px 16px;overflow-y:auto;overscroll-behavior:contain;flex:1;
+  scrollbar-color:rgba(217,164,65,.5) var(--ink-800,#121110);min-height:0;
+}
+.ace-message{max-width:94%;margin:0 0 16px}
+.ace-message .speaker{
+  display:block;font-family:var(--f-util,"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif);font-variation-settings:"wdth" 112;
+  font-size:.625rem;font-weight:600;line-height:1.5;letter-spacing:.14em;
+  color:var(--gold,#D9A441);margin-bottom:5px;
+}
+.ace-message.user{margin-left:auto}
+.ace-message.user .speaker{text-align:right}
+.ace-message p{
+  margin:0;padding:12px 14px;border:1px solid var(--line-dark,#2E2A26);
+  background:var(--ink-700,#1A1816);color:var(--on-dark,#F1EDE6);
+  font-size:.9375rem;line-height:1.55;overflow-wrap:anywhere;
+}
+/* The visitor's own words come back in gold — the one place on the site
+   where the reader, not Ace, is the thing being highlighted. */
+.ace-message.user p{background:var(--gold,#D9A441);color:#1A1105;border-color:var(--gold-hi,#EEBE63)}
+.ace-message-links{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin:10px 0 0}
+.ace-message-links a{
+  font-size:.8125rem;line-height:1.45;color:var(--gold-hi,#EEBE63);
+  border-bottom:1px solid rgba(217,164,65,.45);padding-bottom:2px;
+}
+.ace-message-links a:hover{border-bottom-color:var(--gold-hi,#EEBE63)}
+
+.ace-chat-suggestions{display:flex;gap:6px;padding:0 16px 12px;flex-wrap:wrap;flex-shrink:0}
+.ace-chat-suggestions button{
+  border:1px solid var(--line-dark,#2E2A26);background:var(--ink-700,#1A1816);color:var(--gold-hi,#EEBE63);
+  padding:6px 10px;font:400 .75rem/1.4 var(--f-body,"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif);cursor:pointer;
+}
+.ace-chat-suggestions button:hover{border-color:var(--gold,#D9A441)}
+
+.ace-chat-form{display:flex;gap:8px;padding:12px 14px;border-top:1px solid var(--line-dark,#2E2A26);flex-shrink:0}
+/* 16px on the input specifically: anything smaller and iOS Safari zooms
+   the whole page when it takes focus. */
+.ace-chat-form input{
+  font:400 16px/1.4 var(--f-body,"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif);min-width:0;flex:1;padding:11px;
+  background:var(--ink-900,#0A0908);border:1px solid var(--line-dark,#2E2A26);color:var(--on-dark,#F1EDE6);
+}
+.ace-chat-form input:focus{outline:none;border-color:var(--gold,#D9A441)}
+.ace-chat-form button{
+  background:var(--gold,#D9A441);border:1px solid var(--gold-hi,#EEBE63);color:#1A1105;
+  min-width:44px;font-size:22px;cursor:pointer;
+}
+.ace-chat-form button:hover{background:var(--gold-hi,#EEBE63)}
+
+.ace-chat-foot{
+  padding:0 14px 12px;display:flex;justify-content:space-between;align-items:center;
+  gap:8px;font-size:.6875rem;color:var(--on-dark-mute,#A29C93);flex-shrink:0;
+}
+.ace-park{
+  border:0;padding:3px 0;background:none;color:var(--gold-hi,#EEBE63);
+  font:400 .75rem var(--f-body,"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif);cursor:pointer;
+  text-decoration:underline;text-underline-offset:3px;
+}
+.ace-chat [hidden]{display:none}
+.ace-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+
+@media (max-width:600px){
+  .ace-launcher{right:14px;bottom:14px;padding:10px 13px;font-size:.75rem}
+  .ace-chat{right:12px;bottom:12px;width:calc(100vw - 24px);max-width:none;height:min(580px,calc(100dvh - 90px))}
+  .ace-companion{z-index:81}
+  .ace-chat-head{padding:14px 16px}
+  .ace-chat-messages{padding:14px}
+  .ace-chat-foot{font-size:.625rem}
+}
+@media (prefers-reduced-motion:reduce){
+  .ace-companion,.ace-shadow{will-change:auto}
+  .ace-companion::after{transition:none}
+}
