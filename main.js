@@ -724,7 +724,7 @@
     heroChoreography();
     heroSpotlight();
     pageSpade();
-    flagshipReveal();
+    flagshipReveal();
     proofCounters();
     header();
     navState();
@@ -732,6 +732,42 @@
     applicationForm();
     preselectDoor();
     copyEmail();
+    siteToast();
+  }
+
+  /* ── SITE TOAST ────────────────────────────────────────────────
+     A notice top left, just under the fixed header. PLACEHOLDER copy.
+     Sits under the header's measured height rather than a fixed offset,
+     because the header is taller when the nav wraps and shorter once
+     it collapses on small screens.                                  */
+  function siteToast() {
+    var head = document.querySelector('.site-head');
+    var toast = document.createElement('div');
+    toast.className = 'site-toast';
+    toast.setAttribute('role', 'status');
+    toast.setAttribute('aria-live', 'polite');
+    toast.innerHTML =
+      '<p class="site-toast__msg">popup goes here.</p>' +
+      '<button type="button" class="site-toast__close" aria-label="Dismiss">&times;</button>';
+    document.body.appendChild(toast);
+
+    function place() {
+      var bottom = head ? head.getBoundingClientRect().bottom : 0;
+      toast.style.top = Math.max(0, Math.round(bottom)) + 12 + 'px';
+    }
+    place();
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, { passive: true });
+
+    var timer = 0;
+    function hide() { clearTimeout(timer); toast.classList.remove('is-on'); }
+    toast.querySelector('.site-toast__close').addEventListener('click', hide);
+
+    setTimeout(function () {
+      place();
+      toast.classList.add('is-on');
+      timer = setTimeout(hide, 8000);
+    }, 800);
   }
 
   if (document.readyState === 'loading') {

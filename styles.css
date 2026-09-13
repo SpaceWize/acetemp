@@ -1517,6 +1517,30 @@ button,input,select,textarea{font:inherit;color:inherit}
 /* Failure drops the gold: the border is the only thing distinguishing
    the two states, since both carry the same weight of text. */
 .toast.is-bad{border-color:var(--line-dark)}
+/* Site notice, top left under the fixed header. Its own class so it never
+   collides with the copy-confirmation toast above. `top` is set from the
+   header's real height in main.js, since the header wraps differently by
+   width. Under the header (100) so a dropdown can never sit beneath it,
+   over Little Ace (80). */
+.site-toast{
+  position:fixed;left:var(--gutter);top:4.5rem;z-index:95;
+  display:flex;align-items:center;gap:var(--sp-3);
+  max-width:min(24rem,calc(100vw - 2 * var(--gutter)));
+  padding:.75rem .75rem .75rem 1.1rem;
+  background:var(--ink-800);border:1px solid var(--gold);
+  color:var(--on-dark);font-family:var(--f-body);font-size:var(--fs-sm);
+  box-shadow:0 12px 30px rgba(0,0,0,.45);
+  opacity:0;transform:translateY(-.5rem);pointer-events:none;
+  transition:opacity var(--t-mid) var(--ease),transform var(--t-mid) var(--ease);
+}
+.site-toast.is-on{opacity:1;transform:none;pointer-events:auto}
+.site-toast__close{
+  flex:none;width:2rem;height:2rem;display:grid;place-items:center;
+  background:none;border:0;color:var(--on-dark-mute);font-size:1.1rem;line-height:1;cursor:pointer;
+}
+.site-toast__close:hover{color:var(--gold-hi)}
+.site-toast__close:focus-visible{outline:2px solid var(--gold-hi);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.site-toast{transition:none;transform:none}}
 /* The left column's tray is shorter than the form beside it, which left an
    empty well underneath. The office shot fills it and doubles as a visual
    for the address in the tray directly above. */

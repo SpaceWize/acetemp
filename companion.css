@@ -33,7 +33,6 @@
    the grab only appears once you are actually pulling him about. */
 .ace-companion:active,.ace-companion.is-dragging{cursor:grabbing}
 .ace-companion.is-dragging{transition:none}
-.ace-companion.is-dragging::after{opacity:0}
 /* The prompt above his head. Shown on hover and focus, plus once on load
    (.intro) so a visitor who never points at him still learns he talks. */
 .ace-companion::after{
@@ -47,6 +46,14 @@
 .ace-companion:hover::after,
 .ace-companion:focus-visible::after,
 .ace-companion.intro::after{opacity:1}
+/* Gone the moment he is picked up. After the three rules above and one
+   class more specific than each, because the pointer is always over him
+   while he is dragged, so :hover would otherwise bring the tag straight
+   back. No fade: it should not trail after his head. */
+.ace-companion.is-dragging::after,
+.ace-companion.is-dragging:hover::after,
+.ace-companion.is-dragging:focus-visible::after,
+.ace-companion.is-dragging.intro::after{opacity:0;transition:none}
 /* He steps aside while the panel is open rather than standing over it —
    the default, and what a narrow viewport keeps: there is no room to
    stand a grown-up companion beside a near-full-width sheet. Widened out
