@@ -312,6 +312,24 @@ button,input,select,textarea{font:inherit;color:inherit}
    broken. This is inert on purpose: no href, no hover motion, dimmed. */
 .btn[aria-disabled="true"]{opacity:.4;cursor:not-allowed;pointer-events:none}
 .btn--outline:hover{border-color:var(--gold-ink);color:var(--gold-ink)}
+/* The reservoir tiles' surface, on the other pages' dark buttons. Those
+   buttons had no fill at all, so the gold spade reveal passed behind them
+   at full strength and they read as empty boxes. The tiles' fill instead:
+   ink at 70%, so the spades show faintly through a real surface, lifting to
+   ink-700 at the same 70% on hover. Solid first for browsers without
+   color-mix. `body>section` is every page but home, which alone wraps its
+   sections in <main>. Gold buttons keep their fill; the cream pricing
+   cards' buttons (.tier) keep none, since their text is dark. */
+body>section .btn--outline:not(.tier__cta),
+body>section .btn--ghost{
+  background:var(--ink-800);
+  background:color-mix(in srgb,var(--ink-800) 70%,transparent);
+}
+body>section .btn--outline:not(.tier__cta):hover,
+body>section .btn--ghost:hover{
+  background:var(--ink-700);
+  background:color-mix(in srgb,var(--ink-700) 70%,transparent);
+}
 
 /* text link */
 .tlink{
@@ -332,13 +350,16 @@ button,input,select,textarea{font:inherit;color:inherit}
 }
 
 /* ═══ 1. HEADER ═══════════════════════════════════════════════ */
+/* Solid from the first paint on every page, rather than transparent until
+   the page scrolls: over the dark hero the bare nav read as missing. Same
+   fill and hairline the scrolled state used. The backdrop blur is gone —
+   at 94% opacity it was barely visible, and it re-blurred the page under
+   the header on every scroll frame. main.js still toggles .is-stuck, which
+   now changes nothing here. */
 .site-head{
   position:fixed;inset:0 0 auto;z-index:100;
-  background:transparent;border-bottom:1px solid transparent;
-  transition:background-color var(--t-mid) var(--ease),border-color var(--t-mid) var(--ease);
+  background:rgba(10,9,8,.94);border-bottom:1px solid var(--line-dark);
 }
-.site-head.is-stuck{background:rgba(10,9,8,.94);border-bottom-color:var(--line-dark);
-  backdrop-filter:saturate(140%) blur(10px)}
 .site-head__in{
   max-width:var(--maxw);margin-inline:auto;padding:.85rem var(--gutter);
   display:flex;align-items:center;gap:var(--sp-4);
