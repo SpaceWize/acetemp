@@ -213,7 +213,7 @@ const SPRITE_W=CELL_W/2,SPRITE_H=CELL_H/2;   // CSS px; the canvas is 2x this
    climb, which is drawn from behind). */
 const CLIPS={
   idle  :{f:[0,1,2,3,4,5,6,7],       fps:2.5,loop:true, dir:0},
-  wave  :{f:[8,9,10,11,12],          fps:9,  loop:false,dir:0},
+  wave  :{f:[8,9,10,11,12],          fps:9,  loop:true, dir:0},
   /* A real eight-frame gait, played whole and in order at 11fps — the
      planted foot genuinely swings from ahead of the hips to behind them
      across the sheet. The rear shoe is missing from frame 6 as generated;
@@ -250,10 +250,18 @@ const RUN_SPEED=142;
 
 const img=new Image();const ctx=canvas.getContext('2d');
 let clipName='idle',clipStart=0,lastCell=-1,lastFlip=null,dragPose=0;
+/* He arrives standing on his own Ask Little Ace button and waves hello for
+   WAVE_HOLD seconds before he does anything else. The hold is what makes the
+   wave visible at all: the clip picker runs every frame, and without it the
+   standing branch swapped the wave for idle on the very next one. */
+const WAVE_HOLD=1.7;
 img.onload=()=>{
   ready=true;pet.classList.remove('ace-loading');
   pet.classList.add('intro');setTimeout(()=>pet.classList.remove('intro'),6500);
-  play('wave');                     // say hello once, then settle into idle
+  const spot=launcherSurface();
+  if(spot){state.x=(spot.left+spot.right)/2;state.y=spot.y;state.vx=state.vy=0;state.ground='launcher';}
+  waveUntil=clock+WAVE_HOLD;nextDecision=waveUntil+.6;
+  play('wave');
 };
 img.onerror=()=>{pet.hidden=true;shadow.hidden=true;};
 img.src='assets/images/ace-atlas.png';
@@ -405,7 +413,7 @@ let surfaces=[],clock=0,last=0,nextDecision=1.8,lastSurfaceUpdate=-1,scroll=scro
 /* climb: {el, x} while he is going up a block of copy.
    textSurface: the block he climbed, standable for as long as he is on it.
    pointUntil: how long he holds the point once he has landed on a button. */
-let climb=null,textSurface=null,pointUntil=0;
+let climb=null,textSurface=null,pointUntil=0,waveUntil=0;
 const state={x:Math.max(70,innerWidth-160),y:innerHeight-20,vx:0,vy:0,ground:'floor'};
 let cursorX=innerWidth/2;document.addEventListener('pointermove',e=>{cursorX=e.clientX;},{passive:true});
 
@@ -481,7 +489,11 @@ function textSurfaceNow(){
   if(r.width<100||r.bottom<40||r.top>innerHeight-20)return null;
   return {id:'text',left:r.left,right:r.right,y:r.top,el:textSurface.el};
 }
-function scan(){surfaces=[];for(let i=0;i<perches.length;i++){const p=perches[i],r=p.el.getBoundingClientRect();const y=perchY(p,r);if(r.width>PERCH_MIN_WIDTH&&y>150&&y<innerHeight-60&&r.right>60&&r.left<innerWidth-60){surfaces.push({id:String(i),left:Math.max(20,r.left),right:Math.min(innerWidth-20,r.right),y,el:p.el});}}surfaces=bridge(surfaces);const t=state.ground==='text'&&textSurfaceNow();if(t)surfaces.push(t);surfaces.push({id:'floor',left:0,right:innerWidth,y:innerHeight-16});}
+function scan(){surfaces=[];for(let i=0;i<perches.length;i++){const p=perches[i],r=p.el.getBoundingClientRect();const y=perchY(p,r);if(r.width>PERCH_MIN_WIDTH&&y>150&&y<innerHeight-60&&r.right>60&&r.left<innerWidth-60){surfaces.push({id:String(i),left:Math.max(20,r.left),right:Math.min(innerWidth-20,r.right),y,el:p.el});}}surfaces=bridge(surfaces);const t=state.ground==='text'&&textSurfaceNow();if(t)surfaces.push(t);const l=launcherSurface();if(l)surfaces.push(l);surfaces.push({id:'floor',left:0,right:innerWidth,y:innerHeight-16});}
+/* The Ask Little Ace button, as a ledge. Added after the perch filter on
+   purpose: it sits in the bottom 60px that filter keeps him out of, and it
+   is where he spawns. Gone while the chat is open and the button is hidden. */
+function launcherSurface(){if(launcher.hidden)return null;const r=launcher.getBoundingClientRect();if(!r.width)return null;return {id:'launcher',left:r.left,right:r.right,y:r.top};}
 /* Three pricing cards in a row are one shelf, not three ledges. Anything on
    the same line separated by no more than a gutter is merged into a single
    surface, so he simply runs the length of it — the alternative was hopping
@@ -504,7 +516,7 @@ function bridge(list){
   }
   return out;
 }
-function currentSurface(){if(state.ground==='floor')return {id:'floor',left:0,right:innerWidth,y:innerHeight-16};if(state.ground==='text')return textSurfaceNow();if(state.ground===null)return null;
+function currentSurface(){if(state.ground==='floor')return {id:'floor',left:0,right:innerWidth,y:innerHeight-16};if(state.ground==='text')return textSurfaceNow();if(state.ground==='launcher')return launcherSurface();if(state.ground===null)return null;
  /* The scanned list first: if he is standing on a bridged run, the element's
     own rect is only the card he happens to be over, and using it would drop
     him into the first gutter he reached. */
@@ -722,8 +734,9 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
    else if(dy){state.y=Math.max(-15,Math.min(innerHeight-35,state.y-dy));if(Math.abs(dy)>60){state.vy=Math.max(100,state.vy);pendingJump=null;}}
    if(pendingJump&&clock>=crouchUntil){const p=surfaces.find(p=>p.id===pendingJump.id);if(p){const tx=Math.max(p.left+30,Math.min(p.right-30,pendingJump.x));physics.jump(state,{x:tx,y:p.y});facing=Math.sign(state.vx)||facing;}pendingJump=null;ground=null;}
    if(state.ground!==null){
-    if(holdingPoint()){
-      /* Holding the gesture: no walking, no decisions, no fidgeting. */
+    if(holdingPoint()||clock<waveUntil){
+      /* Holding a gesture (the point, or the hello wave): no walking, no
+         decisions, no fidgeting. */
       state.vx=0;facing=1;
     }else if(runGoal!==null&&!pendingJump){
      const dx=runGoal-state.x;state.vx=Math.sign(dx)*RUN_SPEED;facing=Math.sign(dx)||facing;
@@ -736,7 +749,7 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
        runGoal=null;state.vx=0;nextDecision=clock+.16;
      }
     }else state.vx=0;
-    if(clock>=nextDecision&&!pendingJump&&runGoal===null&&!holdingPoint()){choose();nextDecision=Math.min(nextDecision,clock+2+Math.random()*2);}
+    if(clock>=nextDecision&&clock>=waveUntil&&!pendingJump&&runGoal===null&&!holdingPoint()){choose();nextDecision=Math.min(nextDecision,clock+2+Math.random()*2);}
    }else{const fell=state.vy;const hit=physics.step(state,dt,surfaces,innerWidth);
      /* Only a real drop is worth a landing. Stepping between two ledges on
         the same line arrives at ~130px/s against 500+ for any actual jump,
@@ -759,7 +772,8 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
       Ordered by urgency: a deliberate gesture beats the physics, the
       physics beat locomotion, locomotion beats standing still. */
    if(!ascending){
-     if(holdingPoint())play('point');
+     if(clock<waveUntil&&state.ground!==null)play('wave');
+     else if(holdingPoint())play('point');
      else if(pendingJump)play('crouch');
      else if(clock<landingUntil)play('land');
      else if(state.ground===null)play(state.vy<-180?'rise':state.vy<100?'apex':'fall');
