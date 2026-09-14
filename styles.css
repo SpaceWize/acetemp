@@ -289,6 +289,19 @@ button,input,select,textarea{font:inherit;color:inherit}
   filter:blur(5px);opacity:.85;
   animation:orbitSpin 2.8s linear infinite;
 }
+/* Performance. The spin animates a registered custom property feeding a
+   masked conic-gradient, which the compositor cannot take over, so every
+   running ring is restyled and repainted on the main thread every frame.
+   With 48 of them on the home page that was the page's lag: pausing them
+   took a loaded test from ~85fps with ~165 late frames to 144fps with 1.
+   So only buttons spin. Every other surface keeps the ring standing still
+   (the arc sits where 0deg puts it, reading as trim), and a button pauses
+   whenever it is off screen (main.js adds .is-offscreen). */
+.tier::after,.quote::after,.tiers::after,.quotes::after,.form::after,
+.cta__copy::after,.cta__shot::after,.tiernotes::after,
+.alsotile::after,.plaque::after,
+.portrait::after,.circle__band::after{animation:none}
+.btn.is-offscreen::after,.btn.is-offscreen::before{animation-play-state:paused}
 .btn--gold{background:var(--gold);color:#100E0B}
 .btn--gold:hover{background:var(--gold-hi)}
 .btn--ghost{border-color:rgba(241,237,230,.34);color:var(--on-dark)}

@@ -264,7 +264,9 @@ img.onload=()=>{
   play('wave');
 };
 img.onerror=()=>{pet.hidden=true;shadow.hidden=true;};
-img.src='assets/images/ace-atlas.png';
+/* WebP, not the PNG the build writes: 435KB against 1.8MB, with the alpha
+   identical and colour within ~1.5/255 on average. Re-export after a rebuild. */
+img.src='assets/images/ace-atlas.webp';
 
 function play(name){if(clipName!==name){clipName=name;clipStart=clock;}}
 /* Where a clip has got to. A looping clip wraps; a one-shot holds its last

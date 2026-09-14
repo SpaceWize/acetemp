@@ -732,6 +732,22 @@
     applicationForm();
     preselectDoor();
     copyEmail();
+    pauseOffscreenRings();
+  }
+
+  /* ── OFF-SCREEN RINGS ──────────────────────────────────────────
+     A button's orbit ring is repainted on the main thread every frame it
+     spins, visible or not. Marking buttons that are out of view lets the
+     CSS pause them. The margin starts a ring just before it scrolls in,
+     so it is already moving when it arrives.                        */
+  function pauseOffscreenRings() {
+    if (!('IntersectionObserver' in window)) return;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        e.target.classList.toggle('is-offscreen', !e.isIntersecting);
+      });
+    }, { rootMargin: '120px 0px' });
+    [].forEach.call(document.querySelectorAll('.btn'), function (b) { io.observe(b); });
   }
 
   if (document.readyState === 'loading') {
