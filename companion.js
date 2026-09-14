@@ -282,17 +282,26 @@ function clipDone(){
   const c=CLIPS[clipName]||CLIPS.idle;
   return !c.loop&&(clock-clipStart)>=c.f.length/c.fps;
 }
+/* The idle's glance: the only frames in it that turn his head, and the art
+   turns it to screen-right. On the right half of the page that is the
+   scrollbar, so there they are mirrored to look back across the page. The
+   rest of the idle faces front and is never mirrored. Mirrored about his
+   legs (LEGS_X in cell px, where every idle frame is aligned) rather than
+   the cell centre, or he would hop ~5px sideways every glance. */
+const IDLE_LOOK=new Set([3,4,5]),LEGS_X=115;
 function renderSprite(facing){
   if(!ready)return;
   const cell=clipFrame();
   const dir=(CLIPS[clipName]||CLIPS.idle).dir;
-  const flip=dir!==0&&facing!==dir;
+  const look=clipName==='idle'&&IDLE_LOOK.has(cell)&&state.x>innerWidth/2;
+  const flip=(dir!==0&&facing!==dir)||look;
   if(cell===lastCell&&flip===lastFlip)return;   // nothing changed, skip the blit
   lastCell=cell;lastFlip=flip;
   const sx=(cell%ATLAS_COLS)*CELL_W,sy=Math.floor(cell/ATLAS_COLS)*CELL_H;
   ctx.clearRect(0,0,CELL_W,CELL_H);
   ctx.save();
-  if(flip){ctx.translate(CELL_W,0);ctx.scale(-1,1);}
+  if(look){ctx.translate(LEGS_X*2,0);ctx.scale(-1,1);}
+  else if(flip){ctx.translate(CELL_W,0);ctx.scale(-1,1);}
   ctx.drawImage(img,sx,sy,CELL_W,CELL_H,0,0,CELL_W,CELL_H);
   ctx.restore();
 }
