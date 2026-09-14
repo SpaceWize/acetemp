@@ -443,6 +443,11 @@ const DRAG_SLOP=6;                  // px of travel before a press is a drag
 const DRAG_STEPS=[150,320,700,1200];// px/s thresholds between the five poses
 let dragging=false,dragPointer=null,dragOffX=0,dragOffY=0,
     dragSpeed=0,dragLastT=0,dragDownX=0,dragDownY=0,suppressClick=false;
+/* The hand's velocity, kept as a vector so letting go can throw him. Below
+   THROW_MIN px/s a release is a drop; above it the vector is carried into
+   him, capped at THROW_MAX so a hard flick bounces rather than teleports. */
+const THROW_MIN=220,THROW_MAX=1500;
+let dragVX=0,dragVY=0;
 
 pet.addEventListener('pointerdown',e=>{
   if(e.pointerType==='mouse'&&e.button!==0)return;
@@ -458,17 +463,20 @@ addEventListener('pointermove',e=>{
     try{pet.setPointerCapture(dragPointer);}catch{}
     pet.classList.add('is-dragging');
     climb=null;runGoal=null;pendingJump=null;pointUntil=0;
-    state.vx=0;state.vy=0;state.ground=null;
+    state.vx=0;state.vy=0;state.ground=null;state.bouncy=false;dragVX=dragVY=0;
   }
   const nx=clampX(e.clientX+dragOffX),dx=nx-state.x;
+  const ny=Math.max(-10,Math.min(innerHeight+40,e.clientY+dragOffY)),dy=ny-state.y;
   /* Smoothed against the clock, not against the sample count — pointermove
      fires at the device's rate, not the frame rate, so a raw per-event
      delta reads as a different speed on a 120Hz trackpad than on a 60Hz
      mouse. */
   const dtms=Math.max(6,e.timeStamp-dragLastT);dragLastT=e.timeStamp;
   dragSpeed=dragSpeed*.7+(Math.abs(dx)/(dtms/1000))*.3;
+  dragVX=dragVX*.6+(dx/(dtms/1000))*.4;
+  dragVY=dragVY*.6+(dy/(dtms/1000))*.4;
   if(Math.abs(dx)>1.5)facing=dx>0?1:-1;
-  state.x=nx;state.y=Math.max(-10,Math.min(innerHeight+40,e.clientY+dragOffY));
+  state.x=nx;state.y=ny;
   e.preventDefault();
 },{passive:false});
 
@@ -479,9 +487,15 @@ function endDrag(e){
   dragging=false;dragSpeed=0;
   pet.classList.remove('is-dragging');
   try{pet.releasePointerCapture(e.pointerId);}catch{}
-  /* Dropped, not thrown: the hand's momentum is deliberately not carried
-     into vx. A flick would otherwise fire him across the page. */
-  state.ground=null;state.vx=0;state.vy=0;nextDecision=clock+.5;
+  /* A flick throws him and he bounces (physics.js, s.bouncy); a slow
+     release just drops him. The velocity has already decayed in tick() if
+     the hand stopped before letting go, so a still release is a drop. */
+  const clampV=v=>Math.max(-THROW_MAX,Math.min(THROW_MAX,v));
+  state.ground=null;
+  if(Math.hypot(dragVX,dragVY)>THROW_MIN){state.vx=clampV(dragVX);state.vy=clampV(dragVY);state.bouncy=true;}
+  else{state.vx=0;state.vy=0;state.bouncy=false;}
+  dragVX=dragVY=0;
+  runGoal=null;pendingJump=null;nextDecision=clock+.5;
 }
 addEventListener('pointerup',endDrag);
 addEventListener('pointercancel',endDrag);
@@ -701,6 +715,7 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
      hang at a full swing for as long as you held still. */
   if(dragging){
     dragSpeed*=Math.pow(.002,dt);   // ~half a second from a hard yank to still
+    const decay=Math.pow(.0005,dt);dragVX*=decay;dragVY*=decay;  // a hand that stops, then lets go, drops him
     dragPose=dragSpeed<DRAG_STEPS[0]?0:dragSpeed<DRAG_STEPS[1]?1
             :dragSpeed<DRAG_STEPS[2]?2:dragSpeed<DRAG_STEPS[3]?3:4;
     play('drag');renderSprite(facing);

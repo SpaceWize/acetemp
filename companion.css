@@ -33,6 +33,11 @@
    the grab only appears once you are actually pulling him about. */
 .ace-companion:active,.ace-companion.is-dragging{cursor:grabbing}
 .ace-companion.is-dragging{transition:none}
+/* While he is carried, the cursor is his, not a flashlight's: both spade
+   reveals (the page-wide .aop and the hero's plate) fade out and come back
+   when he is let go. :has() outranks both layers' own visible states. */
+body:has(.ace-companion.is-dragging) .aop,
+body:has(.ace-companion.is-dragging) .hero__plate{opacity:0}
 /* The prompt above his head. Shown on hover and focus, plus once on load
    (.intro) so a visitor who never points at him still learns he talks. */
 .ace-companion::after{
