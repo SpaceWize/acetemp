@@ -179,7 +179,12 @@ function hideChat(){
  if(innerWidth>=900)chatCloseTimer=setTimeout(()=>{panel.hidden=true;},580);
  else panel.hidden=true;
 }
-pet.addEventListener('click',showChat);launcher.addEventListener('click',showChat);close.addEventListener('click',hideChat);panel.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();hideChat();}});
+pet.addEventListener('click',showChat);launcher.addEventListener('click',showChat);close.addEventListener('click',hideChat);
+/* On-Site Assignments has no page of its own: its links open Little Ace,
+   who points to the contact form. */
+document.addEventListener('click',e=>{const el=e.target.closest('.js-ace-ask');if(!el)return;e.preventDefault();
+ if(!open)showChat();
+ addMessage('To learn more about On-Site Assignments, reach out to Ace and his Assistant with a little more information about your situation. The contact form is the best place to start.','bot',[['Contact form','contact.html']]);});panel.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();hideChat();}});
 function ask(q){q=q.trim();if(!q)return;addMessage(q,'user');const a=knowledge.answer(q,lastTopic);lastTopic=a.id;addMessage(a.text,'bot',a.links);input.value='';input.focus({preventScroll:true});}
 panel.querySelector('form').addEventListener('submit',e=>{e.preventDefault();ask(input.value);});panel.querySelectorAll('.ace-chat-suggestions button').forEach(b=>b.addEventListener('click',()=>ask(b.textContent)));
 function updatePark(){parkButton.textContent=parked?'Let Little Ace roam':'Park Little Ace';}

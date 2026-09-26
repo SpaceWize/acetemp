@@ -687,6 +687,18 @@ body>section .btn--ghost:hover{
 /* Home hero only: half the original clamp(4rem,9vh,7rem). Together with
    the halved .formats top padding this halves the whole gap between the
    CTAs and the top of the tiers tray. */
+/* A closing pointer to the next-best option, sitting right under the CTA
+   rather than reading as one more full-weight paragraph competing with the
+   body copy above it (Private Working Session -> Ongoing Private Advisory,
+   and the reverse on that page). Sentence case, quieter and tighter to the
+   button than .hero__sub, same treatment .hero__micro gives short terms. */
+.hero__note{
+  margin-top:var(--sp-2);max-width:56ch;
+  font-size:var(--fs-sm);color:var(--on-dark-mute);
+  opacity:var(--o4);transform:translate3d(0,var(--y4),0);
+}
+.hero__note a{color:var(--gold-ink);text-decoration:underline;text-underline-offset:.25em}
+.hero__note a:hover{color:var(--gold-hi)}
 .hero[data-hero] .hero__content{padding-bottom:clamp(2rem,4.5vh,3.5rem)}
 /* Home hero only — subpages share .hero__stage's flex-end via .hero--page
    and should keep it. Once the choreography settles (--cy reaches 0), the
@@ -861,6 +873,17 @@ body>section .btn--ghost:hover{
 /* Two-up variant — the Meetings page offers a pair, not a trio, and three
    columns holding two cards leaves a hole on the right. */
 .tiers--2{grid-template-columns:repeat(2,1fr)}
+/* Terms that sit inside the tray itself, under the row of cards, rather
+   than in a separate .tiernotes panel below it (Premium Pickup's rate
+   footnotes). Spans the row like .formats__foot, but kept at body size —
+   these bind a paying member and shouldn't read as fine print. */
+.tiers>.tiers__note{
+  grid-column:1/-1;color:var(--on-dark);max-width:80ch;
+}
+.tiers>.tiers__note:first-of-type{margin-top:var(--sp-2);padding-top:var(--sp-3);border-top:1px solid var(--line-dark)}
+.tiers>.tiers__note+.tiers__note{margin-top:var(--sp-2)}
+.tiers__note a{color:var(--gold-ink);text-decoration:underline;text-underline-offset:.25em}
+.tiers__note a:hover{color:var(--gold-hi)}
 /* The two outer tiers are cream cards on the black section; .tier--lead below
    stays dark, so the trio reads light / dark / light. */
 .tier{
@@ -1003,6 +1026,7 @@ body>section .btn--ghost:hover{
    copy they have none, so they sit flush against the paragraph above. */
 .hero__content .tiers,
 .hero__content .steps{margin-top:var(--sp-4)}
+.hero__content .steps{margin-bottom:var(--sp-5)}
 
 /* Notes under the tiers tray: the scheduling line plus the * and **
    footnotes the tier bullets point at. Framed like the tray above it so
@@ -1603,7 +1627,7 @@ body>section .btn--ghost:hover{
 .form{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3) var(--sp-3);
   background:var(--ink-900);border:1px solid var(--line-dark);
   padding:clamp(1.5rem,3vw,2.5rem)}
-.field{display:grid;gap:.45rem}
+.field{display:grid;gap:.45rem;align-content:start}
 .field--full{grid-column:1/-1}
 .field label{
   font-family:var(--f-util);font-variation-settings:"wdth" 112;
@@ -1619,7 +1643,7 @@ body>section .btn--ghost:hover{
   color:var(--on-dark);font-size:var(--fs-body);
   transition:border-color var(--t-fast) var(--ease);
 }
-.field textarea{min-height:auto;resize:vertical}
+.field textarea{min-height:auto;resize:vertical;padding:.55rem .75rem;line-height:1.4}
 .field select{appearance:none;cursor:pointer;
   background-image:linear-gradient(45deg,transparent 50%,var(--on-light-mute) 50%),
                    linear-gradient(135deg,var(--on-light-mute) 50%,transparent 50%);
@@ -1653,17 +1677,22 @@ body>section .btn--ghost:hover{
   font-family:var(--f-body);font-size:var(--fs-sm);font-weight:400;
   letter-spacing:0;text-transform:none;color:var(--on-light);
 }
-.field .check input[type="checkbox"]{
+.field .check input[type="checkbox"],.field .check input[type="radio"]{
   width:1.05rem;height:1.05rem;min-height:0;flex:none;
   margin:.15rem 0 0;padding:0;
   background:none;border:0;
   accent-color:var(--gold-ink);cursor:pointer;
 }
 @media (hover:hover){.field .check:hover{color:var(--gold-ink)}}
-.checks.is-bad .check input[type="checkbox"]{outline:2px solid #A32E1E;outline-offset:2px}
+.checks.is-bad .check input[type="checkbox"],.checks.is-bad .check input[type="radio"]{outline:2px solid #A32E1E;outline-offset:2px}
 .checks .err{margin-top:.6rem}
 .form__foot{grid-column:1/-1;display:grid;gap:.75rem}
 .form__status{font-size:var(--fs-sm);color:var(--on-light-mute)}
+/* The application form sits in a subpage hero: a heading inside the panel,
+   and room above it after the intro copy. */
+.hero__content .form{margin-top:var(--sp-4);max-width:62rem}
+.form__head{display:grid;gap:.35rem}
+.form__h{font:400 var(--fs-h3)/1.08 var(--f-display);letter-spacing:-.02em;color:var(--on-dark)}
 .form__status:empty{display:none}
 
 /* Appears only after a valid submit, listing where to open the composed

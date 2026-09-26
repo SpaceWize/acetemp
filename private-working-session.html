@@ -4,13 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" type="image/png" href="assets/icons/favicon-192.png">
-<title>Meetings — Ace Spaders</title>
+<title>Private Working Session — Ace Spaders</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wdth,wght@62..125,400..700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="companion.css">
-<script async src="https://js.stripe.com/v3/buy-button.js"></script>
 <script>document.documentElement.classList.replace('no-js','js');</script>
 </head>
 <body>
@@ -20,6 +19,9 @@
   <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h14M12.5 6l6 6-6 6"/></symbol>
 </defs></svg>
 
+<!-- The home hero, exactly: same stage, same spotlight, same type ramp. No
+     [data-hero], so heroChoreography() stays unbound — see styles.css.
+     One white title line, no gold second line. -->
 <!-- ══════════════ NAV ══════════════
      Same header as index.html. The in-page anchors are absolute here
      (index.html#about) because the sections they name live on the
@@ -35,10 +37,14 @@
     <nav class="nav" aria-label="Primary">
       <ul class="nav__list" data-nav>
         <li class="nav__item nav__item--sub">
-          <a href="advisory.html">Advisory</a>
+          <a href="index.html#about">About</a>
           <ul class="nav__sub">
-            <li><a href="meetings.html">Meetings</a></li>
-            <li><a href="scout.html">On-Site Assignments</a></li>
+            <li><a href="index.html#about">Ace Spaders</a></li>
+            <li><a href="advisory.html">Ongoing Private Advisory</a></li>
+            <li><a href="private-working-session.html">Private Working Session</a></li>
+            <li><a href="#" class="js-ace-ask" data-ace-topic="onsite">On-Site Assignments</a></li>
+            <li><a href="premium-pickup-transport.html">Premium Pickup &amp; Transport</a></li>
+            <li><a href="public-speaking.html">Public Speaking</a></li>
           </ul>
         </li>
         <li class="nav__item nav__item--sub">
@@ -55,14 +61,6 @@
             <li><a href="all-aces-networking-events.html">All Aces Networking Events</a></li>
           </ul>
         </li>
-        <li class="nav__item nav__item--sub">
-          <a href="index.html#about">About</a>
-          <ul class="nav__sub">
-            <li><a href="public-speaking.html">Public Speaking</a></li>
-            <li><a href="premium-pickup-transport.html">Premium Pickup &amp; Transport</a></li>
-          </ul>
-        </li>
-        <li><a href="contact.html">Contact</a></li>
       </ul>
     </nav>
 
@@ -80,11 +78,14 @@
     <ul>
       <li class="mnav__group">
         <button class="mnav__toggle" type="button" aria-expanded="false"
-                aria-controls="msub-advisory" data-mtoggle>Advisory</button>
-        <ul class="mnav__sub" id="msub-advisory" hidden>
-          <li><a href="advisory.html">Private Advisory</a></li>
-          <li><a href="meetings.html">Meetings</a></li>
-          <li><a href="scout.html">On-Site Assignments</a></li>
+                aria-controls="msub-about" data-mtoggle>About</button>
+        <ul class="mnav__sub" id="msub-about" hidden>
+          <li><a href="index.html#about">Ace Spaders</a></li>
+          <li><a href="advisory.html">Ongoing Private Advisory</a></li>
+          <li><a href="private-working-session.html">Private Working Session</a></li>
+          <li><a href="#" class="js-ace-ask" data-ace-topic="onsite">On-Site Assignments</a></li>
+          <li><a href="premium-pickup-transport.html">Premium Pickup &amp; Transport</a></li>
+          <li><a href="public-speaking.html">Public Speaking</a></li>
         </ul>
       </li>
       <li class="mnav__group">
@@ -105,101 +106,57 @@
           <li><a href="all-aces-networking-events.html">All Aces Networking Events</a></li>
         </ul>
       </li>
-      <li class="mnav__group">
-        <button class="mnav__toggle" type="button" aria-expanded="false"
-                aria-controls="msub-about" data-mtoggle>About</button>
-        <ul class="mnav__sub" id="msub-about" hidden>
-          <li><a href="index.html#about">About Ace</a></li>
-          <li><a href="public-speaking.html">Public Speaking</a></li>
-          <li><a href="premium-pickup-transport.html">Premium Pickup &amp; Transport</a></li>
-        </ul>
-      </li>
-      <li><a href="contact.html">Contact</a></li>
     </ul>
   </nav>
   <a class="btn btn--gold mnav__cta" href="contact.html">Start the Conversation</a>
 </div>
 
-<!-- The home hero, exactly: same stage, same spotlight, same type ramp. No
-     [data-hero], so heroChoreography() stays unbound — see styles.css.
-     One white title line, no gold second line. -->
-<section class="hero hero--page" aria-label="Meetings">
+<section class="hero hero--page" aria-label="Private Working Session">
   <div class="hero__stage">
 
     <div class="hero__content">
       <a class="hero__back" href="index.html"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-arrow"></use></svg> Back</a>
 
       <h1 class="hero__h1">
-        <span class="hero__line">Meetings</span>
+        <span class="hero__line">Private Working Session</span>
       </h1>
 
-      <p class="hero__sub">Two ways to sit down with Ace. Which one you book depends on how clearly you can already name the problem.</p>
+      <p class="hero__sub">A standalone working session with Ace. This is designed for people who need a clear read and a usable next step, without committing to ongoing access.</p>
+      <p class="hero__sub">The session is built around the issue you bring. It can be a first conversation, a one-off when something specific is in front of you, or a way to see how Ace works before deciding on anything more long-term.</p>
 
-      <!-- Two cards rather than three; see .tiers--2 in styles.css. The
-           $500 card leads because it is the more defined engagement — the
-           issue is already established before the session begins. -->
-      <div class="tiers tiers--2">
-        <article class="tier tier--lead">
-          <header class="tier__top">
-            <h3 class="tier__name">$500 / 90 minutes</h3>
-            <p class="tier__pitch">Bring one decision. Leave with next steps.</p>
-          </header>
-          <dl class="spec">
-            <div><dt>Best for</dt><dd>You have already established your one problem with Ace’s Assistant and want to work through it.</dd></div>
-            <div><dt>What happens</dt><dd>
-              <ul class="tier__benefits">
-                <li>Before: send a short overview of the issue, your role, and the decision ahead</li>
-                <li>Together: examine the situation, challenge assumptions, and compare possible next steps</li>
-                <li>After: receive a concise reviewed recap of options, open questions, and agreed actions</li>
-              </ul>
-            </dd></div>
-          </dl>
-          <!-- STRIPE PLACEHOLDER — the 90-minute working session button is
-               not configured yet. Swap this link for a <stripe-buy-button>
-               (the buy-button.js script is already in <head>) once it is. -->
-          <a class="btn btn--gold tier__cta" href="contact.html">Request a Session</a>
-        </article>
+      <h2 class="hero__h3">At a Glance</h2>
+      <dl class="spec spec--page">
+        <div><dt>Fee</dt><dd class="tier__inv">$500 CAD</dd></div>
+        <div><dt>Format</dt><dd>One Private Meeting (in-person, online, or phone)</dd></div>
+        <div><dt>Best for</dt><dd>Owners who want straightforward and actionable insights for one situation now, and/or who want to determine fit within one meeting.</dd></div>
+      </dl>
 
-        <article class="tier">
-          <header class="tier__top">
-            <h3 class="tier__name">$200 / 60 minutes</h3>
-            <p class="tier__pitch">Start the conversation.</p>
-          </header>
-          <dl class="spec">
-            <div><dt>Best for</dt><dd>You know something needs to change but not yet what the problem is — or you are interested in the Mastermind and want to learn more.</dd></div>
-            <div><dt>What happens</dt><dd>
-              <ul class="tier__benefits">
-                <li>Once payment is received, Ace’s Assistant emails you questions to answer before you meet</li>
-                <li>Once answered, the Assistant requests your availability and schedules your Meeting</li>
-                <li>Meetings may continue longer than 60 minutes, subject to Ace’s discretion</li>
-              </ul>
-            </dd></div>
-          </dl>
-          <a class="btn btn--outline tier__cta" href="#book-200">Book This Meeting</a>
-        </article>
-      </div>
+      <h2 class="hero__h3">The Approach</h2>
+      <ol class="steps">
+        <li class="step"><p class="step__n">01</p><h3 class="step__t">Inquiry</h3>
+          <p>You share your issue and any relevant context. Ace listens and asks the questions that are needed. The conversation can be direct or more casual and situational.</p></li>
+        <li class="step"><p class="step__n">02</p><h3 class="step__t">Assessment</h3>
+          <p>Discussions are considered before Ace offers his thoughts on any next steps. He may suggest a new move, a small tweak to what you are already doing, or confirmation to stay the course.</p></li>
+        <li class="step"><p class="step__n">03</p><h3 class="step__t">Recap</h3>
+          <p>You go over the situation with Ace once more. He provides a concise recap of the options on the table, so you have a good grasp of what you can do next.</p></li>
+        <li class="step"><p class="step__n">04</p><h3 class="step__t">Next Steps</h3>
+          <p>Book an additional Private Working Session, or employ Ace’s Ongoing Private Advisory service. Remind yourself of any advice/steps, and follow it to the best of your ability.</p></li>
+      </ol>
 
-      <div class="tiernotes">
-        <p>Both meetings are held by phone, video, or in person by arrangement. Fees are in Canadian dollars.</p>
-        <p>The 90-minute session stands on its own. If further involvement would help, you can discuss <a href="advisory.html">Private Advisory</a> or a separate <a href="scout.html">on-site assignment</a>. There is no requirement to continue.</p>
-        <p>If your 60-minute Meeting leads to <a href="advisory.html">Private Advisory</a> or an <a href="mastermind-membership.html">Invested Aces Mastermind</a> Membership within the following month, the $200 fee will be credited.</p>
-      </div>
+      <p class="hero__sub">Private Working Sessions are $500 for a 90-120-minute meeting and are scheduled through Ace’s Assistant. Allow one-two business days for scheduling.</p>
+      <p class="hero__sub">Come ready to discuss the situation as you currently see it and answer questions honestly. You do not need a polished brief. Prior context helps when it exists, but it is not required.</p>
+      <p class="hero__sub">This session covers one issue. Additional issues or a continued working relationship with Ace are discussed separately.</p>
 
-      <h2 class="hero__h3" id="book-200">Book the 60-Minute Meeting</h2>
       <div class="hero__cta">
-        <stripe-buy-button
-          buy-button-id="buy_btn_1U7n6FIy2nfF4ECQnzLBkZxU"
-          publishable-key="pk_live_51PHBn7Iy2nfF4ECQnWYPr9qgNjIa4gjXzTDU3Dmn8n8ZvRnx1F6yPyizbZ2dYhJ9BvRr2WUvmbkuH5ZYUNT95m0I00RnsDOK14"
-        >
-        </stripe-buy-button>
+        <a class="btn btn--gold" href="contact.html">Get Started</a>
       </div>
 
+      <p class="hero__note">If one session is not enough, or you want Ace to be available for on-the-spot calls between sessions, look at <a href="advisory.html">Ongoing Private Advisory</a>.</p>
       <a class="hero__back hero__back--bottom" href="index.html"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-arrow"></use></svg> Back</a>
     </div>
 
   </div>
 </section>
-
 <!-- ══════════════ 11. FOOTER ══════════════ -->
 <footer class="foot">
   <div class="wrap">
@@ -207,18 +164,21 @@
       <div class="foot__brand">
         <span class="brand__mark brand__mark--lg"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-spade"></use></svg></span>
         <p class="foot__word">ACE SPADERS</p>
-        <blockquote class="foot__quote">"If you're going to suffer, suffer success. I Love Gold and Gold People."</blockquote>
+        <blockquote class="foot__quote">"If you're gonna suffer, suffer success. I Love Gold &amp; Gold People."</blockquote>
         <p class="foot__quote-by">- Matthew Ferguson</p>
 
+        <p class="foot__addr">1281 Hornby St, Vancouver, BC V6Z 0G8<br><span class="foot__addr-note">By appointment only</span></p>
+
         <blockquote class="foot__quote">"Understanding people just takes a willingness to Listen."</blockquote>
-        <p class="foot__quote-by">- T. Queen of Hearts</p>
+        <p class="foot__quote-by">- T, Queen Of Hearts</p>
       </div>
       <div class="foot__col">
         <nav class="foot__nav" aria-label="The work">
           <p class="foot__h">The work</p>
           <ul>
-            <li><a href="advisory.html">Private Advisory</a></li>
-            <li><a href="meetings.html">Meetings</a></li>
+            <li><a href="advisory.html">Ongoing Private Advisory</a></li>
+            <li><a href="private-working-session.html">Private Working Session</a></li>
+            <li><a href="#" class="js-ace-ask" data-ace-topic="onsite">Onsite Assignments</a></li>
             <li><a href="mastermind-membership.html">The Invested Aces Mastermind</a></li>
             <li><a href="group-activities.html">Ace’s Group Activities</a></li>
           </ul>
@@ -236,9 +196,8 @@
         <nav class="foot__nav" aria-label="Also available">
           <p class="foot__h">Also available</p>
           <ul>
-            <li><a href="scout.html">On-Site Assignments</a></li>
-            <li><a href="premium-pickup-transport.html">Premium Pickup &amp; Transport</a></li>
-            <li><a href="public-speaking.html">Public Speaking</a></li>
+            <li><a href="premium-pickup-transport.html">Premium pickup &amp; transport</a></li>
+            <li><a href="public-speaking.html">Public speaking</a></li>
           </ul>
         </nav>
 
@@ -265,16 +224,10 @@
         <nav class="foot__nav foot__nav--stacked" aria-label="Hire Ace's Webmaster">
           <p class="foot__h">Hire Ace's Webmaster</p>
           <ul>
-            <li><a href="https://spacewize.dev/webdev/" target="_blank" rel="noopener noreferrer">spacewize.dev<wbr>/webdev</a></li>
+            <li><a href="http://spacewize.github.io/spacewize" target="_blank" rel="noopener noreferrer">spacewize.github.io<wbr>/spacewize</a></li>
           </ul>
         </nav>
 
-        <nav class="foot__nav foot__nav--stacked" aria-label="Location">
-          <p class="foot__h">Location</p>
-          <ul>
-            <li><a href="contact.html">1281 Hornby St, Vancouver, BC</a><span class="foot__addr-note">By appointment only</span></li>
-          </ul>
-        </nav>
       </div>
     </div>
 

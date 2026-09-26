@@ -327,7 +327,9 @@
     if (!links.length || !('IntersectionObserver' in window)) return;
     var map = {};
     var sections = links.map(function (a) {
-      var el = document.querySelector(a.getAttribute('href'));
+      var href = a.getAttribute('href');
+      /* Only same-page section links; "#" alone (Little Ace triggers) isn't a selector. */
+      var el = /^#[\w-]+$/.test(href) ? document.querySelector(href) : null;
       if (el) map[el.id] = a;
       return el;
     }).filter(Boolean);
@@ -437,7 +439,7 @@
        every unticked box as a failed required field, so the group is checked
        as a unit and its inputs are skipped by the per-field wiring. */
     var group = form.querySelector('[data-checkgroup]');
-    var boxes = group ? [].slice.call(group.querySelectorAll('input[type="checkbox"]')) : [];
+    var boxes = group ? [].slice.call(group.querySelectorAll('input[type="checkbox"], input[type="radio"]')) : [];
 
     function validateGroup() {
       if (!group) return true;
@@ -451,7 +453,7 @@
 
     var fields = [].slice.call(form.querySelectorAll('input, select, textarea'));
     fields.forEach(function (f) {
-      if (f.type === 'checkbox') {
+      if (f.type === 'checkbox' || f.type === 'radio') {
         // only ever clears an error already showing — never scolds mid-choice
         f.addEventListener('change', function () {
           if (group && group.classList.contains('is-bad')) validateGroup();
@@ -470,7 +472,7 @@
       // walked in DOM order, so focus lands on the first problem down the page
       fields.forEach(function (f) {
         var good;
-        if (f.type === 'checkbox') {
+        if (f.type === 'checkbox' || f.type === 'radio') {
           if (groupChecked) return;              // the whole group counts once
           groupChecked = true;
           good = validateGroup();
@@ -486,6 +488,19 @@
       }
 
       var d = new FormData(form);
+      /* Any other form (the Mastermind application) sends every answer
+         under its own question, in page order. */
+      var generic = form.getAttribute('data-subject');
+      if (generic) {
+        var seen = {}, lines = [];
+        fields.forEach(function (f) {
+          if (!f.name || seen[f.name]) return;
+          seen[f.name] = 1;
+          lines.push(f.name, d.getAll(f.name).join(', ') || '—', '');
+        });
+        offerMail(generic + ' — ' + d.get('Full name'), lines.join('\n'));
+        return;
+      }
       // getAll, not get — "door" is now multi-valued, and a single-value read
       // would silently drop every selection after the first.
       var doors = d.getAll('door').join(', ');
@@ -500,7 +515,10 @@
         "What's stuck:",
         d.get('what')
       ].join('\n');
+      offerMail(subject, body);
+    });
 
+    function offerMail(subject, body) {
       /* Offer the compose window rather than firing mailto: blind. A bare
          mailto only works for whoever has a desktop client registered — for
          a webmail user it opens nothing at all, or an app they never use,
@@ -552,7 +570,7 @@
       status.textContent = 'Your application is ready.';
       // move focus so a keyboard or screen-reader user lands on the choices
       row.firstChild.focus();
-    });
+    }
   }
 
   /* ── PAGE SPADE REVEAL ──────────────────────────────────────────

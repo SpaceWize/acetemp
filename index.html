@@ -52,10 +52,14 @@
     <nav class="nav" aria-label="Primary">
       <ul class="nav__list" data-nav>
         <li class="nav__item nav__item--sub">
-          <a href="advisory.html">Advisory</a>
+          <a href="#about">About</a>
           <ul class="nav__sub">
-            <li><a href="meetings.html">Meetings</a></li>
-            <li><a href="scout.html">On-Site Assignments</a></li>
+            <li><a href="#about">Ace Spaders</a></li>
+            <li><a href="advisory.html">Ongoing Private Advisory</a></li>
+            <li><a href="private-working-session.html">Private Working Session</a></li>
+            <li><a href="#" class="js-ace-ask" data-ace-topic="onsite">On-Site Assignments</a></li>
+            <li><a href="premium-pickup-transport.html">Premium Pickup &amp; Transport</a></li>
+            <li><a href="public-speaking.html">Public Speaking</a></li>
           </ul>
         </li>
         <li class="nav__item nav__item--sub">
@@ -72,14 +76,6 @@
             <li><a href="all-aces-networking-events.html">All Aces Networking Events</a></li>
           </ul>
         </li>
-        <li class="nav__item nav__item--sub">
-          <a href="#about">About</a>
-          <ul class="nav__sub">
-            <li><a href="public-speaking.html">Public Speaking</a></li>
-            <li><a href="premium-pickup-transport.html">Premium Pickup &amp; Transport</a></li>
-          </ul>
-        </li>
-        <li><a href="contact.html">Contact</a></li>
       </ul>
     </nav>
 
@@ -97,11 +93,14 @@
     <ul>
       <li class="mnav__group">
         <button class="mnav__toggle" type="button" aria-expanded="false"
-                aria-controls="msub-advisory" data-mtoggle>Advisory</button>
-        <ul class="mnav__sub" id="msub-advisory" hidden>
-          <li><a href="advisory.html">Private Advisory</a></li>
-          <li><a href="meetings.html">Meetings</a></li>
-          <li><a href="scout.html">On-Site Assignments</a></li>
+                aria-controls="msub-about" data-mtoggle>About</button>
+        <ul class="mnav__sub" id="msub-about" hidden>
+          <li><a href="#about">Ace Spaders</a></li>
+          <li><a href="advisory.html">Ongoing Private Advisory</a></li>
+          <li><a href="private-working-session.html">Private Working Session</a></li>
+          <li><a href="#" class="js-ace-ask" data-ace-topic="onsite">On-Site Assignments</a></li>
+          <li><a href="premium-pickup-transport.html">Premium Pickup &amp; Transport</a></li>
+          <li><a href="public-speaking.html">Public Speaking</a></li>
         </ul>
       </li>
       <li class="mnav__group">
@@ -122,16 +121,6 @@
           <li><a href="all-aces-networking-events.html">All Aces Networking Events</a></li>
         </ul>
       </li>
-      <li class="mnav__group">
-        <button class="mnav__toggle" type="button" aria-expanded="false"
-                aria-controls="msub-about" data-mtoggle>About</button>
-        <ul class="mnav__sub" id="msub-about" hidden>
-          <li><a href="#about">About Ace</a></li>
-          <li><a href="public-speaking.html">Public Speaking</a></li>
-          <li><a href="premium-pickup-transport.html">Premium Pickup &amp; Transport</a></li>
-        </ul>
-      </li>
-      <li><a href="contact.html">Contact</a></li>
     </ul>
   </nav>
   <!-- #apply, not #contact: stacked, the form sits below the appointment
@@ -167,15 +156,13 @@
         <span class="hero__line hero__line--gold">You need someone<br>in the room</span>
       </h1>
 
-     
       <div class="hero__cta">
-        <a class="btn btn--gold" href="meetings.html">Request a Working Session</a>
+        <a class="btn btn--gold" href="private-working-session.html">Request a Working Session</a>
         <a class="btn btn--ghost" href="advisory.html">Explore Ongoing Advisory</a>
       </div>
 
       <!-- Rides beat 4 with the CTAs it qualifies. -->
-      <p class="hero__micro">Meet your Ace Success Strategist, Evaluator & Transformationalist
-</p>
+      <p class="hero__micro">Meet your Ace Success Strategist, Evaluator &amp; Transformationalist</p>
     </div>
 
     <div class="hero__cue" aria-hidden="true"><span>Scroll</span><i></i></div>
@@ -197,7 +184,7 @@
         </header>
         <p class="tier__pitch">Focused on one meaningful business issue: An inquisitive and  insightful conversation, followed by a concise recap of options and a discussion of next steps.</p>
         <p class="tier__price">$500</p>
-        <a class="btn btn--outline tier__cta" href="meetings.html">Learn more</a>
+        <a class="btn btn--outline tier__cta" href="private-working-session.html">Learn more</a>
       </article>
 
       <article class="tier tier--lead">
@@ -215,8 +202,7 @@
         </header>
         <p class="tier__pitch">Evaluations of work culture, locations, or opportunities (locally or abroad): Get the unfiltered report you need to handle decisions, operations, teams, resources, and more.</p>
         <p class="tier__price tier__price--custom">Quoted by assignment</p>
-        <!-- Makes Little Ace chat open and tells them that to learn more they must reach out to ace and his assistant with more information, and directs them to the contact form -->
-        <a class="btn btn--outline tier__cta" href="scout.html">Learn More</a>
+        <a class="btn btn--outline tier__cta js-ace-ask" href="#" data-ace-topic="onsite">Learn More</a>
       </article>
     </div>
   </div>
@@ -225,26 +211,24 @@
 <!-- ══════════════ 5b. PROCESS ══════════════ -->
 <section class="section process" id="process" aria-labelledby="process-h">
   <div class="wrap">
-    <div class="process__head"> <!-- Claude, Please check this one-->
-      <h3 class="h3 h3--light" id="process-h">Getting Started</h3>
+    <div class="process__head">
+      <h2 class="h3 h3--light process__h" id="process-h">Getting Started</h2>
     </div>
 
     <ol class="steps">
       <li class="step"><p class="step__n">01</p><h3 class="step__t">30 Minute Assessment</h3>
-        <p>Everything starts by speaking with Ace’s Assistant. Explain your situation and give an overview of what you’re looking for from Ace.
-</p></li>
+        <p>Everything starts by speaking with Ace’s Assistant. Explain your situation and give an overview of what you’re looking for from Ace.</p></li>
       <li class="step"><p class="step__n">02</p><h3 class="step__t">Approval</h3>
         <p>After your assessment call, Ace will review your request. If he agrees to work with you, his Assistant will provide you with a quote and agreement.</p></li>
       <li class="step"><p class="step__n">03</p><h3 class="step__t">Orientation</h3>
         <p>Once the agreement is signed and initial payment is made, you will be scheduled for a 60-minute Meeting with Ace to discuss your situation and/or potential next steps.</p></li>
       <li class="step"><p class="step__n">04</p><h3 class="step__t">Action</h3>
-        <p>Private Working Sessions are typically 90-120 minutes. Ongoing Private Advisory and On-site Assignments are subject to the scope of work and interactions agreed upon. </p></li>
+        <p>Private Working Sessions are typically 90-120 minutes. Ongoing Private Advisory and On-site Assignments are subject to the scope of work and interactions agreed upon.</p></li>
     </ol>
   </div>
 </section>
 
 
-  
 <!-- ══════════════ 6. THE CIRCLE — INVESTED ACES ══════════════
      The one gold surface on the page. The Mastermind is no longer one of
      the three ways to work with Ace directly; it is the circle around
@@ -327,9 +311,7 @@
       <p>If someone in his network needs to make a decision with incomplete information, Ace has often been asked to go take a look at things for them. This has been both locally and abroad. He travels to the area or site, assesses the actual conditions and reports back so the choice is grounded in reality rather than photos and second-hand accounts.</p>
       <p>There is also a quieter side to what he does. People who stay in conversation with him often find their perspective on a specific situation, decision, or long-term pattern begins to shift. Sometimes the shift is one that just needed reinforcing, other times it needed to be identified, but either way, the end result is a positive one. Many times the shift has been in regards to how someone relates to their own health, and Ace simply gave them a better way of seeing and approaching the things they already knew were needed.</p>
       <p>Join the growing number of people who have privately benefited from knowing Ace personally.</p>
-      <p>
-To meet him for yourself, you can book a Private Working Session or join one of his Group Activities, but you will get the most from Ace through his Ongoing Private Advisory; Or by becoming a member of the Invested Aces Mastermind. Having personal access to him on an ongoing basis will lead to a more successful and mutually beneficial relationship, because he enjoys helping out those within his circle.
-</p>
+      <p>To meet him for yourself, you can book a Private Working Session or join one of his Group Activities, but you will get the most from Ace through his Ongoing Private Advisory; Or by becoming a member of the Invested Aces Mastermind. Having personal access to him on an ongoing basis will lead to a more successful and mutually beneficial relationship, because he enjoys helping out those within his circle.</p>
       <p>There are also two things Ace has done for himself and others that still remain available:</p>
       <ul class="network__list">
         <li><a href="premium-pickup-transport.html">Premium Pickup and Transport</a> with his Cybertruck when the situation calls for something more reliable and with more presence than Uber or Lyft. (For Mastermind Members or as a premium engagement.)</li>
@@ -490,8 +472,9 @@ To meet him for yourself, you can book a Private Working Session or join one of 
           <legend>Regarding</legend>
           <p class="hint" id="hint-door">Choose all that apply</p>
           <ul class="checks__grid">
-            <li><label class="check"><input type="checkbox" name="door" value="A Meeting" aria-describedby="hint-door e-door"><span>A Meeting</span></label></li>
-            <li><label class="check"><input type="checkbox" name="door" value="A Commitment"><span>A Commitment</span></label></li>
+            <li><label class="check"><input type="checkbox" name="door" value="Ongoing Private Advisory" aria-describedby="hint-door e-door"><span>Ongoing Private Advisory</span></label></li>
+            <li><label class="check"><input type="checkbox" name="door" value="Private Working Session"><span>Private Working Session</span></label></li>
+            <li><label class="check"><input type="checkbox" name="door" value="Onsite Assignments"><span>Onsite Assignments</span></label></li>
             <li><label class="check"><input type="checkbox" name="door" value="The Invested Aces Mastermind"><span>The Invested Aces Mastermind</span></label></li>
             <li><label class="check"><input type="checkbox" name="door" value="All Aces Networking Events"><span>All Aces Networking Events</span></label></li>
             <li><label class="check"><input type="checkbox" name="door" value="Aces Running Group"><span>Aces Running Group</span></label></li>
@@ -543,18 +526,21 @@ To meet him for yourself, you can book a Private Working Session or join one of 
       <div class="foot__brand">
         <span class="brand__mark brand__mark--lg"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-spade"></use></svg></span>
         <p class="foot__word">ACE SPADERS</p>
-        <blockquote class="foot__quote">"If you're going to suffer, suffer success. I Love Gold and Gold People."</blockquote>
+        <blockquote class="foot__quote">"If you're gonna suffer, suffer success. I Love Gold &amp; Gold People."</blockquote>
         <p class="foot__quote-by">- Matthew Ferguson</p>
 
+        <p class="foot__addr">1281 Hornby St, Vancouver, BC V6Z 0G8<br><span class="foot__addr-note">By appointment only</span></p>
+
         <blockquote class="foot__quote">"Understanding people just takes a willingness to Listen."</blockquote>
-        <p class="foot__quote-by">- T. Queen of Hearts</p>
+        <p class="foot__quote-by">- T, Queen Of Hearts</p>
       </div>
       <div class="foot__col">
         <nav class="foot__nav" aria-label="The work">
           <p class="foot__h">The work</p>
           <ul>
-            <li><a href="advisory.html">Private Advisory</a></li>
-            <li><a href="meetings.html">Meetings</a></li>
+            <li><a href="advisory.html">Ongoing Private Advisory</a></li>
+            <li><a href="private-working-session.html">Private Working Session</a></li>
+            <li><a href="#" class="js-ace-ask" data-ace-topic="onsite">Onsite Assignments</a></li>
             <li><a href="mastermind-membership.html">The Invested Aces Mastermind</a></li>
             <li><a href="group-activities.html">Ace’s Group Activities</a></li>
           </ul>
@@ -572,9 +558,8 @@ To meet him for yourself, you can book a Private Working Session or join one of 
         <nav class="foot__nav" aria-label="Also available">
           <p class="foot__h">Also available</p>
           <ul>
-            <li><a href="scout.html">On-Site Assignments</a></li>
-            <li><a href="premium-pickup-transport.html">Premium Pickup &amp; Transport</a></li>
-            <li><a href="public-speaking.html">Public Speaking</a></li>
+            <li><a href="premium-pickup-transport.html">Premium pickup &amp; transport</a></li>
+            <li><a href="public-speaking.html">Public speaking</a></li>
           </ul>
         </nav>
 
@@ -601,16 +586,10 @@ To meet him for yourself, you can book a Private Working Session or join one of 
         <nav class="foot__nav foot__nav--stacked" aria-label="Hire Ace's Webmaster">
           <p class="foot__h">Hire Ace's Webmaster</p>
           <ul>
-            <li><a href="https://spacewize.dev/webdev/" target="_blank" rel="noopener noreferrer">spacewize.dev<wbr>/webdev</a></li>
+            <li><a href="http://spacewize.github.io/spacewize" target="_blank" rel="noopener noreferrer">spacewize.github.io<wbr>/spacewize</a></li>
           </ul>
         </nav>
 
-        <nav class="foot__nav foot__nav--stacked" aria-label="Location">
-          <p class="foot__h">Location</p>
-          <ul>
-            <li><a href="contact.html">1281 Hornby St, Vancouver, BC</a><span class="foot__addr-note">By appointment only</span></li>
-          </ul>
-        </nav>
       </div>
     </div>
 

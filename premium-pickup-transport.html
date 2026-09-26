@@ -34,10 +34,14 @@
     <nav class="nav" aria-label="Primary">
       <ul class="nav__list" data-nav>
         <li class="nav__item nav__item--sub">
-          <a href="advisory.html">Advisory</a>
+          <a href="index.html#about">About</a>
           <ul class="nav__sub">
-            <li><a href="meetings.html">Meetings</a></li>
-            <li><a href="scout.html">On-Site Assignments</a></li>
+            <li><a href="index.html#about">Ace Spaders</a></li>
+            <li><a href="advisory.html">Ongoing Private Advisory</a></li>
+            <li><a href="private-working-session.html">Private Working Session</a></li>
+            <li><a href="#" class="js-ace-ask" data-ace-topic="onsite">On-Site Assignments</a></li>
+            <li><a href="premium-pickup-transport.html">Premium Pickup &amp; Transport</a></li>
+            <li><a href="public-speaking.html">Public Speaking</a></li>
           </ul>
         </li>
         <li class="nav__item nav__item--sub">
@@ -54,14 +58,6 @@
             <li><a href="all-aces-networking-events.html">All Aces Networking Events</a></li>
           </ul>
         </li>
-        <li class="nav__item nav__item--sub">
-          <a href="index.html#about">About</a>
-          <ul class="nav__sub">
-            <li><a href="public-speaking.html">Public Speaking</a></li>
-            <li><a href="premium-pickup-transport.html">Premium Pickup &amp; Transport</a></li>
-          </ul>
-        </li>
-        <li><a href="contact.html">Contact</a></li>
       </ul>
     </nav>
 
@@ -79,11 +75,14 @@
     <ul>
       <li class="mnav__group">
         <button class="mnav__toggle" type="button" aria-expanded="false"
-                aria-controls="msub-advisory" data-mtoggle>Advisory</button>
-        <ul class="mnav__sub" id="msub-advisory" hidden>
-          <li><a href="advisory.html">Private Advisory</a></li>
-          <li><a href="meetings.html">Meetings</a></li>
-          <li><a href="scout.html">On-Site Assignments</a></li>
+                aria-controls="msub-about" data-mtoggle>About</button>
+        <ul class="mnav__sub" id="msub-about" hidden>
+          <li><a href="index.html#about">Ace Spaders</a></li>
+          <li><a href="advisory.html">Ongoing Private Advisory</a></li>
+          <li><a href="private-working-session.html">Private Working Session</a></li>
+          <li><a href="#" class="js-ace-ask" data-ace-topic="onsite">On-Site Assignments</a></li>
+          <li><a href="premium-pickup-transport.html">Premium Pickup &amp; Transport</a></li>
+          <li><a href="public-speaking.html">Public Speaking</a></li>
         </ul>
       </li>
       <li class="mnav__group">
@@ -104,16 +103,6 @@
           <li><a href="all-aces-networking-events.html">All Aces Networking Events</a></li>
         </ul>
       </li>
-      <li class="mnav__group">
-        <button class="mnav__toggle" type="button" aria-expanded="false"
-                aria-controls="msub-about" data-mtoggle>About</button>
-        <ul class="mnav__sub" id="msub-about" hidden>
-          <li><a href="index.html#about">About Ace</a></li>
-          <li><a href="public-speaking.html">Public Speaking</a></li>
-          <li><a href="premium-pickup-transport.html">Premium Pickup &amp; Transport</a></li>
-        </ul>
-      </li>
-      <li><a href="contact.html">Contact</a></li>
     </ul>
   </nav>
   <a class="btn btn--gold mnav__cta" href="contact.html">Start the Conversation</a>
@@ -122,7 +111,7 @@
 <!-- The home hero, exactly: same stage, same spotlight, same type ramp. No
      [data-hero], so heroChoreography() stays unbound — see styles.css.
      One white title line, no gold second line. -->
-<section class="hero hero--page" aria-label="Premium Pickup & Transport">
+<section class="hero hero--page" aria-label="Premium Pickup &amp; Transport">
   <div class="hero__stage">
 
     <div class="hero__content">
@@ -132,14 +121,15 @@
         <span class="hero__line">Premium Pickup &amp; Transport</span>
       </h1>
 
-      <p class="hero__sub">Ace offers Premium Pickup and Transport in his Cybertruck for situations where a standard rideshare feels too casual, unreliable, or lacking in presence. Ace arrives on time, with discretion, and in a vehicle and manner that matches the importance of the occasion.</p>
+      <p class="hero__sub">For situations where a standard rideshare feels too casual, unreliable, or lacking in presence, Ace arrives on time, with discretion, and in a vehicle and manner that matches the importance of the occasion.</p>
 
-      <p class="hero__sub">This can be for airport transfers, client or investor meetings, events, time-sensitive deliveries, or any movement where the vehicle and driver need to feel intentional. When required, Ace will adjust his presentation to fit the setting so the arrival carries the right weight. (Formal, Business Casual, Street Nice, or Comfy Casual.)</p>
+      <p class="hero__sub">This can be for airport transfers, client or investor meetings, events, time-sensitive deliveries, or any movement where the vehicle and driver need to feel intentional. When required, Ace will adjust his presence to fit the setting so the arrival carries the right weight. (Formal, Business Casual, Street Nice, or Comfy Casual.)</p>
 
-      <p class="hero__sub">There are two ways to access this:</p>
+      <p class="hero__sub">There are three ways to access this:</p>
       <ul class="hero__list">
-        <li>People in the <a href="mastermind-membership.html">Invested Aces Mastermind</a> can use it as a Membership benefit</li>
-        <li>Others can book it as a paid engagement</li>
+        <li>Certain Members of the <a href="mastermind-membership.html">Invested Aces Mastermind</a> can use it as a Membership benefit</li>
+        <li>It can be discussed as an Add-On for Ongoing Private Advisory clients</li>
+        <li>The standalone service may be booked as a paid engagement</li>
       </ul>
 
       <h2 class="hero__h3">Paid Engagement Structure</h2>
@@ -147,14 +137,17 @@
            homepage. Unlike the membership tiers, the middle card here
            keeps .tier--lead: "Preferred" is named as the preferred option
            in the copy, so the trio genuinely does have a recommended
-           pick to flag. -->
+           pick to flag. The scheduling notes sit inside the same tray,
+           under the row, rather than in a separate panel below it. -->
       <div class="tiers">
         <article class="tier">
           <header class="tier__top">
             <h3 class="tier__name">Minimum</h3>
           </header>
           <dl class="spec">
-            <div><dt>Rate</dt><dd>Local and Lower Mainland bookings are charged at $200 per hour with a firm 3-hour minimum of $600. Even if the actual time used is less than three hours, the full minimum applies.</dd></div>
+            <div><dt>Fee</dt><dd class="tier__inv">$600</dd></div>
+            <div><dt>Format</dt><dd>Local and Lower Mainland bookings</dd></div>
+            <div><dt>Best for</dt><dd>Short local runs where you need Ace and the vehicle. A 3-hour minimum applies.</dd></div>
           </dl>
         </article>
 
@@ -163,33 +156,35 @@
             <h3 class="tier__name">Preferred</h3>
           </header>
           <dl class="spec">
-            <div><dt>Rate</dt><dd>Preferred longer local engagements (4-6 hours) continue at $200/hr, or can be booked as a fixed 6-hour package of $1,100. Longer local days are quoted accordingly.</dd></div>
+            <div><dt>Fee</dt><dd class="tier__inv">$1,000</dd></div>
+            <div><dt>Format</dt><dd>Longer/distant engagements.</dd></div>
+            <div><dt>Best for</dt><dd>Executive transport on the go. A 6-hour minimum applies.</dd></div>
           </dl>
         </article>
 
         <article class="tier">
           <header class="tier__top">
-            <h3 class="tier__name">Extended Travel</h3>
+            <h3 class="tier__name">Extended</h3>
           </header>
           <dl class="spec">
-            <div><dt>Rate</dt><dd>Long-distance travel and overnight stays are available at a higher rate to properly cover time, vehicle, accommodations, and meals. These are quoted individually based on the itinerary.</dd></div>
+            <div><dt>Fee</dt><dd class="tier__inv">Quoted individually from the itinerary</dd></div>
+            <div><dt>Format</dt><dd>Long-distance travel and overnight stays</dd></div>
+            <div><dt>Best for</dt><dd>Trips that run past the local area, or that need the vehicle, time, accommodations, and meals covered properly</dd></div>
           </dl>
         </article>
-      </div>
 
-      <!-- Same notes panel as the membership page uses under its tiers. -->
-      <div class="tiernotes">
-        <p>Members of the <a href="mastermind-membership.html">Invested Aces Mastermind</a> can access this service for $175/hr.</p>
+        <p class="tiers__note">Additional time past the minimums is charged at $200/hour.</p>
+        <p class="tiers__note">Select Members of the <a href="mastermind-membership.html">Invested Aces Mastermind</a> can access the Minimum and Preferred options for $150/hr.</p>
       </div>
 
       <h2 class="hero__h3">Availability Note</h2>
-      <p class="hero__sub">Ace hosts regular monthly Mastermind Meetings on the 2nd Tuesday and 3rd Saturday, plus Group Activities on the 2nd Saturday (<a href="aces-running-group.html">Ace’s Running Group</a>) and 3rd Wednesday (<a href="aces-poker-night.html">Aces Poker Night</a>), and a <a href="all-aces-networking-events.html">Networking Event</a> once every 3 months. Transport bookings must work around these commitments.</p>
-      <p class="hero__sub">Bookings that support attendance at these events (pickup before, attendance, and return after) are welcome and can be arranged.</p>
+      <p class="hero__sub">Ace is scheduled for meetings throughout the month with clients.</p>
+      <p class="hero__sub">Ace also hosts regular monthly Mastermind Meetings on the 2nd Tuesday and 3rd Saturday, plus Group Activities on the 2nd Saturday (<a href="aces-running-group.html">Ace’s Running Group</a>) and 3rd Wednesday (<a href="aces-poker-night.html">Aces Poker Night</a>), and a <a href="all-aces-networking-events.html">Networking Event</a> once every 3 months. Transport bookings must work around these commitments.</p>
+      <p class="hero__sub">Bookings that support attendance at Ace’s events (pickup before, attendance, and return after) are welcome and can be arranged.</p>
 
       <h2 class="hero__h3">How to Book</h2>
       <p class="hero__sub">Because availability is limited and bookings are handled personally, there is no online calendar.</p>
       <p class="hero__sub">To inquire or request a booking, use the Contact form and include your preferred date(s), approximate times, pickup/drop-off locations, and any relevant details about the occasion. Ace’s Assistant will respond to confirm availability and provide a clear quote.</p>
-      <p class="hero__sub">A $200 deposit is required to secure the booking. The remaining balance is due upon pickup.</p>
       <p class="hero__sub">All rates are in CAD and exclude GST. Clear terms on timing, cancellation, and what is included are provided at booking.</p>
 
       <div class="hero__cta">
@@ -211,18 +206,21 @@
       <div class="foot__brand">
         <span class="brand__mark brand__mark--lg"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-spade"></use></svg></span>
         <p class="foot__word">ACE SPADERS</p>
-        <blockquote class="foot__quote">"If you're going to suffer, suffer success. I Love Gold and Gold People."</blockquote>
+        <blockquote class="foot__quote">"If you're gonna suffer, suffer success. I Love Gold &amp; Gold People."</blockquote>
         <p class="foot__quote-by">- Matthew Ferguson</p>
 
+        <p class="foot__addr">1281 Hornby St, Vancouver, BC V6Z 0G8<br><span class="foot__addr-note">By appointment only</span></p>
+
         <blockquote class="foot__quote">"Understanding people just takes a willingness to Listen."</blockquote>
-        <p class="foot__quote-by">- T. Queen of Hearts</p>
+        <p class="foot__quote-by">- T, Queen Of Hearts</p>
       </div>
       <div class="foot__col">
         <nav class="foot__nav" aria-label="The work">
           <p class="foot__h">The work</p>
           <ul>
-            <li><a href="advisory.html">Private Advisory</a></li>
-            <li><a href="meetings.html">Meetings</a></li>
+            <li><a href="advisory.html">Ongoing Private Advisory</a></li>
+            <li><a href="private-working-session.html">Private Working Session</a></li>
+            <li><a href="#" class="js-ace-ask" data-ace-topic="onsite">Onsite Assignments</a></li>
             <li><a href="mastermind-membership.html">The Invested Aces Mastermind</a></li>
             <li><a href="group-activities.html">Ace’s Group Activities</a></li>
           </ul>
@@ -240,9 +238,8 @@
         <nav class="foot__nav" aria-label="Also available">
           <p class="foot__h">Also available</p>
           <ul>
-            <li><a href="scout.html">On-Site Assignments</a></li>
-            <li><a href="premium-pickup-transport.html">Premium Pickup &amp; Transport</a></li>
-            <li><a href="public-speaking.html">Public Speaking</a></li>
+            <li><a href="premium-pickup-transport.html">Premium pickup &amp; transport</a></li>
+            <li><a href="public-speaking.html">Public speaking</a></li>
           </ul>
         </nav>
 
@@ -269,16 +266,10 @@
         <nav class="foot__nav foot__nav--stacked" aria-label="Hire Ace's Webmaster">
           <p class="foot__h">Hire Ace's Webmaster</p>
           <ul>
-            <li><a href="https://spacewize.dev/webdev/" target="_blank" rel="noopener noreferrer">spacewize.dev<wbr>/webdev</a></li>
+            <li><a href="http://spacewize.github.io/spacewize" target="_blank" rel="noopener noreferrer">spacewize.github.io<wbr>/spacewize</a></li>
           </ul>
         </nav>
 
-        <nav class="foot__nav foot__nav--stacked" aria-label="Location">
-          <p class="foot__h">Location</p>
-          <ul>
-            <li><a href="contact.html">1281 Hornby St, Vancouver, BC</a><span class="foot__addr-note">By appointment only</span></li>
-          </ul>
-        </nav>
       </div>
     </div>
 
