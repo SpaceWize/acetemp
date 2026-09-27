@@ -147,9 +147,27 @@ body{
   opacity:0;transition:opacity var(--t-mid) var(--ease);
 }
 .aop.is-on{opacity:1}
-/* Over bare copy, the same strength the cards' and buttons' 70% ink fill
-   leaves showing through — see overBareText() in main.js. */
-.aop.is-on.is-dim{opacity:.3}
+/* Backdrops for copy that sits straight on the page ground, revealed by the
+   spade — see "Backdrops for bare text" in main.js, which places one <i>
+   per text block and lights it when the spade reaches its outer edge.
+
+   The same 70% ink the reservoir tiles and the other pages' buttons use,
+   with no border: each shape is solid ink with a box-shadow in the same
+   ink, solid for its spread and then blurred out, so it fades to nothing
+   ~36px past the text. The 70% is on the layer, not the shapes, so where
+   two shapes overlap they merge instead of stacking darker.
+
+   Absolute in page coordinates (not fixed) so the shapes scroll with the
+   text. z-index 0 and after .aop in the DOM: above the gold, below every
+   section (z-index 1). */
+.aop-veil{position:absolute;left:0;top:0;width:0;height:0;z-index:0;
+  pointer-events:none;opacity:.7}
+.aop-veil i{
+  position:absolute;background:var(--ink-800);
+  box-shadow:0 0 18px 14px var(--ink-800);
+  opacity:0;transition:opacity var(--t-mid) var(--ease);
+}
+.aop-veil i.is-lit{opacity:1}
 
 /* The layer is z-index:0, so everything the reader reads has to sit above
    it. These are transparent, so the gold still shows through.

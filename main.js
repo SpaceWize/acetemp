@@ -560,6 +560,7 @@
       smooth.y += (raw.y - smooth.y) * 0.18;
       layer.style.setProperty('--gx', smooth.x.toFixed(1) + 'px');
       layer.style.setProperty('--gy', smooth.y.toFixed(1) + 'px');
+      reveal();
       if (Math.abs(raw.x - smooth.x) < 0.5 && Math.abs(raw.y - smooth.y) < 0.5) {
         running = false;
         return;
@@ -567,63 +568,136 @@
       requestAnimationFrame(frame);
     }
 
-    /* Dim over bare text. Cards, trays and buttons have a 70% fill, so the
-       spades only show faintly through them; copy sitting straight on the
-       page ground had none, and the full-strength gold made whatever the
-       cursor rested on hard to read. Over boxless text the layer drops to
-       the same strength a fill would leave (see .aop.is-dim).
+    /* Backdrops for bare text. Cards, trays and buttons have a 70% fill,
+       so the spades only show faintly through them; copy sitting straight
+       on the page ground had none, and full-strength gold behind it made
+       it hard to read. Each such text block now carries a borderless,
+       feathered backdrop of that same 70% fill (.lit-text in styles.css),
+       hidden until the spade reaches the outermost faded pixels of it.
 
-       The hit test is the text's own extent (a Range around the block's
-       contents), not the block's box — a heading's box runs the full column
-       width even when its words stop halfway. The range's bounding box is
-       used rather than each line, so moving between lines of a paragraph
-       doesn't blink. */
+       The backdrops are not painted on the text elements themselves. Two
+       neighbouring paragraphs' feathered edges overlap, and two 70% layers
+       stacked read as a dark band between them. Instead each is a solid
+       shape on one shared layer (.aop-veil) that is itself 70% opaque —
+       overlapping solids merge, and the transparency is applied once. The
+       layer is positioned in page coordinates, so it scrolls with the text
+       rather than chasing it a frame behind.
+
+       The spade is tested as its own bounding box, derived from the mask:
+       the glyph spans 16.9 x 19.6 of its 24-unit viewBox, drawn inside a
+       32-unit mask tile sized to 2 x --gr, so it reaches 0.53 --gr either
+       side of the cursor and 0.61 --gr above and below. FEATHER is how far
+       past the text box the backdrop's fade runs (its shadow spread plus
+       blur), so the reveal starts right at its faintest edge. */
     var TEXT = 'p,h1,h2,h3,h4,h5,h6,li,dt,dd,blockquote,figcaption,label,legend,.eyebrow';
-    var PAD = 8;
+    var FEATHER = 36;
     function hasFill(el) {
       var bg = getComputedStyle(el).backgroundColor;
       return !(bg === 'transparent' || /rgba\(.*,\s*0\)$/.test(bg));
     }
-    function overBareText(x, y) {
-      var hit = document.elementFromPoint(x, y);
-      var block = hit && hit.closest(TEXT);
-      if (!block) return false;
-      // inside a filled surface already — that fill does the dimming
-      for (var el = block; el && el !== document.body; el = el.parentElement) {
-        if (hasFill(el)) return false;
+    function bare(el) {
+      // innermost blocks only: a blockquote's <p> gets the backdrop, not both
+      if (el.querySelector(TEXT)) return false;
+      if (!el.textContent.trim()) return false;
+      // inside a filled surface already, or the opaque hero/footer where the
+      // spade never shows — that fill does the job
+      for (var p = el; p && p !== document.body; p = p.parentElement) {
+        if (hasFill(p)) return false;
       }
-      var range = document.createRange();
-      range.selectNodeContents(block);
-      var r = range.getBoundingClientRect();
-      return x >= r.left - PAD && x <= r.right + PAD && y >= r.top - PAD && y <= r.bottom + PAD;
+      return true;
     }
-    var dimQueued = false, undimTimer = 0;
-    function checkDim() {
-      dimQueued = false;
-      if (!on) return;
-      if (overBareText(raw.x, raw.y)) {
-        clearTimeout(undimTimer); undimTimer = 0;
-        layer.classList.add('is-dim');
-      } else if (!undimTimer && layer.classList.contains('is-dim')) {
-        /* A beat before brightening, so crossing the gap between two
-           paragraphs doesn't flash the gold up and back down. */
-        undimTimer = setTimeout(function () {
-          undimTimer = 0;
-          if (!overBareText(raw.x, raw.y)) layer.classList.remove('is-dim');
-        }, 280);
+    var texts = [].slice.call(document.querySelectorAll(TEXT)).filter(bare);
+    var veil = document.createElement('div');
+    veil.className = 'aop-veil';
+    veil.setAttribute('aria-hidden', 'true');
+    layer.after(veil);                 // above the gold, below the content
+    var shapes = new Map();
+    function shapeFor(el) {
+      var s = shapes.get(el);
+      if (!s) { s = document.createElement('i'); veil.appendChild(s); shapes.set(el, s); }
+      return s;
+    }
+
+    var shown = texts;
+    if ('IntersectionObserver' in window) {
+      shown = [];
+      var tio = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          var i = shown.indexOf(e.target);
+          if (e.isIntersecting && i < 0) shown.push(e.target);
+          else if (!e.isIntersecting && i >= 0) {
+            shown.splice(i, 1);
+            var s = shapes.get(e.target);
+            if (s) s.classList.remove('is-lit');
+          }
+        });
+      }, { rootMargin: '60px 0px' });
+      texts.forEach(function (t) { tio.observe(t); });
+    }
+
+    function spadeR() { return Math.min(Math.max(130, window.innerWidth * 0.15), 235); }
+    var gr = spadeR();
+    var range = document.createRange();
+    function textBox(el) {
+      var box = { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity };
+      var walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      for (var n = walk.nextNode(); n; n = walk.nextNode()) {
+        if (!n.nodeValue.trim()) continue;
+        range.selectNodeContents(n);
+        var r = range.getBoundingClientRect();
+        if (!r.width) continue;
+        if (r.left < box.left) box.left = r.left;
+        if (r.top < box.top) box.top = r.top;
+        if (r.right > box.right) box.right = r.right;
+        if (r.bottom > box.bottom) box.bottom = r.bottom;
       }
+      if (box.left === Infinity) return { left: 0, top: -1e5, right: 0, bottom: -1e5, width: 0, height: 0 };
+      box.width = box.right - box.left;
+      box.height = box.bottom - box.top;
+      return box;
     }
-    function queueDim() {
-      if (!dimQueued) { dimQueued = true; requestAnimationFrame(checkDim); }
+    window.addEventListener('resize', function () { gr = spadeR(); });
+
+    function reveal() {
+      var hx = 0.53 * gr, hy = 0.61 * gr;
+      var l = smooth.x - hx, r = smooth.x + hx, t = smooth.y - hy, b = smooth.y + hy;
+      /* The text's own extent, not the block's box — a heading's box runs
+         the full column width even when its words stop halfway, and the
+         backdrop would too. Measured per text node and unioned: a Range
+         over the whole block would count any block-level child's box (the
+         page titles' .hero__line spans), which is full width again. Every
+         rect is read first, then written, so layout is computed once. */
+      var rects = shown.map(textBox);
+      var sx = window.scrollX, sy = window.scrollY;
+      shown.forEach(function (el, n) {
+        var q = rects[n];
+        var hit = on && q.right + FEATHER > l && q.left - FEATHER < r &&
+                  q.bottom + FEATHER > t && q.top - FEATHER < b;
+        var s = hit ? shapeFor(el) : shapes.get(el);
+        if (!s) return;
+        // keep a fading-out shape where its text is, too
+        if (hit || s.classList.contains('is-lit')) {
+          s.style.left = (q.left + sx).toFixed(1) + 'px';
+          s.style.top = (q.top + sy).toFixed(1) + 'px';
+          s.style.width = q.width.toFixed(1) + 'px';
+          s.style.height = q.height.toFixed(1) + 'px';
+        }
+        s.classList.toggle('is-lit', hit);
+      });
     }
-    // scrolling moves the page under a still cursor
-    window.addEventListener('scroll', queueDim, { passive: true });
+    var revealQueued = false;
+    function queueReveal() {
+      if (revealQueued) return;
+      revealQueued = true;
+      requestAnimationFrame(function () { revealQueued = false; reveal(); });
+    }
+    // scrolling moves the page under a still spade
+    window.addEventListener('scroll', queueReveal, { passive: true });
 
     window.addEventListener('pointermove', function (e) {
       if (e.pointerType === 'touch') return;
       raw.x = e.clientX;
       raw.y = e.clientY;
-      queueDim();
       /* Snap on the first move. Lerping from the off-canvas rest position
          would fly the spade in across the whole viewport. */
       if (!on) {
@@ -639,6 +713,7 @@
     document.addEventListener('mouseleave', function () {
       on = false;
       layer.classList.remove('is-on');
+      queueReveal();
     });
   }
 
