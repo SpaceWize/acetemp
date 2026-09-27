@@ -147,6 +147,9 @@ body{
   opacity:0;transition:opacity var(--t-mid) var(--ease);
 }
 .aop.is-on{opacity:1}
+/* Over bare copy, the same strength the cards' and buttons' 70% ink fill
+   leaves showing through — see overBareText() in main.js. */
+.aop.is-on.is-dim{opacity:.3}
 
 /* The layer is z-index:0, so everything the reader reads has to sit above
    it. These are transparent, so the gold still shows through.
@@ -1163,13 +1166,10 @@ body>section .btn--ghost:hover{
   gap:clamp(2.5rem,5vw,5rem);align-items:start}
 /* The portrait plate stays dark by design, so only its frame follows the
    section — a --line-dark edge would vanish into the cream around it. */
-/* Pushed down to clear the eyebrow AND the heading above the copy
-   column: with align-items:start the grid lines up the image with the
-   eyebrow label at the very top of the column, not with the first line
-   of actual body copy several elements down. Measured at desktop width;
-   the h2 above uses a vw-based clamp, so this drifts slightly at other
-   viewport widths rather than holding exactly everywhere. */
-.portrait{position:relative;overflow:hidden;border:1px solid var(--ink-600);margin-top:12.13rem}
+/* Top-aligned with the copy column's eyebrow (align-items:start does
+   that on its own). It used to be pushed 12rem down to meet the first
+   paragraph, which left the picture sitting low beside the heading. */
+.portrait{position:relative;overflow:hidden;border:1px solid var(--ink-600)}
 .portrait__art{
   position:relative;aspect-ratio:4/5;
   background:
@@ -1214,6 +1214,7 @@ body>section .btn--ghost:hover{
    375px phone and blow out the page. The size alone holds one line on
    desktop; narrow viewports are allowed to wrap. */
 .network__head .h2{font-size:clamp(1.5rem,4.3vw,3.6rem)}
+.network__sub{margin-top:var(--sp-2);font-size:clamp(1.2rem,2vw,1.75rem);color:var(--gold)}
 .network__copy{max-width:68ch}
 .network__copy p{color:var(--on-light-mute);margin-bottom:var(--sp-3)}
 .network__list{margin-top:var(--sp-3)}
@@ -1738,7 +1739,9 @@ body>section .btn--ghost:hover{
    the end of the first's list rather than beside it as its own column. */
 .foot__col{display:flex;flex-direction:column}
 .foot__nav--stacked{margin-top:var(--sp-4)}
-.brand__mark--lg{width:40px;height:40px;margin-bottom:var(--sp-2)}
+/* Spade beside the wordmark, as in the header, rather than stacked over it. */
+.foot__lockup{display:flex;align-items:center;gap:.85rem;margin-bottom:var(--sp-2)}
+.brand__mark--lg{width:40px;height:40px}
 .brand__mark--lg svg{width:20px;height:20px}
 .foot__word{font:400 1.35rem/1 var(--f-display);letter-spacing:.02em;color:var(--on-dark)}
 .foot__tag{margin-top:.6rem;font-size:var(--fs-sm);color:var(--on-dark-mute);max-width:26ch}

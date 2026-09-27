@@ -567,10 +567,63 @@
       requestAnimationFrame(frame);
     }
 
+    /* Dim over bare text. Cards, trays and buttons have a 70% fill, so the
+       spades only show faintly through them; copy sitting straight on the
+       page ground had none, and the full-strength gold made whatever the
+       cursor rested on hard to read. Over boxless text the layer drops to
+       the same strength a fill would leave (see .aop.is-dim).
+
+       The hit test is the text's own extent (a Range around the block's
+       contents), not the block's box — a heading's box runs the full column
+       width even when its words stop halfway. The range's bounding box is
+       used rather than each line, so moving between lines of a paragraph
+       doesn't blink. */
+    var TEXT = 'p,h1,h2,h3,h4,h5,h6,li,dt,dd,blockquote,figcaption,label,legend,.eyebrow';
+    var PAD = 8;
+    function hasFill(el) {
+      var bg = getComputedStyle(el).backgroundColor;
+      return !(bg === 'transparent' || /rgba\(.*,\s*0\)$/.test(bg));
+    }
+    function overBareText(x, y) {
+      var hit = document.elementFromPoint(x, y);
+      var block = hit && hit.closest(TEXT);
+      if (!block) return false;
+      // inside a filled surface already — that fill does the dimming
+      for (var el = block; el && el !== document.body; el = el.parentElement) {
+        if (hasFill(el)) return false;
+      }
+      var range = document.createRange();
+      range.selectNodeContents(block);
+      var r = range.getBoundingClientRect();
+      return x >= r.left - PAD && x <= r.right + PAD && y >= r.top - PAD && y <= r.bottom + PAD;
+    }
+    var dimQueued = false, undimTimer = 0;
+    function checkDim() {
+      dimQueued = false;
+      if (!on) return;
+      if (overBareText(raw.x, raw.y)) {
+        clearTimeout(undimTimer); undimTimer = 0;
+        layer.classList.add('is-dim');
+      } else if (!undimTimer && layer.classList.contains('is-dim')) {
+        /* A beat before brightening, so crossing the gap between two
+           paragraphs doesn't flash the gold up and back down. */
+        undimTimer = setTimeout(function () {
+          undimTimer = 0;
+          if (!overBareText(raw.x, raw.y)) layer.classList.remove('is-dim');
+        }, 280);
+      }
+    }
+    function queueDim() {
+      if (!dimQueued) { dimQueued = true; requestAnimationFrame(checkDim); }
+    }
+    // scrolling moves the page under a still cursor
+    window.addEventListener('scroll', queueDim, { passive: true });
+
     window.addEventListener('pointermove', function (e) {
       if (e.pointerType === 'touch') return;
       raw.x = e.clientX;
       raw.y = e.clientY;
+      queueDim();
       /* Snap on the first move. Lerping from the off-canvas rest position
          would fly the spade in across the whole viewport. */
       if (!on) {
