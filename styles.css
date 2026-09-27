@@ -197,6 +197,98 @@ button,input,select,textarea{font:inherit;color:inherit}
 .wrap{max-width:var(--maxw);margin-inline:auto;padding-inline:var(--gutter)}
 .section{padding-block:var(--sp-sec)}
 
+/* ── LIQUID LIGHT (molten gold) ───────────────────────────────
+   Bold gold type as a window onto slow-moving light. The element's text
+   is the clip for a stack of gradients:
+     1. the surge — a band of light that pours in from the side the
+        cursor entered and drains out the side it left (--dir, --t, --h)
+     2. the cursor pool — a white-hot spot that follows the pointer
+        inside the words while it is near (--cx, --cy, --near)
+     3. four drifting blobs — the lava lamp. Each has a near-white core
+        fading to amber or rose, and drifts on its own period so they
+        merge and part without ever falling into step
+     4. the base: deep enough that the white-hot light stands out, but
+        never darker than #B87A2E, which still reads on the black ground
+   --glow scales the blobs and the halo: dim at rest, full on hover.
+   liquidLight() in main.js drives the surge and the pool and pauses the
+   drift off screen. Tested against a full-spectrum and a tinted version
+   (liquid-light-test.html); plain gold won. */
+@property --p1x{syntax:'<percentage>';inherits:false;initial-value:10%}
+@property --p1y{syntax:'<percentage>';inherits:false;initial-value:30%}
+@property --p2x{syntax:'<percentage>';inherits:false;initial-value:60%}
+@property --p2y{syntax:'<percentage>';inherits:false;initial-value:80%}
+@property --p3x{syntax:'<percentage>';inherits:false;initial-value:95%}
+@property --p3y{syntax:'<percentage>';inherits:false;initial-value:20%}
+@property --p4x{syntax:'<percentage>';inherits:false;initial-value:35%}
+@property --p4y{syntax:'<percentage>';inherits:false;initial-value:60%}
+@property --glow{syntax:'<number>';inherits:false;initial-value:0}
+@property --near{syntax:'<number>';inherits:false;initial-value:0}
+@property --h{syntax:'<number>';inherits:false;initial-value:0}
+@property --t{syntax:'<number>';inherits:false;initial-value:0}
+
+@keyframes llDrift1{0%{--p1x:-5%;--p1y:20%}50%{--p1x:70%;--p1y:90%}100%{--p1x:105%;--p1y:10%}}
+@keyframes llDrift2{0%{--p2x:100%;--p2y:85%}50%{--p2x:25%;--p2y:5%}100%{--p2x:-10%;--p2y:70%}}
+@keyframes llDrift3{0%{--p3x:50%;--p3y:-10%}50%{--p3x:110%;--p3y:60%}100%{--p3x:15%;--p3y:100%}}
+@keyframes llDrift4{0%{--p4x:20%;--p4y:100%}50%{--p4x:-5%;--p4y:30%}100%{--p4x:85%;--p4y:40%}}
+
+.ll{
+  --dir:90deg; --cx:50%; --cy:50%;
+  --glow:.75;
+  --c1:#FFC44D; --c2:#FF9B3D; --c3:#FFE39A; --c4:#E8836B;
+  --surge:#FFE7A8; --rim:#FFFFFF; --halo:#F2B04A;
+  /* sized to the words, so the blobs drift through the text rather than
+     through the empty end of a full-width block */
+  width:fit-content;max-width:100%;
+  color:transparent;-webkit-text-fill-color:transparent;
+  -webkit-background-clip:text;background-clip:text;
+  background-repeat:no-repeat;
+  background-image:
+    linear-gradient(var(--dir),
+      transparent calc(var(--t) * 140% - 30%),
+      var(--surge) calc(var(--t) * 140% - 10%),
+      var(--surge) calc(var(--h) * 140% - 36%),
+      var(--rim) calc(var(--h) * 140% - 24%),
+      transparent calc(var(--h) * 140% - 8%)),
+    radial-gradient(circle 2.2em at var(--cx) var(--cy),
+      color-mix(in srgb,#fff calc(var(--near) * 95%),transparent) 0,
+      color-mix(in srgb,var(--c1) calc(var(--near) * 80%),transparent) 35%,
+      transparent 75%),
+    radial-gradient(circle 1.9em at var(--p1x) var(--p1y),
+      color-mix(in srgb,#fff calc(var(--glow) * 80%),transparent) 0,
+      color-mix(in srgb,var(--c1) calc(var(--glow) * 100%),transparent) 28%,
+      transparent 72%),
+    radial-gradient(circle 2.4em at var(--p2x) var(--p2y),
+      color-mix(in srgb,var(--c2) calc(var(--glow) * 100%),transparent) 0,
+      color-mix(in srgb,var(--c2) calc(var(--glow) * 50%),transparent) 40%,
+      transparent 75%),
+    radial-gradient(circle 2em at var(--p3x) var(--p3y),
+      color-mix(in srgb,#fff calc(var(--glow) * 60%),transparent) 0,
+      color-mix(in srgb,var(--c3) calc(var(--glow) * 100%),transparent) 30%,
+      transparent 72%),
+    radial-gradient(circle 2.6em at var(--p4x) var(--p4y),
+      color-mix(in srgb,var(--c4) calc(var(--glow) * 100%),transparent) 0,
+      color-mix(in srgb,var(--c4) calc(var(--glow) * 45%),transparent) 45%,
+      transparent 78%),
+    linear-gradient(180deg,#D39A45 0%,#B87A2E 55%,#CB8E3E 100%);
+  filter:
+    drop-shadow(0 0 calc(var(--glow) * 2px) color-mix(in srgb,var(--halo) calc(var(--glow) * 70%),transparent))
+    drop-shadow(0 0 calc(var(--glow) * 9px) color-mix(in srgb,var(--halo) calc(var(--glow) * 45%),transparent));
+  animation:
+    llDrift1 11s ease-in-out infinite alternate,
+    llDrift2 15s ease-in-out infinite alternate,
+    llDrift3 13s ease-in-out infinite alternate,
+    llDrift4 19s ease-in-out infinite alternate;
+  transition:--glow .6s var(--ease);
+}
+.ll.is-hot{--glow:1}
+.ll.is-off{animation-play-state:paused}
+/* An icon inside a lit label keeps its own gold; with the text fill
+   transparent, currentColor would make it vanish. */
+.ll svg{fill:var(--gold)}
+@media (prefers-reduced-motion:reduce){
+  .ll{animation:none;transition:none}
+}
+
 /* ── SHARED TYPE ────────────────────────────────────────────── */
 .eyebrow{
   display:flex;align-items:flex-start;gap:.6em;

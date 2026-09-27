@@ -631,6 +631,11 @@
             if (s) s.classList.remove('is-lit');
           }
         });
+        /* The observer reports after the scroll frame that brought these
+           blocks in, so that frame's reveal never saw them. Without this,
+           text scrolled under a parked spade stayed bare until the mouse
+           moved. */
+        queueReveal();
       }, { rootMargin: '60px 0px' });
       texts.forEach(function (t) { tio.observe(t); });
     }
@@ -841,6 +846,105 @@
     preselectDoor();
     copyEmail();
     edgeLight();
+    liquidLight();
+  }
+
+  /* ── LIQUID LIGHT ──────────────────────────────────────────────
+     Drives the .ll type (see "LIQUID LIGHT" in styles.css):
+       - the surge: light pours in from the edge the pointer entered by
+         and drains out the edge it left by. --h is the leading edge, --t
+         the trailing one, both animated as registered numbers.
+       - the pool: a white-hot spot that follows the pointer inside any
+         lit word within POOL_REACH of it.
+       - each word starts its drift at a different point, so they don't
+         pulse in unison, and pauses while off screen.
+     Reduced motion keeps the fill and drops the movement. */
+  var POOL_REACH = 160;
+  function liquidLight() {
+    var items = [].slice.call(document.querySelectorAll('.ll'));
+    if (!items.length) return;
+    var still = reduce.matches;
+
+    items.forEach(function (el) {
+      var d = function () { return -(Math.random() * 19).toFixed(1) + 's'; };
+      el.style.animationDelay = [d(), d(), d(), d()].join(',');
+    });
+
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) { e.target.classList.toggle('is-off', !e.isIntersecting); });
+      });
+      items.forEach(function (el) { io.observe(el); });
+    }
+    if (still || !window.matchMedia('(hover: hover)').matches) return;
+
+    var FILL = { duration: 650, easing: 'cubic-bezier(.34,1.25,.5,1)', fill: 'forwards' };
+    var DRAIN = { duration: 700, easing: 'cubic-bezier(.45,0,.3,1)', fill: 'forwards' };
+    var ANGLE = { left: 90, right: 270, top: 180, bottom: 0 };   // runs from that side
+
+    function edge(el, x, y) {
+      var r = el.getBoundingClientRect();
+      var d = { left: x - r.left, right: r.right - x, top: y - r.top, bottom: r.bottom - y };
+      // weight top/bottom by the box's aspect, or a wide word would almost
+      // always read as entered from above or below
+      var k = r.width / r.height / 2.5;
+      d.top *= k; d.bottom *= k;
+      return Object.keys(d).reduce(function (a, b) { return d[a] <= d[b] ? a : b; });
+    }
+    function run(el, prop, from, to, opts) {
+      if (el['_ll' + prop]) el['_ll' + prop].cancel();
+      var a = {}, b = {}; a[prop] = from; b[prop] = to;
+      el['_ll' + prop] = el.animate([a, b], opts);
+    }
+    function enter(el, side) {
+      el.classList.add('is-hot');
+      el.style.setProperty('--dir', ANGLE[side] + 'deg');
+      run(el, '--t', 0, 0, { duration: 1, fill: 'forwards' });
+      run(el, '--h', 0, 1, FILL);
+    }
+    function leave(el, side) {
+      el.classList.remove('is-hot');
+      var h = Math.min(parseFloat(getComputedStyle(el).getPropertyValue('--h')) || 0, 1);
+      // re-anchor the lit band on the exit side at the same size, then let
+      // the trailing edge run out through it
+      el.style.setProperty('--dir', ((ANGLE[side] + 180) % 360) + 'deg');
+      run(el, '--h', 1, 1, { duration: 1, fill: 'forwards' });
+      run(el, '--t', 1 - h, 1, DRAIN);
+    }
+    items.forEach(function (el) {
+      var host = el.closest('a') || el;
+      host.addEventListener('pointerenter', function (e) { enter(el, edge(el, e.clientX, e.clientY)); });
+      host.addEventListener('pointerleave', function (e) { leave(el, edge(el, e.clientX, e.clientY)); });
+      if (host !== el) {
+        host.addEventListener('focus', function () { enter(el, 'left'); });
+        host.addEventListener('blur', function () { leave(el, 'right'); });
+      }
+    });
+
+    var px = -1e4, py = -1e4, queued = false;
+    function pools() {
+      queued = false;
+      var rects = items.map(function (el) { return el.getBoundingClientRect(); });
+      items.forEach(function (el, i) {
+        var r = rects[i];
+        if (r.bottom < 0 || r.top > window.innerHeight) return;
+        var dx = Math.max(r.left - px, 0, px - r.right);
+        var dy = Math.max(r.top - py, 0, py - r.bottom);
+        var near = Math.max(0, 1 - Math.sqrt(dx * dx + dy * dy) / POOL_REACH);
+        el.style.setProperty('--near', near.toFixed(3));
+        if (near) {
+          el.style.setProperty('--cx', ((px - r.left) / r.width * 100).toFixed(1) + '%');
+          el.style.setProperty('--cy', ((py - r.top) / r.height * 100).toFixed(1) + '%');
+        }
+      });
+    }
+    function queue() { if (!queued) { queued = true; requestAnimationFrame(pools); } }
+    window.addEventListener('pointermove', function (e) {
+      if (e.pointerType === 'touch') return;
+      px = e.clientX; py = e.clientY;
+      queue();
+    }, { passive: true });
+    window.addEventListener('scroll', queue, { passive: true });
   }
 
   /* ── CURSOR-LIT EDGES ──────────────────────────────────────────
