@@ -1181,10 +1181,18 @@ body>section .btn--ghost:hover{
   gap:clamp(2.5rem,5vw,5rem);align-items:start}
 /* The portrait plate stays dark by design, so only its frame follows the
    section — a --line-dark edge would vanish into the cream around it. */
-/* Top-aligned with the copy column's eyebrow (align-items:start does
-   that on its own). It used to be pushed 12rem down to meet the first
-   paragraph, which left the picture sitting low beside the heading. */
-.portrait{position:relative;overflow:hidden;border:1px solid var(--ink-600)}
+/* The picture's top edge lines up with the middle of the K in "Known",
+   the heading's second line. Built from the pieces above it in the copy
+   column, so it holds at every width rather than at one measured one:
+     eyebrow line box   .75rem (--fs-label) x 1.62 line-height
+     its gap            --sp-2 (.about__copy p margin)
+     heading to K mid   1.515em of the h2 — one full line (line-height 1)
+                        plus the cap-height midpoint of the second line,
+                        measured on the display face
+   The h2 size below must match `.about__copy .h2`. Stacked layout resets
+   this to 0 in the 900px query. */
+.portrait{position:relative;overflow:hidden;border:1px solid var(--ink-600);
+  margin-top:calc(.75rem * 1.62 + var(--sp-2) + 1.515 * clamp(1.9rem,3.4vw,3rem))}
 .portrait__art{
   position:relative;aspect-ratio:4/5;
   background:
