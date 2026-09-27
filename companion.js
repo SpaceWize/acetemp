@@ -234,7 +234,7 @@ function logTurn(q,a,source){
  if(lastQ&&similar(q,lastQ))flags.push('repeat');
  lastQ=q;
  const body=JSON.stringify({chat:chatId,turn:++turn,page:location.pathname.split('/').pop()||'index.html',
-  source,q:scrubPII(q).slice(0,600),id:a.id,flags:flags.join(' '),a:scrubPII(a.text).slice(0,300),v:LOG_VERSION});
+  source,q:scrubPII(q).slice(0,600),id:a.id,flags:flags.join(' '),a:scrubPII(a.text).slice(0,1500),v:LOG_VERSION});
  try{fetch(LOG_URL,{method:'POST',mode:'no-cors',keepalive:true,headers:{'Content-Type':'text/plain'},body}).catch(()=>{});}catch{}
 }
 function ask(q,source='typed'){q=q.trim();if(!q)return;
