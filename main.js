@@ -846,7 +846,131 @@
     preselectDoor();
     copyEmail();
     edgeLight();
+    navGlass();          // before liquidLight: it tags the logo's SPADERS
     liquidLight();
+  }
+
+  /* ── NAV — BURNING STEEL ───────────────────────────────────────
+     Sets up and drives the header type (see "NAV — BURNING STEEL" in
+     styles.css):
+       - the logo splits: ACE becomes steel, SPADERS gentle molten gold
+       - every nav link, dropdown item and phone-menu row becomes .steel
+       - each frame, every visible steel word gets --near (how close the
+         pointer is) and --sx (where its heat band sits). The band drifts
+         on its own clock, faster and wider as --near rises, and leans
+         toward the pointer. The current section's link keeps a floor of
+         heat so it still reads as "you are here" without the gold colour.
+       - one aura per list glides to the hovered or focused item.
+     Far away the loop drops to every fourth frame; nothing up there is
+     moving fast enough to need more. Touch gets the drift with no pointer;
+     reduced motion gets the steel standing still. */
+  var STEEL_REACH = 350;     // px at which a word stops answering the pointer
+  function navGlass() {
+    // liquid-light-test.html builds its own headers while versions are compared
+    if (document.body.hasAttribute('data-ll-test')) return;
+    var head = document.querySelector('.site-head');
+    if (!head) return;
+
+    var word = head.querySelector('.brand__word');
+    if (word) {
+      var first = word.firstChild;
+      if (first && first.nodeType === 3 && first.nodeValue.trim()) {
+        var ace = document.createElement('span');
+        ace.className = 'brand__ace steel';
+        ace.textContent = first.nodeValue.trim();
+        word.replaceChild(ace, first);
+      }
+      var b = word.querySelector('.brand__word-b');
+      if (b) b.classList.add('ll', 'll--gentle');
+    }
+
+    var words = [].slice.call(document.querySelectorAll(
+      '.site-head .brand__ace, .nav__list a, .mnav a:not(.mnav__cta), .mnav__toggle'));
+    words.forEach(function (w) { w.classList.add('steel'); });
+    var hover = window.matchMedia('(hover: hover)').matches;
+    var still = reduce.matches;
+    var state = words.map(function (el) {
+      return { el: el, near: -1, phase: Math.random() * 6.28 };
+    });
+
+    var px = -1e4, py = -1e4, last = performance.now(), tick = 0;
+    function frame(now) {
+      requestAnimationFrame(frame);
+      var dt = Math.min((now - last) / 1000, 0.1);
+      var idle = state.every(function (s) { return s.near < 0.01; });
+      if (idle && (tick++ % 4)) return;
+      last = now;
+      state.forEach(function (s) {
+        var r = s.el.getBoundingClientRect();
+        if (!r.width) return;                              // closed dropdown / menu
+        var dx = Math.max(r.left - px, 0, px - r.right);
+        var dy = Math.max(r.top - py, 0, py - r.bottom);
+        var t = hover ? Math.max(0, 1 - Math.sqrt(dx * dx + dy * dy) / STEEL_REACH) : 0;
+        t *= t;
+        if (s.el.classList.contains('is-current')) t = Math.max(t, 0.45);
+        if (hover && s.el.matches(':hover')) t = 1;
+        s.near = s.near < 0 ? t : s.near + (t - s.near) * Math.min(1, dt * 6);
+        var n = s.near;
+        s.phase += dt * (0.12 + n * 1.3);
+        var lean = hover ? Math.max(-1, Math.min(1, (px - (r.left + r.width / 2)) / (r.width / 2 + 60))) : 0;
+        var sx = 50 + Math.sin(s.phase) * (5 + n * 32) - lean * n * 22;
+        s.el.style.setProperty('--near', n.toFixed(3));
+        s.el.style.setProperty('--sx', sx.toFixed(1) + '%');
+      });
+    }
+    if (still) {
+      state.forEach(function (s) {
+        s.el.style.setProperty('--near', s.el.classList.contains('is-current') ? '0.45' : '0');
+      });
+    } else {
+      requestAnimationFrame(frame);
+    }
+    if (!hover) return;
+    window.addEventListener('pointermove', function (e) {
+      if (e.pointerType === 'touch') return;
+      px = e.clientX; py = e.clientY;
+    }, { passive: true });
+    document.addEventListener('mouseleave', function () { px = py = -1e4; });
+
+    function aura(list, items) {
+      var a = document.createElement('span');
+      a.className = 'aura';
+      a.setAttribute('aria-hidden', 'true');
+      a.appendChild(document.createElement('i'));
+      list.appendChild(a);
+      function to(el) {
+        var u = list.getBoundingClientRect(), r = el.getBoundingClientRect();
+        var w = r.width + 64, h = r.height + 38;
+        var place = 'translate(' + (r.left - u.left - 32) + 'px,' + (r.top - u.top - 19) + 'px)';
+        if (!a.classList.contains('is-on')) {             // appear in place, no fly-in
+          a.style.transition = 'none';
+          a.style.transform = place;
+          a.style.width = w + 'px'; a.style.height = h + 'px';
+          a.offsetWidth;
+          a.style.transition = '';
+        }
+        a.style.transform = place;
+        a.style.width = w + 'px'; a.style.height = h + 'px';
+        a.classList.add('is-on');
+      }
+      items.forEach(function (el) {
+        el.addEventListener('pointerenter', function () { to(el); });
+        el.addEventListener('focus', function () { to(el); });
+      });
+      list.addEventListener('pointerleave', function () { a.classList.remove('is-on'); });
+      list.addEventListener('focusout', function (e) {
+        if (!list.contains(e.relatedTarget)) a.classList.remove('is-on');
+      });
+      return a;
+    }
+    var row = head.querySelector('.nav__list');
+    if (!row) return;
+    var top = aura(row, [].slice.call(row.querySelectorAll(':scope > li > a')));
+    [].forEach.call(row.querySelectorAll('.nav__sub'), function (ul) {
+      aura(ul, [].slice.call(ul.querySelectorAll('a')));
+      ul.addEventListener('pointerenter', function () { top.classList.add('is-faint'); });
+      ul.addEventListener('pointerleave', function () { top.classList.remove('is-faint'); });
+    });
   }
 
   /* ── LIQUID LIGHT ──────────────────────────────────────────────
@@ -964,7 +1088,7 @@
      source and nothing more. */
   var LIT = '.btn,.tier,.quote,.tiers,.quotes,.form,.cta__copy,.cta__shot,' +
             '.tiernotes,.alsotile,.plaque,.portrait,.circle__band,' +
-            '.brand__mark,.four__node,.burger,.nav__sub,.toast';
+            '.brand__mark,.four__node,.burger,.toast';
   var LIGHT_REACH = 700;     // px from a box at which its edge is dimmest
 
   function edgeLight() {

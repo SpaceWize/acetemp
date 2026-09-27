@@ -284,6 +284,9 @@ button,input,select,textarea{font:inherit;color:inherit}
   transition:--glow .6s var(--ease);
 }
 .ll.is-hot{--glow:1}
+/* the logo's SPADERS: slower drift, lower glow */
+.ll--gentle{--glow:.5;animation-duration:18s,24s,21s,30s}
+.ll--gentle.is-hot{--glow:.8}
 .ll.is-off{animation-play-state:paused}
 /* An icon inside a lit label keeps its own gold; with the text fill
    transparent, currentColor would make it vanish. */
@@ -352,9 +355,10 @@ button,input,select,textarea{font:inherit;color:inherit}
 
 /* Everything that reads as a surface or a control carries the ring:
    buttons, trays, cards, boxes, framed images, the brand marks, the
-   dropdown menu, the burger and the toast. One selector list so the arcs
-   stay identical everywhere. The dropdown and toast keep their own
-   absolute/fixed position, which their later rules restore. */
+   burger and the toast. One selector list so the arcs stay identical
+   everywhere. The toast keeps its own fixed position, which its later
+   rule restores. The nav dropdown is deliberately not here: it has no box
+   to ring (see NAV — BURNING STEEL). */
 .btn,
 .tier,.quote,.tiers,.quotes,.form,.cta__copy,.cta__shot,.tiernotes,
 .alsotile,.plaque,.portrait,.circle__band,
@@ -364,7 +368,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .btn,
 .tier,.quote,.tiers,.quotes,.form,.cta__copy,.cta__shot,.tiernotes,
 .alsotile,.plaque,.portrait,.circle__band,
-.brand__mark,.four__node,.burger,.nav__sub,.toast{
+.brand__mark,.four__node,.burger,.toast{
   --orbit-glow:var(--gold-hi);
   --light-a:-50deg;          /* before the first pointer move: lit from above left */
   --light-i:.55;
@@ -383,7 +387,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .alsotile::after,.plaque::after,
 .portrait::after,.circle__band::after,
 .brand__mark::after,.four__node::after,.burger::after,
-.nav__sub::after,.toast::after{
+.toast::after{
   content:"";position:absolute;inset:0;border-radius:inherit;
   pointer-events:none;padding:2px;
   background:conic-gradient(from calc(var(--light-a) - 96deg),
@@ -520,7 +524,7 @@ body>section .btn--ghost:hover{
 .nav__item--sub>a{display:block}
 .nav__sub{
   position:absolute;top:100%;left:0;z-index:1;min-width:max-content;
-  background:rgba(10,9,8,.97);border:1px solid var(--line-dark);
+  padding:.4rem 0;
   opacity:0;visibility:hidden;transform:translateY(-.35rem);
   transition:opacity var(--t-fast) var(--ease),
              transform var(--t-fast) var(--ease),
@@ -530,9 +534,7 @@ body>section .btn--ghost:hover{
 .nav__item--sub:focus-within>.nav__sub{
   opacity:1;visibility:visible;transform:translateY(0);
 }
-.nav__sub li+li{border-top:1px solid var(--line-dark)}
 .nav__sub a{display:block;padding:.65rem 1.1rem;white-space:nowrap}
-.nav__sub a:hover{background:var(--ink-700)}
 
 .burger{display:none;width:44px;height:44px;border:1px solid var(--line-dark);
   background:none;cursor:pointer;place-items:center}
@@ -588,6 +590,128 @@ body>section .btn--ghost:hover{
   padding:.5rem 0;border-bottom:0;color:var(--on-dark-mute);
 }
 .mnav .mnav__sub a:hover{color:var(--gold)}
+
+/* ═══ NAV — BURNING STEEL ═════════════════════════════════════
+   The header's type, chosen on liquid-light-test.html (version G).
+
+   STEEL LETTERS (.steel — navGlass() in main.js adds the class and drives
+   the variables). Each word is brushed steel: bright at the top, a darker
+   band across the middle, lifting again at the foot, with a hairline dark
+   edge underneath for thickness. Through it runs a band of temper colour
+   in the order heated steel shows it — pale straw, gold, bronze, then a
+   thin violet and blue — fading back to grey. The hues never rotate; the
+   pointer only spreads and brightens the heat:
+     --near  0 far away … 1 on the word. Links start answering at 350px and
+             ramp in slowly (squared), so most of the change is close in.
+     --sx    where the heat band sits; it drifts faster and wider, and
+             leans toward the pointer, as --near rises.
+   Written as the background shorthand, not background-image, because the
+   band's layer carries its own position and size.
+
+   DROPDOWN (no box). No border, no dividers, no ring. Behind the options
+   is a soft inverted vignette — solid under the text, fading to nothing
+   well past it — whose top edge feathers in so the top link's aura melts
+   into it, and which never reaches up over the link it hangs from.
+
+   AURA. One per list (the top row, each dropdown); it glides to the
+   hovered or focused item on a plain ease-out — no overshoot, no squash,
+   which is what made the earlier glow read as jumping. Three layers, all
+   yellow-gold and silver, screen-blended so it only adds light:
+     ::before  a breathing core
+     ::after   aurora curtains, soft vertical folds drifting and swaying
+     <i>       rising energy climbing through a flame-shaped mask
+   The top row's aura steps back while a dropdown's is active.
+
+   LOGO. ACE is set in the nav's own face and is steel like the links;
+   SPADERS stays in the display face as a gentle molten gold (.ll--gentle).
+   Without JS none of this is applied and the header keeps its plain look. */
+.steel{
+  --near:0; --sx:50%;
+  --heat:calc(.12 + var(--near) * .5);
+  color:transparent;-webkit-text-fill-color:transparent;
+  background:
+    linear-gradient(100deg,
+      transparent 16%,
+      rgba(226,206,150,calc(var(--heat) * .9)) 27%,
+      rgba(214,170,98,var(--heat)) 35%,
+      rgba(176,118,66,var(--heat)) 42%,
+      rgba(128,86,120,calc(var(--heat) * .75)) 48%,
+      rgba(86,112,168,calc(var(--heat) * .7)) 53%,
+      rgba(120,136,160,calc(var(--heat) * .35)) 58%,
+      transparent 66%) var(--sx) 0 / 260% 100% no-repeat,
+    linear-gradient(180deg,#EEF0F2 0%,#D4D8DC 36%,#9EA4AB 56%,#B4B9BF 74%,#D9DCE0 100%);
+  -webkit-background-clip:text;background-clip:text;
+  filter:
+    drop-shadow(0 1px 0 rgba(0,0,0,.65))
+    drop-shadow(0 0 calc(var(--near) * 5px) rgba(214,148,78,calc(var(--near) * .32)))
+    brightness(calc(.9 + var(--near) * .14));
+}
+/* ACE: the nav's face at the logo's size, so the lockup still reads as
+   one word */
+.brand__ace{
+  font-family:var(--f-util);font-variation-settings:"wdth" 112;
+  font-size:.95rem;font-weight:600;letter-spacing:.15em;
+}
+.brand__word-b.ll{margin-left:.3em}
+
+.nav__sub::before{
+  content:"";position:absolute;inset:0 -90px -70px;z-index:-1;pointer-events:none;
+  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 34px);
+  mask-image:linear-gradient(180deg,transparent 0,#000 34px);
+  background:radial-gradient(farthest-side at 50% 20%,
+    rgba(7,6,5,.97) 0,rgba(7,6,5,.96) 62%,rgba(7,6,5,.78) 80%,rgba(7,6,5,.3) 92%,transparent 100%);
+}
+.nav__list{position:relative}
+.nav__list>li,.nav__sub li{position:relative;z-index:1}
+
+@keyframes auraBreath{0%{transform:scale(.95);opacity:.8}100%{transform:scale(1.05);opacity:1}}
+@keyframes auraCurtain{to{background-position:64px 0,0 0}}
+@keyframes auraSway{0%{transform:scaleY(.94) skewX(-5deg)}100%{transform:scaleY(1.1) skewX(5deg)}}
+@keyframes auraRise{to{background-position:0 -40px}}
+@keyframes auraFlicker{0%,100%{opacity:.85}23%{opacity:1}41%{opacity:.78}67%{opacity:.95}83%{opacity:.82}}
+.aura{
+  position:absolute;left:0;top:0;z-index:0;pointer-events:none;
+  opacity:0;mix-blend-mode:screen;
+  transition:transform .6s cubic-bezier(.22,.61,.36,1),
+             width .6s cubic-bezier(.22,.61,.36,1),
+             height .6s cubic-bezier(.22,.61,.36,1),
+             opacity .5s ease;
+}
+.aura.is-on{opacity:1}
+.aura.is-faint{opacity:.35}
+.aura::before{
+  content:"";position:absolute;inset:0;border-radius:50%;
+  background:radial-gradient(ellipse 50% 50% at 50% 55%,
+    rgba(255,240,190,.6),rgba(244,200,106,.36) 45%,rgba(218,224,234,.16) 72%,transparent 100%);
+  filter:blur(8px);
+  animation:auraBreath 4.2s ease-in-out infinite alternate;
+}
+.aura::after{
+  content:"";position:absolute;inset:-22% -4% -8%;
+  background:
+    repeating-linear-gradient(90deg,
+      rgba(255,232,165,0) 0 12px,rgba(255,232,165,.32) 18px,
+      rgba(226,231,238,.26) 25px,rgba(255,232,165,0) 34px),
+    linear-gradient(0deg,rgba(242,198,104,0),rgba(242,198,104,.22) 30%,rgba(228,232,238,.16) 62%,transparent);
+  background-size:64px 100%,100% 100%;
+  -webkit-mask-image:radial-gradient(ellipse 50% 50% at 50% 60%,#000 22%,transparent 72%);
+  mask-image:radial-gradient(ellipse 50% 50% at 50% 60%,#000 22%,transparent 72%);
+  filter:blur(5px);transform-origin:50% 100%;
+  animation:auraCurtain 8s linear infinite,auraSway 3.1s ease-in-out infinite alternate;
+}
+.aura i{
+  position:absolute;inset:-70% 6% 0;
+  background:repeating-linear-gradient(0deg,
+    transparent 0 8px,rgba(255,238,176,.55) 13px,rgba(236,240,246,.34) 17px,transparent 23px);
+  background-size:100% 40px;
+  -webkit-mask-image:radial-gradient(ellipse 44% 62% at 50% 78%,#000 16%,transparent 70%);
+  mask-image:radial-gradient(ellipse 44% 62% at 50% 78%,#000 16%,transparent 70%);
+  filter:blur(2.5px);
+  animation:auraRise 1.4s linear infinite,auraFlicker 2.3s ease-in-out infinite;
+}
+@media (prefers-reduced-motion:reduce){
+  .aura,.aura::before,.aura::after,.aura i{animation:none;transition:opacity .2s}
+}
 
 /* ═══ 2. HERO ═════════════════════════════════════════════════ */
 .hero{position:relative;background:var(--ink-900)}
@@ -1486,7 +1610,7 @@ body>section .btn--ghost:hover{
   .tiernotes:hover,
   .alsotile:hover,.plaque:hover,.circle__band:hover,
   .btn:hover,
-  .nav__list a:hover,.foot__grid a:hover,.tlink:hover,
+  .foot__grid a:hover,.tlink:hover,
   .cta__meta a:hover,.cta__meta .copy:hover{
     transform:translateY(-6px);
     /* the 0-offset ring stands in for a border change: .quote's 2px gold
@@ -1506,9 +1630,11 @@ body>section .btn--ghost:hover{
                0 0 40px -6px rgba(217,164,65,.30),
                0 0 90px 8px rgba(217,164,65,.14);
   }
-  /* Links and buttons are small; the card halo swamps them. */
+  /* Links and buttons are small; the card halo swamps them. The nav's
+     links are out of this and the lift: they carry the burning-steel
+     light and the aura instead (NAV — BURNING STEEL). */
   .btn:hover,
-  .nav__list a:hover,.foot__grid a:hover,.tlink:hover,
+  .foot__grid a:hover,.tlink:hover,
   .cta__meta a:hover,.cta__meta .copy:hover{
     box-shadow:0 0 18px -4px rgba(217,164,65,.45),
                0 10px 18px -12px rgba(20,18,15,.5);
