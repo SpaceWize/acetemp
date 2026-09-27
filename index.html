@@ -24,8 +24,23 @@
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="companion.css">
 <script>document.documentElement.classList.replace('no-js','js');</script>
+<script>
+/* Home hero intro (heroIntro() in main.js). Decided here, before first
+   paint, so the page never flashes composed and then goes dark. Skipped for
+   reduced motion, deep links and back/forward, which should land where they
+   left off. The timeout is a failsafe: if main.js never runs, nothing stays
+   hidden or locked. */
+(function(){try{
+  var d=document.documentElement,n=performance.getEntriesByType('navigation')[0];
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches||location.hash||(n&&n.type==='back_forward'))return;
+  if('scrollRestoration' in history)history.scrollRestoration='manual';
+  d.classList.add('intro','intro-lock');
+  setTimeout(function(){d.classList.remove('intro','intro-lock');},12000);
+}catch(e){}})();
+</script>
 </head>
 <body>
+<div class="hero-intro" aria-hidden="true"><i></i></div>
 
 <a class="skip" href="#formats">Skip to the work</a>
 
@@ -154,7 +169,7 @@
            animated in, so this is on screen before any scrolling. -->
   
       <h1 class="hero__h1">
-        <span class="hero__line">Meet Your ASSET</span>
+        <span class="hero__line"><span class="hero__meet">Meet Your</span> <span class="hero__asset">ASSET</span></span>
         <span class="hero__line hero__line--gold ll">Ace Spaders</span>
       </h1>
       <h3 class="hero__h3">Ace Success Strategist, Evaluator &amp; Transformationalist</h3>

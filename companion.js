@@ -456,6 +456,44 @@ let surfaces=[],clock=0,last=0,nextDecision=1.8,lastSurfaceUpdate=-1,scroll=scro
    textSurface: the block he climbed, standable for as long as he is on it.
    pointUntil: how long he holds the point once he has landed on a button. */
 let climb=null,textSurface=null,pointUntil=0,waveUntil=0;
+/* ── A SCRIPTED VISIT ─────────────────────────────────────────
+   The home hero's intro (heroIntro() in main.js) sends him to stand on a
+   word and point at it: window.AceCompanion.visit(el,{onPoint,onLeave}).
+   While it runs the decision loop is off, the word's top edge is a surface
+   he can land on, and the two leaps are solved here rather than by
+   physics.jump(), whose 340px/s cap is sized for hops between neighbouring
+   ledges and would drop him short of a word across the screen. It resolves
+   true once he is back on his button, or false if he could not go (not
+   loaded, parked, chatting, being carried) or it ran long. */
+let visit=null;
+const VISIT_POINT=1.6;   // s he points at the word; the point clip itself is 1.3s
+function visitSurface(){
+  if(!visit||visit.phase==='back')return null;
+  const r=visit.el.getBoundingClientRect();
+  if(!r.width)return null;
+  return {id:'visit',left:r.left-30,right:r.right+30,y:r.top};
+}
+function leap(tx,ty){
+  const g=physics.GRAVITY,rise=state.y-ty;
+  const clear=Math.max(60,Math.min(190,ty-90));        // keep the top of the arc on screen
+  const vy=-Math.sqrt(2*g*(Math.max(0,rise)+clear));
+  const time=(-vy+Math.sqrt(Math.max(0,vy*vy+2*g*(ty-state.y))))/g;
+  state.vy=vy;state.vx=(tx-state.x)/Math.max(.3,time);state.ground=null;
+  facing=Math.sign(state.vx)||facing;
+}
+function endVisit(ok){
+  if(!visit)return;
+  const v=visit;visit=null;nextDecision=clock+1.2;scan();v.res(ok);
+}
+window.AceCompanion={
+  visit(el,opts){
+    return new Promise(res=>{
+      if(!ready||open||parked||motionPaused||dragging||!el){res(false);return;}
+      visit={el,phase:'start',onPoint:opts&&opts.onPoint,onLeave:opts&&opts.onLeave,res,until:clock+9};
+      climb=null;runGoal=null;pendingJump=null;waveUntil=0;pointUntil=0;scan();
+    });
+  }
+};
 const state={x:Math.max(70,innerWidth-160),y:innerHeight-20,vx:0,vy:0,ground:'floor'};
 let cursorX=innerWidth/2;document.addEventListener('pointermove',e=>{cursorX=e.clientX;},{passive:true});
 
@@ -573,7 +611,7 @@ function textSurfaceNow(){
   if(r.width<100||r.bottom<40||r.top>innerHeight-20)return null;
   return {id:'text',left:r.left,right:r.right,y:r.top,el:textSurface.el};
 }
-function scan(){surfaces=[];for(let i=0;i<perches.length;i++){const p=perches[i],r=p.el.getBoundingClientRect();const y=perchY(p,r);if(r.width>PERCH_MIN_WIDTH&&y>150&&y<innerHeight-60&&r.right>60&&r.left<innerWidth-60){surfaces.push({id:String(i),left:Math.max(20,r.left),right:Math.min(innerWidth-20,r.right),y,el:p.el});}}surfaces=bridge(surfaces);const t=state.ground==='text'&&textSurfaceNow();if(t)surfaces.push(t);const l=launcherSurface();if(l)surfaces.push(l);surfaces.push({id:'floor',left:0,right:innerWidth,y:innerHeight-16});}
+function scan(){surfaces=[];for(let i=0;i<perches.length;i++){const p=perches[i],r=p.el.getBoundingClientRect();const y=perchY(p,r);if(r.width>PERCH_MIN_WIDTH&&y>150&&y<innerHeight-60&&r.right>60&&r.left<innerWidth-60){surfaces.push({id:String(i),left:Math.max(20,r.left),right:Math.min(innerWidth-20,r.right),y,el:p.el});}}surfaces=bridge(surfaces);const t=state.ground==='text'&&textSurfaceNow();if(t)surfaces.push(t);const v=visitSurface();if(v)surfaces.push(v);const l=launcherSurface();if(l)surfaces.push(l);surfaces.push({id:'floor',left:0,right:innerWidth,y:innerHeight-16});}
 /* The Ask Little Ace button, as a ledge. Added after the perch filter on
    purpose: it sits in the bottom 60px that filter keeps him out of, and it
    is where he spawns. Gone while the chat is open and the button is hidden. */
@@ -600,7 +638,7 @@ function bridge(list){
   }
   return out;
 }
-function currentSurface(){if(state.ground==='floor')return {id:'floor',left:0,right:innerWidth,y:innerHeight-16};if(state.ground==='text')return textSurfaceNow();if(state.ground==='launcher')return launcherSurface();if(state.ground===null)return null;
+function currentSurface(){if(state.ground==='floor')return {id:'floor',left:0,right:innerWidth,y:innerHeight-16};if(state.ground==='text')return textSurfaceNow();if(state.ground==='visit')return visitSurface();if(state.ground==='launcher')return launcherSurface();if(state.ground===null)return null;
  /* The scanned list first: if he is standing on a bridged run, the element's
     own rect is only the card he happens to be over, and using it would drop
     him into the first gutter he reached. */
@@ -778,6 +816,7 @@ function choose(busy){
    That leaves him frozen mid-gesture with no decisions, alive but stuck,
    which is exactly the state he was found in. */
 function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=ts;if(document.hidden){requestAnimationFrame(tick);return;}clock+=dt;
+ if(visit&&clock>visit.until){if(visit.phase!=='back'&&visit.onLeave)visit.onLeave();endVisit(false);}
  if(!open&&ready){
   const stationary=parked||motionPaused;
   /* Being carried beats everything, parking included — if you have hold of
@@ -828,7 +867,7 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
 
    if(!ascending){
    let ground=currentSurface();
-   if(ground){state.y=ground.y;if(state.y<120||state.y>innerHeight+30||state.x<ground.left+6||state.x>ground.right-6){state.ground=null;state.y=Math.max(-15,Math.min(innerHeight-20,state.y));state.vy=100;ground=null;runGoal=null;pendingJump=null;}}
+   if(ground){state.y=ground.y;if((ground.id!=='visit'&&state.y<120)||state.y>innerHeight+30||state.x<ground.left+6||state.x>ground.right-6){state.ground=null;state.y=Math.max(-15,Math.min(innerHeight-20,state.y));state.vy=100;ground=null;runGoal=null;pendingJump=null;}}
    else if(dy){state.y=Math.max(-15,Math.min(innerHeight-35,state.y-dy));if(Math.abs(dy)>60){state.vy=Math.max(100,state.vy);pendingJump=null;}}
    if(pendingJump&&clock>=crouchUntil){const p=surfaces.find(p=>p.id===pendingJump.id);if(p){const tx=Math.max(p.left+30,Math.min(p.right-30,pendingJump.x));physics.jump(state,{x:tx,y:p.y});facing=Math.sign(state.vx)||facing;}pendingJump=null;ground=null;}
    if(state.ground!==null){
@@ -850,7 +889,17 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
     /* A visitor who starts moving again cuts a rest short. Not a climb in
        progress (it books its own long wait) and not a held point. */
     if(busy()&&!climb&&!holdingPoint()&&nextDecision-clock>1.2)nextDecision=clock+.3;
-    if(clock>=nextDecision&&clock>=waveUntil&&!pendingJump&&runGoal===null&&!holdingPoint())decide();
+    if(visit&&!holdingPoint()){
+      if(visit.phase==='start'){
+        const v=visitSurface();
+        if(v){visit.phase='out';leap((v.left+v.right)/2,v.y);}else endVisit(false);
+      }else if(visit.phase==='point'){
+        const l=launcherSurface();
+        visit.phase='back';if(visit.onLeave)visit.onLeave();
+        if(l)leap((l.left+l.right)/2,l.y);else endVisit(true);
+      }
+    }
+    else if(clock>=nextDecision&&clock>=waveUntil&&!pendingJump&&runGoal===null&&!holdingPoint())decide();
    }else{const fell=state.vy;const hit=physics.step(state,dt,surfaces,innerWidth);
      /* Only a real drop is worth a landing. Stepping between two ledges on
         the same line arrives at ~130px/s against 500+ for any actual jump,
@@ -861,7 +910,14 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
         floor under him, which is the button itself — so it plays where he
         lands and the walk-up is gone. */
      const p=perches[Number(hit.id)];
-     if(p&&p.button&&Math.random()<.75){
+     if(visit){
+       if(hit.id==='visit'){
+         pointUntil=clock+VISIT_POINT;play('point');visit.phase='point';nextDecision=clock+99;
+         if(visit.onPoint)visit.onPoint();
+       }else if(visit.phase==='back')endVisit(true);
+       else{visit.phase='start';}          // came down short: try again from here
+     }
+     else if(p&&p.button&&Math.random()<.75){
        pointUntil=clock+POINT_HOLD;play('point');runGoal=null;nextDecision=pointUntil+.2;
      }
    }}

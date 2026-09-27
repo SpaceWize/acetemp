@@ -995,6 +995,52 @@ body>section .btn--ghost:hover{
 }
 .hero__cue i{display:block;width:64px;height:1px;background:linear-gradient(90deg,var(--gold),transparent)}
 
+/* ═══ HOME HERO INTRO ═════════════════════════════════════════
+   Played once per load by heroIntro() in main.js; the class is set by the
+   inline script in index.html's head.
+     0     dark hold, scroll locked, a faint ember glow
+     1     "Meet Your" in steel: letter-spacing squeeze, blur to sharp
+     2     "ASSET" forged letter by letter, landing hot (--near 1), cooling
+     3     "Ace Spaders" poured in molten gold, left to right
+     4     Little Ace hops onto ASSET and points; ASSET reheats once
+     5     subtitle, buttons, scroll cue; the lock releases
+   Everything below is only the hidden starting state. The motion itself is
+   Web Animations in main.js, and removing .intro hands every element back
+   to its normal rules. */
+.hero-intro{
+  display:none;position:fixed;inset:0;z-index:1000;pointer-events:none;
+  background:#000;
+}
+.hero-intro i{
+  position:absolute;left:50%;top:56%;width:min(70vw,720px);aspect-ratio:1;
+  transform:translate(-50%,-50%);border-radius:50%;
+  background:radial-gradient(circle,rgba(226,146,60,.2) 0,rgba(180,96,34,.09) 32%,rgba(120,56,18,.03) 55%,transparent 70%);
+  filter:blur(12px);
+  animation:emberBreath 1.8s ease-in-out infinite alternate;
+}
+@keyframes emberBreath{0%{opacity:.55;transform:translate(-50%,-50%) scale(.92)}100%{opacity:1;transform:translate(-50%,-50%) scale(1.06)}}
+html.intro .hero-intro{display:block}
+html.intro-lock{overflow:hidden;scrollbar-gutter:stable}
+
+html.intro .hero__meet,
+html.intro .hero__asset,
+html.intro .hero__line--gold,
+html.intro .hero__h3,
+html.intro .hero__cta,
+html.intro .hero__cue{opacity:0}
+
+/* The hero's own steel, sized up from the nav's. A heat glow that scales
+   with --near and a brightness lift, so a freshly forged letter reads as
+   glowing rather than merely tinted. */
+.hero__steel{
+  filter:
+    drop-shadow(0 2px 0 rgba(0,0,0,.55))
+    drop-shadow(0 0 calc(var(--near) * 22px) rgba(255,170,84,calc(var(--near) * .6)))
+    brightness(calc(1 + var(--near) * .45));
+}
+.hero__asset,.hero__forge{display:inline-block}
+.hero__meet{display:inline-block}
+
 /* ═══ 3. PROOF STRIP ══════════════════════════════════════════ */
 /* Black, same as the hero above it — the strip reads as the hero's closing
    line rather than a separate band, and the top rule is what separates the

@@ -57,14 +57,9 @@
 
       s.setProperty('--scrim', (0.40 + 0.32 * seg(p, 0.14, 0.80)).toFixed(3));
 
-      // Beat 1 is the landing frame — it is never animated in, so the page
-      // never opens on an empty screen. Scroll composes beats 2–4 beneath it.
-      // Each beat needs roughly a couple of wheel notches to read as an event;
-      // at ~60px it fires faster than the input that drives it and the whole
-      // reveal collapses into a single flick. Sized against the 200vh hero.
-      setBeat(2, seg(p, 0.08, 0.28));   // headline, line two
-      setBeat(3, seg(p, 0.30, 0.50));   // identity paragraph
-      setBeat(4, seg(p, 0.48, 0.68));   // calls to action
+      // The headline, subtitle and buttons used to be composed here, one
+      // scroll beat at a time. heroIntro() now builds the whole frame on load,
+      // so scroll only carries the block up and deepens the scrim.
 
       // the block rides low while it is still half-empty, then rises
       // 265, not 320: the eyebrow and lede added to the landing frame pushed
@@ -830,6 +825,206 @@
     });
   }
 
+  /* ── HOME HERO INTRO ───────────────────────────────────────────
+     The load sequence described under "HOME HERO INTRO" in styles.css.
+     index.html's head decides whether it plays (html.intro); either way the
+     headline's steel is set up here, so the finished hero looks the same
+     whether it was forged in front of you or not.
+
+     Timeline, in ms from the start:
+        0  dark hold
+      600  the dark lifts; "Meet Your" squeezes in from wide and blurred
+     1250  ASSET, one letter every 150ms, each landing at full heat and
+           cooling over 1.2s
+     2300  "Ace Spaders" pours in, then its surge drains off
+     3500  Little Ace hops onto ASSET and points; ASSET reheats to 0.6
+     then  subtitle, buttons, scroll cue, and the scroll lock lets go
+     A click or any key skips straight to the end. */
+  function heroIntro() {
+    var hero = document.querySelector('[data-hero]');
+    var root = document.documentElement;
+    if (!hero) { root.classList.remove('intro', 'intro-lock'); return; }
+    var meet = hero.querySelector('.hero__meet');
+    var asset = hero.querySelector('.hero__asset');
+    var gold = hero.querySelector('.hero__line--gold');
+    var sub = hero.querySelector('.hero__h3');
+    var cta = hero.querySelector('.hero__cta');
+    var cue = hero.querySelector('.hero__cue');
+    var overlay = document.querySelector('.hero-intro');
+    if (!meet || !asset) { root.classList.remove('intro', 'intro-lock'); return; }
+
+    // Steel, as in the nav: "Meet Your" as one word, ASSET a letter at a time
+    // so each can be forged on its own.
+    var meetSteel = document.createElement('span');
+    meetSteel.className = 'steel hero__steel';
+    meetSteel.textContent = meet.textContent;
+    meet.textContent = '';
+    meet.appendChild(meetSteel);
+    var word = asset.textContent;
+    var letters = word.split('').map(function (ch) {
+      var l = document.createElement('span');
+      l.className = 'steel hero__steel hero__forge';
+      l.setAttribute('aria-hidden', 'true');
+      l.textContent = ch;
+      return l;
+    });
+    asset.setAttribute('aria-label', word);
+    asset.textContent = '';
+    letters.forEach(function (l) { asset.appendChild(l); });
+    var steel = [meetSteel].concat(letters);
+
+    function handOver() {
+      steel.forEach(function (el) { el.removeAttribute('data-heat-lock'); });
+      if (steelAdd) steelAdd(steel);
+      else steel.forEach(function (el) { el.style.setProperty('--near', '0'); });
+    }
+
+    if (!root.classList.contains('intro')) { handOver(); return; }
+    window.scrollTo(0, 0);
+
+    steel.forEach(function (el) { el.setAttribute('data-heat-lock', ''); });
+    if (gold) gold.setAttribute('data-heat-lock', '');
+
+    var anims = [], timers = [], raf = 0, done = false;
+    var t0 = performance.now();
+    function at(ms, fn) { timers.push(setTimeout(fn, ms)); }
+    function anim(el, frames, opts) {
+      if (!el) return null;
+      opts.fill = 'forwards';
+      var a = el.animate(frames, opts);
+      anims.push(a);
+      return a;
+    }
+    var EASE = 'cubic-bezier(.22,.61,.36,1)';
+
+    // Heat, per steel element: when it lands and how long it takes to cool,
+    // plus one shared reheat for ASSET while Little Ace points at it.
+    var heat = steel.map(function () { return { land: -1, cool: 1200, sx0: 20 }; });
+    var reheat = -1, REHEAT = 1100, REHEAT_PEAK = 0.6;
+    function heatFrame(now) {
+      var t = now - t0;
+      steel.forEach(function (el, i) {
+        var h = heat[i], n = 0, sx = 50;
+        if (h.land >= 0 && t >= h.land) {
+          var k = Math.min(1, (t - h.land) / h.cool);
+          n = Math.pow(1 - k, 2);                             // cools fast, then settles
+          sx = h.sx0 + k * 55;                                // the temper band slides as it cools
+        }
+        if (i > 0 && reheat >= 0 && t >= reheat) {
+          var r = Math.min(1, (t - reheat) / REHEAT);
+          var bump = Math.sin(r * Math.PI) * REHEAT_PEAK;
+          if (bump > n) { n = bump; sx = 30 + r * 40; }
+        }
+        el.style.setProperty('--near', n.toFixed(3));
+        el.style.setProperty('--sx', sx.toFixed(1) + '%');
+      });
+      if (!done) raf = requestAnimationFrame(heatFrame);
+    }
+    raf = requestAnimationFrame(heatFrame);
+
+    // 0 → the dark hold, then it lifts
+    at(600, function () {
+      anim(overlay, [{ opacity: 1 }, { opacity: 0 }], { duration: 700, easing: 'ease-out' });
+    });
+
+    // 1 → "Meet Your": wide and soft, squeezing in to sharp
+    at(600, function () {
+      anim(meet, [
+        { opacity: 0, letterSpacing: '.45em', filter: 'blur(14px)' },
+        { opacity: 1, letterSpacing: '0em', filter: 'blur(0px)' }
+      ], { duration: 950, easing: EASE });
+    });
+
+    // 2 → ASSET, forged a letter at a time
+    letters.forEach(function (l) { l.style.opacity = '0'; });
+    anim(asset, [{ opacity: 1 }, { opacity: 1 }], { duration: 1 });
+    letters.forEach(function (l, i) {
+      at(1250 + i * 150, function () {
+        heat[i + 1].land = performance.now() - t0 + 140;
+        heat[i + 1].sx0 = 15 + Math.random() * 10;
+        anim(l, [
+          { opacity: 0, transform: 'translateY(-.32em) scale(1.25)' },
+          { opacity: 1, transform: 'translateY(.03em) scale(.98)', offset: .7 },
+          { opacity: 1, transform: 'none' }
+        ], { duration: 260, easing: 'cubic-bezier(.3,0,.2,1)' });
+      });
+    });
+
+    // 3 → "Ace Spaders" poured in. The reveal is locked to .ll's own lit
+    //     band (--h), so the band's bright rim is the leading edge; then the
+    //     surge drains off and it settles into its usual gold.
+    if (gold) at(2300, function () {
+      gold.style.setProperty('--dir', '90deg');
+      gold.style.clipPath = 'inset(-20% calc(100% - (var(--h) * 140% - 8%)) -20% -4px)';
+      anim(gold, [{ opacity: 1 }, { opacity: 1 }], { duration: 1 });
+      anim(gold, [{ '--t': 0 }, { '--t': 0 }], { duration: 1 });
+      anim(gold, [{ '--h': 0 }, { '--h': 1 }], { duration: 1150, easing: 'cubic-bezier(.45,.05,.4,1)' });
+      at(1150, function () {
+        gold.style.clipPath = '';
+        anim(gold, [{ '--t': 0 }, { '--t': 1 }], { duration: 1100, easing: 'cubic-bezier(.45,0,.35,1)' });
+      });
+    });
+
+    // 4 → Little Ace hops onto ASSET and points; ASSET reheats once.
+    //     companion.js may not be ready, parked, or mid-chat — then the
+    //     reheat and the rest go ahead without him.
+    var restStarted = false;
+    function rest() {
+      if (restStarted) return;
+      restStarted = true;
+      anim(sub, [{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }],
+        { duration: 700, easing: EASE });
+      anim(cta, [{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }],
+        { duration: 700, delay: 260, easing: EASE });
+      anim(cue, [{ opacity: 0 }, { opacity: 1 }], { duration: 700, delay: 560, easing: 'ease-out' });
+      at(1300, finish);
+    }
+    function startReheat() { reheat = performance.now() - t0; }
+    at(3500, function () {
+      var ace = window.AceCompanion;
+      if (ace && ace.visit) {
+        ace.visit(asset, { onPoint: startReheat, onLeave: rest }).then(function (went) {
+          if (!went) { startReheat(); at(REHEAT, rest); }
+        });
+      } else {
+        startReheat();
+        at(REHEAT, rest);
+      }
+    });
+    at(9500, rest);                                  // never wait on him for long
+
+    function finish() {
+      if (done) return;
+      done = true;
+      timers.forEach(clearTimeout);
+      cancelAnimationFrame(raf);
+      removeEventListener('click', skip, true);
+      removeEventListener('keydown', skip, true);
+      removeEventListener('wheel', hold, { passive: false });
+      removeEventListener('touchmove', hold, { passive: false });
+      root.classList.remove('intro', 'intro-lock');
+      anims.forEach(function (a) { a.cancel(); });
+      letters.forEach(function (l) { l.style.opacity = ''; });
+      if (gold) {
+        gold.style.clipPath = '';
+        gold.style.removeProperty('--dir');
+        gold.removeAttribute('data-heat-lock');
+      }
+      handOver();
+    }
+    function skip(e) {
+      if (e.type === 'keydown' && (e.ctrlKey || e.metaKey || e.altKey)) return;
+      finish();
+    }
+    // The lock: overflow:hidden covers the wheel and the scrollbar; these
+    // cover touch and keys on browsers that still scroll a hidden root.
+    function hold(e) { e.preventDefault(); }
+    addEventListener('click', skip, true);
+    addEventListener('keydown', skip, true);
+    addEventListener('wheel', hold, { passive: false });
+    addEventListener('touchmove', hold, { passive: false });
+  }
+
   /* ── boot ──────────────────────────────────────────────────── */
   function init() {
     var y = document.querySelector('[data-year]');
@@ -849,6 +1044,7 @@
     footLight();         // first: navGlass's steel loop must see its ACE
     navGlass();          // before liquidLight: both tag elements for it
     liquidLight();
+    heroIntro();         // last: it borrows navGlass's loop and liquidLight's gold
   }
 
   /* ── NAV — BURNING STEEL ───────────────────────────────────────
@@ -866,6 +1062,7 @@
      moving fast enough to need more. Touch gets the drift with no pointer;
      reduced motion gets the steel standing still. */
   var STEEL_REACH = 350;     // px at which a word stops answering the pointer
+  var steelAdd = null;       // set by navGlass(); adds words to its loop
   function navGlass() {
     // liquid-light-test.html builds its own headers while versions are compared
     if (document.body.hasAttribute('data-ll-test')) return;
@@ -893,6 +1090,10 @@
     var state = words.map(function (el) {
       return { el: el, near: -1, phase: Math.random() * 6.28 };
     });
+    // heroIntro() forges its own steel, then hands it over to this loop
+    steelAdd = function (els) {
+      els.forEach(function (el) { state.push({ el: el, near: -1, phase: Math.random() * 6.28 }); });
+    };
 
     var px = -1e4, py = -1e4, last = performance.now(), tick = 0;
     function frame(now) {
@@ -902,6 +1103,7 @@
       if (idle && (tick++ % 4)) return;
       last = now;
       state.forEach(function (s) {
+        if (s.el.hasAttribute('data-heat-lock')) return;   // driven elsewhere for now
         var r = s.el.getBoundingClientRect();
         if (!r.width) return;                              // closed dropdown / menu
         var dx = Math.max(r.left - px, 0, px - r.right);
@@ -1061,12 +1263,14 @@
       el['_ll' + prop] = el.animate([a, b], opts);
     }
     function enter(el, side) {
+      if (el.hasAttribute('data-heat-lock')) return;
       el.classList.add('is-hot');
       el.style.setProperty('--dir', ANGLE[side] + 'deg');
       run(el, '--t', 0, 0, { duration: 1, fill: 'forwards' });
       run(el, '--h', 0, 1, FILL);
     }
     function leave(el, side) {
+      if (el.hasAttribute('data-heat-lock')) return;
       el.classList.remove('is-hot');
       var h = Math.min(parseFloat(getComputedStyle(el).getPropertyValue('--h')) || 0, 1);
       // re-anchor the lit band on the exit side at the same size, then let
