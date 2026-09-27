@@ -623,6 +623,14 @@ body>section .btn--ghost:hover{
    the gap goes between siblings rather than on the element — otherwise the
    home hero gains a trailing space that throws off its beat spacing. */
 .hero__sub + .hero__sub{margin-top:var(--sp-2)}
+/* The one-line hook under a service page's title. Gold in the display face
+   so it reads as part of the heading, pulled up under the h1, and smaller
+   than .hero__h3 so it never competes with the section heads below. */
+.hero__tagline{
+  max-width:52ch;margin:calc(var(--sp-3) - var(--sp-4)) 0 var(--sp-4);
+  font:400 clamp(1.15rem,1.8vw,1.5rem)/1.3 var(--f-display);
+  letter-spacing:-.01em;color:var(--gold);
+}
 /* A short bulleted list inside hero copy — Premium Pickup & Transport and
    Public Speaking both need one for their "ways to access this" lines.
    Kept to the hero's own type scale rather than borrowing a denser list
@@ -1141,6 +1149,8 @@ body>section .btn--ghost:hover{
   transition:border-color var(--t-fast) var(--ease);
 }
 .circle__link:hover{border-bottom-color:#281B0A}
+/* Explore and Apply side by side, wrapping to two lines when narrow. */
+.circle__copy .circle__links{display:flex;flex-wrap:wrap;gap:0 var(--sp-4);max-width:none}
 /* The schedule and its link share one wrapper so the band stays a single
    row of three columns — align-items:center then has one row to centre,
    and the column rule runs past the list to the link below it. */
