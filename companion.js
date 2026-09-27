@@ -35,7 +35,7 @@ const shadow=document.createElement('div');shadow.className='ace-shadow';shadow.
    this darkens without taking the page hostage. */
 const scrim=document.createElement('div');scrim.className='ace-scrim';scrim.ariaHidden='true';document.body.append(scrim);
 const launcher=document.createElement('button');launcher.type='button';launcher.className='ace-launcher';launcher.innerHTML='<span aria-hidden="true"><img class="ace-spade" src="assets/icons/favicon-192.png" alt=""></span><span>Ask Little Ace</span>';launcher.setAttribute('aria-controls','ace-chat');launcher.setAttribute('aria-expanded','false');document.body.append(launcher);
-const panel=document.createElement('section');panel.id='ace-chat';panel.className='ace-chat';panel.hidden=true;panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','false');panel.setAttribute('aria-labelledby','ace-chat-title');panel.innerHTML='<div class="ace-chat-head"><span class="ace-chat-symbol" aria-hidden="true"><img class="ace-spade" src="assets/icons/favicon-192.png" alt=""></span><div><h2 id="ace-chat-title">Little Ace</h2><p>Your guide to Ace Spaders</p></div><button type="button" class="ace-chat-close" aria-label="Close chat">×</button></div><div class="ace-chat-messages" role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversation"></div><div class="ace-chat-suggestions" aria-label="Suggested questions"><button type="button">Advisory fees</button><button type="button">About Ace</button><button type="button">Upcoming events</button></div><form class="ace-chat-form"><label class="ace-sr" for="ace-question">Ask about Ace or the website</label><input id="ace-question" name="question" maxlength="600" autocomplete="off" placeholder="Ask about Ace, services, events…" required><button type="submit" aria-label="Send question">↑</button></form><div class="ace-chat-foot"><span>Published-site answers · stays in your browser</span><button class="ace-park" type="button">Park Little Ace</button></div>';document.body.append(panel);
+const panel=document.createElement('section');panel.id='ace-chat';panel.className='ace-chat';panel.hidden=true;panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','false');panel.setAttribute('aria-labelledby','ace-chat-title');panel.innerHTML='<div class="ace-chat-head"><span class="ace-chat-symbol" aria-hidden="true"><img class="ace-spade" src="assets/icons/favicon-192.png" alt=""></span><div><h2 id="ace-chat-title">Little Ace</h2><p>Your guide to Ace Spaders</p></div><button type="button" class="ace-chat-close" aria-label="Close chat">×</button></div><div class="ace-chat-messages" role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversation"></div><div class="ace-chat-suggestions" aria-label="Suggested questions"><button type="button">Advisory fees</button><button type="button">About Ace</button><button type="button">Upcoming events</button></div><form class="ace-chat-form"><label class="ace-sr" for="ace-question">Ask about Ace or the website</label><input id="ace-question" name="question" maxlength="600" autocomplete="off" placeholder="Ask about Ace, services, events…" required><button type="submit" aria-label="Send question">↑</button></form><div class="ace-chat-foot"><span>Published-site answers · questions logged anonymously</span><button class="ace-park" type="button">Park Little Ace</button></div>';document.body.append(panel);
 const log=panel.querySelector('.ace-chat-messages'),input=panel.querySelector('input'),close=panel.querySelector('.ace-chat-close'),parkButton=panel.querySelector('.ace-park');
 
 /* Reduced motion parks him by default rather than hiding him: the chat is
@@ -48,7 +48,7 @@ calm.addEventListener('change',e=>{motionPaused=e.matches;if(!motionPaused){stat
 function addMessage(text,who,links=[],suggest=[]){const el=document.createElement('div');el.className='ace-message '+who;const label=document.createElement('span');label.className='speaker';label.textContent=who==='user'?'YOU':'LITTLE ACE';const p=document.createElement('p');p.textContent=text;el.append(label,p);if(links.length){const list=document.createElement('div');list.className='ace-message-links';for(const [title,href] of links){const a=document.createElement('a');a.textContent=title+' ↗';a.href=href;if(href.startsWith('https:')){a.target='_blank';a.rel='noopener';}list.append(a);}el.append(list);}
 /* Some answers (the "are you asking a good question?" one) carry their own
    clickable follow-ups; each button simply asks its question. */
-if(suggest&&suggest.length){const row=document.createElement('div');row.className='ace-msg-suggest';for(const s of suggest){const b=document.createElement('button');b.type='button';b.textContent=s;b.addEventListener('click',()=>ask(s));row.append(b);}el.append(row);}
+if(suggest&&suggest.length){const row=document.createElement('div');row.className='ace-msg-suggest';for(const s of suggest){const b=document.createElement('button');b.type='button';b.textContent=s;b.addEventListener('click',()=>ask(s,'chip'));row.append(b);}el.append(row);}
 log.append(el);while(log.children.length>50)log.firstElementChild.remove();log.scrollTop=log.scrollHeight;}
 addMessage('Hi, I’m Little Ace, the automated site guide. I can explain Ace’s work, compare the services, or find your next gathering. I answer from published site information; for personal advice, speak with Ace.','bot');
 
@@ -204,15 +204,49 @@ const pageTopic=PAGE_TOPIC[(location.pathname.split('/').pop()||'').replace(/\.h
 let typingEl=null,typingTimer=0;
 function showTyping(){typingEl=document.createElement('div');typingEl.className='ace-message bot ace-typing';typingEl.setAttribute('aria-label','Little Ace is typing');
  typingEl.innerHTML='<span class="speaker">LITTLE ACE</span><p><i></i><i></i><i></i></p>';log.append(typingEl);log.scrollTop=log.scrollHeight;}
-function ask(q){q=q.trim();if(!q)return;
+/* ── CHAT LOG ──────────────────────────────────────────────────
+   Each exchange is sent to a Google Sheet (tools/little-ace-log.gs) so the
+   answers can be improved from what people actually ask. Off while LOG_URL
+   is empty. Anonymous: the chat ID is random per page load, and emails and
+   phone numbers are replaced before anything leaves the browser. The send
+   is fire-and-forget text/plain with no-cors — the only kind of request an
+   Apps Script web app takes from another site without a preflight — so a
+   failure never touches the chat.
+   Flags mark likely misses: fallback (the "good question?" reply), noinfo
+   (an answer still waiting on site info), missed (didn't understand),
+   split (two questions answered in one), repeat (close to the last
+   question — often a rephrase after a miss, sometimes just a follow-up). */
+const LOG_URL='https://script.google.com/macros/s/AKfycbwuuq5oPfvbiUtTgI2K9HJMan2YNRChqNrYjQ1VwtJKcJ0iEn9swbSuzk_w2Lks15x-UA/exec';
+const LOG_VERSION='2026-09-27';
+if(!LOG_URL){const f=panel.querySelector('.ace-chat-foot span');if(f)f.textContent='Published-site answers · stays in your browser';}
+const chatId=Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);
+let turn=0,lastQ='';
+const scrubPII=t=>t.replace(/[^\s@]+@[^\s@]+\.[^\s@]+/g,'[email]').replace(/(\+?\d[\d ().-]{7,}\d)/g,'[phone]');
+const words=t=>new Set(t.toLowerCase().replace(/[^a-z0-9$ ]/g,' ').split(/\s+/).filter(w=>w.length>2));
+function similar(a,b){const A=words(a),B=words(b);if(!A.size||!B.size)return false;let n=0;for(const w of A)if(B.has(w))n++;return n/(A.size+B.size-n)>=.6;}
+function logTurn(q,a,source){
+ if(!LOG_URL)return;
+ const flags=[];
+ if(a.id==='NONSENSE')flags.push('fallback');
+ if(/doesn['’]t cover that yet/i.test(a.text))flags.push('noinfo');
+ if(a.id==='FRUSTRATED'||/^Sorry, I missed that/.test(a.text))flags.push('missed');
+ if(a.text.includes('\n\n'))flags.push('split');
+ if(lastQ&&similar(q,lastQ))flags.push('repeat');
+ lastQ=q;
+ const body=JSON.stringify({chat:chatId,turn:++turn,page:location.pathname.split('/').pop()||'index.html',
+  source,q:scrubPII(q).slice(0,600),id:a.id,flags:flags.join(' '),a:scrubPII(a.text).slice(0,300),v:LOG_VERSION});
+ try{fetch(LOG_URL,{method:'POST',mode:'no-cors',keepalive:true,headers:{'Content-Type':'text/plain'},body}).catch(()=>{});}catch{}
+}
+function ask(q,source='typed'){q=q.trim();if(!q)return;
  if(typingEl){clearTimeout(typingTimer);typingEl.remove();typingEl=null;}
  addMessage(q,'user');input.value='';input.focus({preventScroll:true});
  const a=chat.reply(q,{pageTopic});if(!a)return;
+ logTurn(q,a,source);
  const wait=calm.matches?0:Math.min(1600,380+a.text.length*6);
  if(!wait){addMessage(a.text,'bot',a.links,a.suggest);return;}
  showTyping();
  typingTimer=setTimeout(()=>{if(typingEl){typingEl.remove();typingEl=null;}addMessage(a.text,'bot',a.links,a.suggest);},wait);}
-panel.querySelector('form').addEventListener('submit',e=>{e.preventDefault();ask(input.value);});panel.querySelectorAll('.ace-chat-suggestions button').forEach(b=>b.addEventListener('click',()=>ask(b.textContent)));
+panel.querySelector('form').addEventListener('submit',e=>{e.preventDefault();ask(input.value);});panel.querySelectorAll('.ace-chat-suggestions button').forEach(b=>b.addEventListener('click',()=>ask(b.textContent,'chip')));
 function updatePark(){parkButton.textContent=parked?'Let Little Ace roam':'Park Little Ace';}
 parkButton.addEventListener('click',()=>{parked=!parked;try{sessionStorage.setItem('ace-parked',parked?'yes':'no');}catch{}updatePark();if(!parked){state.ground=null;state.vy=0;nextDecision=clock+.5;}});updatePark();
 
