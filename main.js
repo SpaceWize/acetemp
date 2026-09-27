@@ -765,22 +765,99 @@
     applicationForm();
     preselectDoor();
     copyEmail();
-    pauseOffscreenRings();
+    edgeLight();
   }
 
-  /* ── OFF-SCREEN RINGS ──────────────────────────────────────────
-     A button's orbit ring is repainted on the main thread every frame it
-     spins, visible or not. Marking buttons that are out of view lets the
-     CSS pause them. The margin starts a ring just before it scrolls in,
-     so it is already moving when it arrives.                        */
-  function pauseOffscreenRings() {
-    if (!('IntersectionObserver' in window)) return;
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (e) {
-        e.target.classList.toggle('is-offscreen', !e.isIntersecting);
+  /* ── CURSOR-LIT EDGES ──────────────────────────────────────────
+     Points each box's edge arc at the cursor (see "CURSOR-LIT EDGE GLOW"
+     in styles.css). --light-a is the angle from the box's centre to the
+     light, clockwise from straight up, which is how conic-gradient counts;
+     --light-i brightens the edge as the light gets closer.
+
+     Only boxes on screen are touched (an IntersectionObserver keeps that
+     set), and the loop runs only while the light is still travelling, so
+     a parked cursor costs nothing. The light itself is eased toward the
+     pointer, which also keeps the arcs from snapping when it jumps.
+
+     No cursor (touch, or before the first move): the source sits above
+     the middle of the viewport, so scrolling alone sweeps the light
+     around each box as it passes. Reduced motion gets that same fixed
+     source and nothing more. */
+  var LIT = '.btn,.tier,.quote,.tiers,.quotes,.form,.cta__copy,.cta__shot,' +
+            '.tiernotes,.alsotile,.plaque,.portrait,.circle__band,' +
+            '.brand__mark,.four__node,.burger,.nav__sub,.toast';
+  var LIGHT_REACH = 700;     // px from a box at which its edge is dimmest
+
+  function edgeLight() {
+    var boxes = [].slice.call(document.querySelectorAll(LIT));
+    if (!boxes.length) return;
+
+    var visible = boxes;
+    if ('IntersectionObserver' in window) {
+      var seen = [];
+      visible = seen;
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          var i = seen.indexOf(e.target);
+          if (e.isIntersecting && i < 0) seen.push(e.target);
+          else if (!e.isIntersecting && i >= 0) seen.splice(i, 1);
+        });
+        queue();
+      }, { rootMargin: '80px 0px' });
+      boxes.forEach(function (b) { io.observe(b); });
+    }
+
+    function fixedSource() { return { x: window.innerWidth / 2, y: -window.innerHeight * 0.25 }; }
+    var target = fixedSource();
+    var light = { x: target.x, y: target.y };
+    var hasPointer = false, running = false;
+
+    function paint() {
+      // read every rect first, then write, so layout is computed once
+      var rects = visible.map(function (b) { return b.getBoundingClientRect(); });
+      visible.forEach(function (b, n) {
+        var r = rects[n];
+        if (!r.width && !r.height) return;            // display:none (closed dropdown)
+        var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+        var ang = Math.atan2(light.x - cx, cy - light.y) * 180 / Math.PI;
+        // distance to the box's nearest edge, 0 when the light is inside it
+        var dx = Math.max(r.left - light.x, 0, light.x - r.right);
+        var dy = Math.max(r.top - light.y, 0, light.y - r.bottom);
+        var near = 1 - Math.min(Math.sqrt(dx * dx + dy * dy) / LIGHT_REACH, 1);
+        b.style.setProperty('--light-a', ang.toFixed(1) + 'deg');
+        b.style.setProperty('--light-i', (hasPointer ? 0.3 + 0.7 * near : 0.7).toFixed(2));
       });
-    }, { rootMargin: '120px 0px' });
-    [].forEach.call(document.querySelectorAll('.btn'), function (b) { io.observe(b); });
+    }
+    function frame() {
+      if (!hasPointer) target = fixedSource();
+      var ease = reduce.matches ? 1 : 0.2;
+      light.x += (target.x - light.x) * ease;
+      light.y += (target.y - light.y) * ease;
+      paint();
+      if (Math.abs(target.x - light.x) > 0.5 || Math.abs(target.y - light.y) > 0.5) {
+        requestAnimationFrame(frame);
+      } else {
+        running = false;
+      }
+    }
+    function queue() {
+      if (!running) { running = true; requestAnimationFrame(frame); }
+    }
+
+    if (!reduce.matches) {
+      window.addEventListener('pointermove', function (e) {
+        if (e.pointerType === 'touch') return;
+        if (!hasPointer) { hasPointer = true; light.x = e.clientX; light.y = e.clientY; }
+        target = { x: e.clientX, y: e.clientY };
+        queue();
+      }, { passive: true });
+    }
+    // boxes move under a still light when the page scrolls or reflows
+    window.addEventListener('scroll', queue, { passive: true });
+    window.addEventListener('resize', queue);
+    // dropdowns open on hover/focus and need their angle before they show
+    document.addEventListener('focusin', queue);
+    queue();
   }
 
   if (document.readyState === 'loading') {
