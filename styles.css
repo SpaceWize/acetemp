@@ -289,7 +289,7 @@ button,input,select,textarea{font:inherit;color:inherit}
     llDrift2 15s ease-in-out infinite alternate,
     llDrift3 13s ease-in-out infinite alternate,
     llDrift4 19s ease-in-out infinite alternate;
-  /* The light gathers over ~1.2s and ebbs over ~1.8s rather than snapping
+  /* The light gathers over ~1.9s and ebbs over ~1.8s rather than snapping
      on and off with the pointer. Carried in a variable rather than set
      directly on .is-hot: any element with a transition of its own (the
      footer's links declare one for colour) outranks .ll and would drop
@@ -300,8 +300,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 }
 .ll.is-hot{
   --glow:1;
-  --ll-fade:--glow 1.2s var(--ease),--base-a 1.2s var(--ease),
-            --base-b 1.2s var(--ease),--base-c 1.2s var(--ease);
+  --ll-fade:--glow 1.9s var(--ease),--base-a 1.9s var(--ease),
+            --base-b 1.9s var(--ease),--base-c 1.9s var(--ease);
 }
 /* the logo's SPADERS: slower drift, lower glow */
 .ll--gentle{--glow:.5;animation-duration:18s,24s,21s,30s}

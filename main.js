@@ -1041,9 +1041,8 @@
     if (still || !window.matchMedia('(hover: hover)').matches) return;
 
     /* Unhurried on purpose: the light should gather and ebb rather than
-       track the pointer. The drain runs longer than the fill so a word the
-       pointer has left keeps glowing for a moment. */
-    var FILL = { duration: 1200, easing: 'cubic-bezier(.34,1.12,.5,1)', fill: 'forwards' };
+       track the pointer. Matched to the glow's own fade in styles.css. */
+    var FILL = { duration: 1900, easing: 'cubic-bezier(.34,1.08,.5,1)', fill: 'forwards' };
     var DRAIN = { duration: 1700, easing: 'cubic-bezier(.45,0,.35,1)', fill: 'forwards' };
     var ANGLE = { left: 90, right: 270, top: 180, bottom: 0 };   // runs from that side
 
