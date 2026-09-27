@@ -112,7 +112,8 @@ body:has(.ace-companion.is-dragging) .hero__plate{opacity:0}
   font-family:var(--f-util,"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif);font-variation-settings:"wdth" 112;
   font-size:.8125rem;font-weight:600;line-height:1.4;
 }
-.ace-launcher>span:first-child{font:24px/1 Georgia,serif}
+.ace-launcher>span:first-child{font:24px/1 Georgia,serif;line-height:0}
+.ace-launcher .ace-spade{width:24px;height:24px;display:block}
 .ace-launcher:hover{border-color:var(--gold,#D9A441);box-shadow:0 6px 30px rgba(0,0,0,.7),0 0 22px rgba(217,164,65,.27)}
 /* [hidden] and .ace-launcher{display:flex} tie in specificity, so without
    this the launcher was never actually hidden by companion.js setting the
@@ -161,7 +162,8 @@ body:has(.ace-companion.is-dragging) .hero__plate{opacity:0}
 }
 .ace-chat-head h2{font:400 1.125rem/1.1 var(--f-display,"Archivo Black","Archivo",system-ui,-apple-system,"Segoe UI",sans-serif);letter-spacing:-.02em;margin:0;color:var(--gold-hi,#EEBE63)}
 .ace-chat-head p{font-size:.75rem;margin:4px 0 0;color:var(--on-dark-mute,#A29C93)}
-.ace-chat-symbol{font:34px/1 Georgia,serif;color:var(--gold,#D9A441)}
+.ace-chat-symbol{font:34px/1 Georgia,serif;color:var(--gold,#D9A441);line-height:0}
+.ace-chat-symbol .ace-spade{width:34px;height:34px;display:block}
 .ace-chat-close{
   margin-left:auto;background:none;border:1px solid var(--line-dark,#2E2A26);
   color:var(--on-dark,#F1EDE6);width:32px;height:32px;cursor:pointer;font-size:22px;line-height:1;

@@ -669,7 +669,7 @@ body>section .btn--ghost:hover{
    one word */
 .brand__ace{
   font-family:var(--f-util);font-variation-settings:"wdth" 112;
-  font-size:.95rem;font-weight:600;letter-spacing:.15em;
+  font-size:.95rem;font-weight:900;letter-spacing:.15em;
 }
 .brand__word-b.ll{margin-left:.3em}
 
