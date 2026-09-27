@@ -209,7 +209,9 @@ button,input,select,textarea{font:inherit;color:inherit}
         merge and part without ever falling into step
      4. the base: deep enough that the white-hot light stands out, but
         never darker than #B87A2E, which still reads on the black ground
-   --glow scales the blobs and the halo: dim at rest, full on hover.
+   --glow scales the blobs and the halo: dim at rest, full on hover. The
+   halo is kept tight (1px, then a faint 4px) with a hairline dark edge
+   underneath: a wide 9px halo read as haze and softened the letters.
    liquidLight() in main.js drives the surge and the pool and pauses the
    drift off screen. Tested against a full-spectrum and a tinted version
    (liquid-light-test.html); plain gold won. */
@@ -271,8 +273,9 @@ button,input,select,textarea{font:inherit;color:inherit}
       transparent 78%),
     linear-gradient(180deg,#D39A45 0%,#B87A2E 55%,#CB8E3E 100%);
   filter:
-    drop-shadow(0 0 calc(var(--glow) * 2px) color-mix(in srgb,var(--halo) calc(var(--glow) * 70%),transparent))
-    drop-shadow(0 0 calc(var(--glow) * 9px) color-mix(in srgb,var(--halo) calc(var(--glow) * 45%),transparent));
+    drop-shadow(0 1px 0 rgba(0,0,0,.5))
+    drop-shadow(0 0 calc(var(--glow) * 1px) color-mix(in srgb,var(--halo) calc(var(--glow) * 55%),transparent))
+    drop-shadow(0 0 calc(var(--glow) * 4px) color-mix(in srgb,var(--halo) calc(var(--glow) * 22%),transparent));
   animation:
     llDrift1 11s ease-in-out infinite alternate,
     llDrift2 15s ease-in-out infinite alternate,
