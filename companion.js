@@ -45,7 +45,11 @@ let open=false,lastTopic=null,previousFocus=null,parked=false,motionPaused=calm.
 try{parked=sessionStorage.getItem('ace-parked')==='yes';}catch{}
 calm.addEventListener('change',e=>{motionPaused=e.matches;if(!motionPaused){state.ground=null;state.vy=0;nextDecision=clock+.8;}});
 
-function addMessage(text,who,links=[]){const el=document.createElement('div');el.className='ace-message '+who;const label=document.createElement('span');label.className='speaker';label.textContent=who==='user'?'YOU':'LITTLE ACE';const p=document.createElement('p');p.textContent=text;el.append(label,p);if(links.length){const list=document.createElement('div');list.className='ace-message-links';for(const [title,href] of links){const a=document.createElement('a');a.textContent=title+' ↗';a.href=href;if(href.startsWith('https:')){a.target='_blank';a.rel='noopener';}list.append(a);}el.append(list);}log.append(el);while(log.children.length>50)log.firstElementChild.remove();log.scrollTop=log.scrollHeight;}
+function addMessage(text,who,links=[],suggest=[]){const el=document.createElement('div');el.className='ace-message '+who;const label=document.createElement('span');label.className='speaker';label.textContent=who==='user'?'YOU':'LITTLE ACE';const p=document.createElement('p');p.textContent=text;el.append(label,p);if(links.length){const list=document.createElement('div');list.className='ace-message-links';for(const [title,href] of links){const a=document.createElement('a');a.textContent=title+' ↗';a.href=href;if(href.startsWith('https:')){a.target='_blank';a.rel='noopener';}list.append(a);}el.append(list);}
+/* Some answers (the "are you asking a good question?" one) carry their own
+   clickable follow-ups; each button simply asks its question. */
+if(suggest&&suggest.length){const row=document.createElement('div');row.className='ace-msg-suggest';for(const s of suggest){const b=document.createElement('button');b.type='button';b.textContent=s;b.addEventListener('click',()=>ask(s));row.append(b);}el.append(row);}
+log.append(el);while(log.children.length>50)log.firstElementChild.remove();log.scrollTop=log.scrollHeight;}
 addMessage('Hi, I’m Little Ace, the automated site guide. I can explain Ace’s work, compare the services, or find your next gathering. I answer from published site information; for personal advice, speak with Ace.','bot');
 
 /* px/s^-1-ish ease rate he glides toward the chat-stand spot at, and the
@@ -180,12 +184,34 @@ function hideChat(){
  else panel.hidden=true;
 }
 pet.addEventListener('click',showChat);launcher.addEventListener('click',showChat);close.addEventListener('click',hideChat);
-/* On-Site Assignments has no page of its own: its links open Little Ace,
-   who points to the contact form. */
+/* Services without their own page (Advisory, Working Session, On-Site):
+   their links open Little Ace, who points to the contact form. */
+const ASK_TOPIC={onsite:'On-Site Assignments'};
 document.addEventListener('click',e=>{const el=e.target.closest('.js-ace-ask');if(!el)return;e.preventDefault();
+ const topic=ASK_TOPIC[el.dataset.aceTopic]||'that';
  if(!open)showChat();
- addMessage('To learn more about On-Site Assignments, reach out to Ace and his Assistant with a little more information about your situation. The contact form is the best place to start.','bot',[['Contact form','contact.html']]);});panel.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();hideChat();}});
-function ask(q){q=q.trim();if(!q)return;addMessage(q,'user');const a=knowledge.answer(q,lastTopic);lastTopic=a.id;addMessage(a.text,'bot',a.links);input.value='';input.focus({preventScroll:true});}
+ addMessage('To learn more about '+topic+', reach out to Ace and his Assistant with a little more information about your situation. The contact form is the best place to start.','bot',[['Contact form','contact.html']]);});panel.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();hideChat();}});
+/* One conversation per page load: the session remembers the topic, the
+   visitor's name, business and budget, and rotates wordings (knowledge.js).
+   The page itself is context — "how much is it?" on the poker page means
+   the buy-in. */
+const chat=knowledge.createSession();
+const PAGE_TOPIC={'aces-poker-night':'poker','aces-running-group':'running','all-aces-networking-events':'networking','premium-pickup-transport':'transport',
+ 'mastermind-membership':'MASTERMIND','mastermind-application':'MASTERMIND','public-speaking':'SPEAKING','private-working-session':'start','advisory':'ONGOING'};
+const pageTopic=PAGE_TOPIC[(location.pathname.split('/').pop()||'').replace(/\.html$/,'')]||null;
+/* A short "typing" pause, longer for longer answers, so replies arrive like
+   someone wrote them rather than all at once. Skipped for reduced motion. */
+let typingEl=null,typingTimer=0;
+function showTyping(){typingEl=document.createElement('div');typingEl.className='ace-message bot ace-typing';typingEl.setAttribute('aria-label','Little Ace is typing');
+ typingEl.innerHTML='<span class="speaker">LITTLE ACE</span><p><i></i><i></i><i></i></p>';log.append(typingEl);log.scrollTop=log.scrollHeight;}
+function ask(q){q=q.trim();if(!q)return;
+ if(typingEl){clearTimeout(typingTimer);typingEl.remove();typingEl=null;}
+ addMessage(q,'user');input.value='';input.focus({preventScroll:true});
+ const a=chat.reply(q,{pageTopic});if(!a)return;
+ const wait=calm.matches?0:Math.min(1600,380+a.text.length*6);
+ if(!wait){addMessage(a.text,'bot',a.links,a.suggest);return;}
+ showTyping();
+ typingTimer=setTimeout(()=>{if(typingEl){typingEl.remove();typingEl=null;}addMessage(a.text,'bot',a.links,a.suggest);},wait);}
 panel.querySelector('form').addEventListener('submit',e=>{e.preventDefault();ask(input.value);});panel.querySelectorAll('.ace-chat-suggestions button').forEach(b=>b.addEventListener('click',()=>ask(b.textContent)));
 function updatePark(){parkButton.textContent=parked?'Let Little Ace roam':'Park Little Ace';}
 parkButton.addEventListener('click',()=>{parked=!parked;try{sessionStorage.setItem('ace-parked',parked?'yes':'no');}catch{}updatePark();if(!parked){state.ground=null;state.vy=0;nextDecision=clock+.5;}});updatePark();
@@ -433,6 +459,34 @@ let climb=null,textSurface=null,pointUntil=0,waveUntil=0;
 const state={x:Math.max(70,innerWidth-160),y:innerHeight-20,vx:0,vy:0,ground:'floor'};
 let cursorX=innerWidth/2;document.addEventListener('pointermove',e=>{cursorX=e.clientX;},{passive:true});
 
+/* ── PACE ─────────────────────────────────────────────────────
+   He takes his energy from the visitor. While they are moving (pointer,
+   scroll, wheel, keys, touch within ACTIVE_WINDOW seconds) he is busy:
+   quick decisions, more hops and climbs. Once they stop he keeps going for
+   SETTLE_MOVES more moves at a calmer pace, then rests in the idle stance
+   for REST_MIN-REST_MAX seconds, takes a short wander of one or two moves,
+   and rests again — for as long as they stay put. Moving again wakes him
+   straight away (see the decision call in tick).
+
+   Bounded by time as well as by count: one climb or a run across the page
+   can take several seconds, so three "settling" moves could otherwise fill
+   the whole pause and he would never come to rest. New moves only start
+   within SETTLE_SECS of the visitor stopping, or within WANDER_SECS of a
+   rest ending; whatever he is already doing still finishes. */
+const ACTIVE_WINDOW=1.2,SETTLE_MOVES=3,SETTLE_SECS=4,REST_MIN=2.5,REST_MAX=5,WANDER_SECS=3;
+let lastActive=0,movesLeft=SETTLE_MOVES,wanderUntil=0;
+const markActive=()=>{lastActive=clock;};
+for(const ev of ['pointermove','scroll','wheel','keydown','touchstart'])addEventListener(ev,markActive,{passive:true});
+function busy(){return clock-lastActive<ACTIVE_WINDOW;}
+function decide(){
+  if(busy()){movesLeft=SETTLE_MOVES;choose(true);nextDecision=Math.min(nextDecision,clock+.5+Math.random()*.9);return;}
+  const open=Math.max(lastActive+ACTIVE_WINDOW+SETTLE_SECS,wanderUntil);
+  if(movesLeft>0&&clock<open){movesLeft--;choose(false);nextDecision=Math.min(nextDecision,clock+1.4+Math.random()*1.4);return;}
+  nextDecision=clock+REST_MIN+Math.random()*(REST_MAX-REST_MIN);   // stand in idle
+  movesLeft=Math.random()<.5?1:2;                                   // then a short wander
+  wanderUntil=nextDecision+WANDER_SECS;
+}
+
 /* ── BEING CARRIED ───────────────────────────────────────────
    He is a button first, so a press stays a click until it travels far
    enough to be a drag. Past DRAG_SLOP the pointer owns him outright: the
@@ -616,15 +670,25 @@ function climbTarget(){
     const rise=state.y-r.top;
     if(rise<70||rise>460)continue;
     const x=clampX(r.left+16);
-    best.push({el:c.el,x,topY:r.top,cost:Math.abs(x-state.x)+rise*.4+Math.random()*90});
+    best.push({el:c.el,x,topY:r.top,cost:Math.abs(x-state.x)+rise*.4+Math.abs(x-cursorX)*.3+Math.random()*90});
   }
   if(!best.length)return null;
   best.sort((a,b)=>a.cost-b.cost);
   return best[0];
 }
 
-function choose(){
+/* busy: the visitor is moving (see PACE). Busy, he hops and climbs more and
+   walks less; calm, he prefers the ground he is on. Either way the places
+   he picks are pulled toward the pointer — where the visitor is looking —
+   and toward buttons, which he can point at. */
+function choose(busy){
  const ground=currentSurface();
+ /* More climby: a block of copy is tried first on a share of decisions,
+    not only when nothing else is in reach. */
+ if(Math.random()<(busy?.45:.3)){
+   const t=climbTarget();
+   if(t){climb=t;runGoal=t.x;nextDecision=clock+8;return;}
+ }
  /* Comfortably in the middle of a wide ledge: this is what "flat surface,
     so he runs" means, and it is the actual bug behind the jumping-bean
     complaint. inReach() below deliberately excludes the surface he is
@@ -633,13 +697,14 @@ function choose(){
     be decided here, before inReach() is ever consulted, or it never gets
     a turn. */
  if(ground&&ground.id!=='floor'&&ground.right-ground.left>140&&
-    state.x-ground.left>SURFACE_EDGE&&ground.right-state.x>SURFACE_EDGE){
+    state.x-ground.left>SURFACE_EDGE&&ground.right-state.x>SURFACE_EDGE&&
+    !(busy&&Math.random()<.4)){
    const x=Math.random()<.5?ground.right-35:ground.left+35;
    runGoal=clampX(x);nextDecision=clock+.5;return;
  }
  /* On the floor: often enough, just walk it. He still explores the page,
     he simply does more of it on foot. */
- if(ground&&ground.id==='floor'&&Math.random()<FLOOR_ROAM){
+ if(ground&&ground.id==='floor'&&Math.random()<(busy?.3:FLOOR_ROAM)){
    runGoal=clampX(state.x+(Math.random()<.5?-1:1)*(140+Math.random()*220));
    nextDecision=clock+.6;return;
  }
@@ -690,7 +755,9 @@ function choose(){
    Math.abs((p.left+p.right)/2-state.x)+Math.abs(p.y-state.y)*.5
    +Math.random()*55
    +(p.id==='floor'?140:0)
-   +recentBonus(p.id)})).sort((a,b)=>a.score-b.score);
+   +recentBonus(p.id)
+   +Math.abs((p.left+p.right)/2-cursorX)*(busy?.35:.6)
+   -(perches[Number(p.id)]&&perches[Number(p.id)].button?90:0)})).sort((a,b)=>a.score-b.score);
  const p=scored[Math.min(scored.length-1,Math.random()<.25?1:0)].p;
  /* Spread landings across the ledge instead of always touching down where
     he took off, so a wide tray gets walked rather than stood on. */
@@ -780,7 +847,10 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
        runGoal=null;state.vx=0;nextDecision=clock+.16;
      }
     }else state.vx=0;
-    if(clock>=nextDecision&&clock>=waveUntil&&!pendingJump&&runGoal===null&&!holdingPoint()){choose();nextDecision=Math.min(nextDecision,clock+2+Math.random()*2);}
+    /* A visitor who starts moving again cuts a rest short. Not a climb in
+       progress (it books its own long wait) and not a held point. */
+    if(busy()&&!climb&&!holdingPoint()&&nextDecision-clock>1.2)nextDecision=clock+.3;
+    if(clock>=nextDecision&&clock>=waveUntil&&!pendingJump&&runGoal===null&&!holdingPoint())decide();
    }else{const fell=state.vy;const hit=physics.step(state,dt,surfaces,innerWidth);
      /* Only a real drop is worth a landing. Stepping between two ledges on
         the same line arrives at ~130px/s against 500+ for any actual jump,

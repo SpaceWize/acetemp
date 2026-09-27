@@ -184,7 +184,14 @@ body:has(.ace-companion.is-dragging) .hero__plate{opacity:0}
   margin:0;padding:12px 14px;border:1px solid var(--line-dark,#2E2A26);
   background:var(--ink-700,#1A1816);color:var(--on-dark,#F1EDE6);
   font-size:.9375rem;line-height:1.55;overflow-wrap:anywhere;
+  white-space:pre-line;   /* multi-part answers and event lists break onto lines */
 }
+/* Typing indicator: three dots that pulse while a reply is "written". */
+.ace-typing p{display:inline-flex;gap:5px;padding:14px 16px}
+.ace-typing i{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.35;animation:aceTyping 1s infinite ease-in-out}
+.ace-typing i:nth-child(2){animation-delay:.15s}
+.ace-typing i:nth-child(3){animation-delay:.3s}
+@keyframes aceTyping{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:.9;transform:translateY(-3px)}}
 /* The visitor's own words come back in gold — the one place on the site
    where the reader, not Ace, is the thing being highlighted. */
 .ace-message.user p{background:var(--gold,#D9A441);color:#1A1105;border-color:var(--gold-hi,#EEBE63)}
@@ -201,6 +208,14 @@ body:has(.ace-companion.is-dragging) .hero__plate{opacity:0}
   padding:6px 10px;font:400 .75rem/1.4 var(--f-body,"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif);cursor:pointer;
 }
 .ace-chat-suggestions button:hover{border-color:var(--gold,#D9A441)}
+/* Follow-up buttons inside an answer bubble — same chip styling as the
+   suggestion row above the input, laid under the message text. */
+.ace-msg-suggest{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.ace-msg-suggest button{
+  border:1px solid var(--line-dark,#2E2A26);background:var(--ink-700,#1A1816);color:var(--gold-hi,#EEBE63);
+  padding:6px 10px;font:400 .75rem/1.4 var(--f-body,"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif);cursor:pointer;text-align:left;
+}
+.ace-msg-suggest button:hover{border-color:var(--gold,#D9A441)}
 
 .ace-chat-form{display:flex;gap:8px;padding:12px 14px;border-top:1px solid var(--line-dark,#2E2A26);flex-shrink:0}
 /* 16px on the input specifically: anything smaller and iOS Safari zooms
