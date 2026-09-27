@@ -216,7 +216,7 @@ function showTyping(){typingEl=document.createElement('div');typingEl.className=
    (an answer still waiting on site info), missed (didn't understand),
    split (two questions answered in one), repeat (close to the last
    question — often a rephrase after a miss, sometimes just a follow-up). */
-const LOG_URL='https://script.google.com/macros/s/AKfycbwuuq5oPfvbiUtTgI2K9HJMan2YNRChqNrYjQ1VwtJKcJ0iEn9swbSuzk_w2Lks15x-UA/exec';
+const LOG_URL='https://script.google.com/macros/s/AKfycbxr8aKMcIdB2LnibmgYvAwZpkmd7J_bCwomDTcYox6ZZE6hzLoQPVk8CI1Ez89iDLXAmQ/exec';
 const LOG_VERSION='2026-09-27';
 if(!LOG_URL){const f=panel.querySelector('.ace-chat-foot span');if(f)f.textContent='Published-site answers · stays in your browser';}
 const chatId=Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);
