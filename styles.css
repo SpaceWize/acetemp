@@ -871,6 +871,14 @@ body>section .btn--ghost:hover{
 .hero__line{display:block}
 .hero__line:first-child{opacity:var(--o1);transform:translate3d(0,var(--y1),0)}
 .hero__line--gold{color:var(--gold);opacity:var(--o2);transform:translate3d(0,var(--y2),0)}
+/* Home hero: what ASSET stands for, on the third beat between the name
+   and the CTAs. */
+.hero__h3{
+  margin-top:calc(var(--sp-2) * -1);max-width:60ch;
+  font:400 clamp(1.05rem,1.9vw,1.55rem)/1.25 var(--f-display);letter-spacing:-.01em;
+  color:var(--on-dark);
+  opacity:var(--o3);transform:translate3d(0,var(--y3),0);
+}
 .hero__sub{
   max-width:56ch;font-size:var(--fs-lead);color:#CFC9C0;
   opacity:var(--o3);transform:translate3d(0,var(--y3),0);
