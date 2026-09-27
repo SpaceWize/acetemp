@@ -244,7 +244,10 @@ button,input,select,textarea{font:inherit;color:inherit}
   color:transparent;-webkit-text-fill-color:transparent;
   -webkit-background-clip:text;background-clip:text;
   background-repeat:no-repeat;
-  background-image:
+  /* held in a variable so .ll--link can drop the layers at rest and put
+     them back when lit */
+  background-image:var(--ll-layers);
+  --ll-layers:
     linear-gradient(var(--dir),
       transparent calc(var(--t) * 140% - 30%),
       var(--surge) calc(var(--t) * 140% - 10%),
@@ -1610,7 +1613,7 @@ body>section .btn--ghost:hover{
   .tiernotes:hover,
   .alsotile:hover,.plaque:hover,.circle__band:hover,
   .btn:hover,
-  .foot__grid a:hover,.tlink:hover,
+  .tlink:hover,
   .cta__meta a:hover,.cta__meta .copy:hover{
     transform:translateY(-6px);
     /* the 0-offset ring stands in for a border change: .quote's 2px gold
@@ -1630,11 +1633,12 @@ body>section .btn--ghost:hover{
                0 0 40px -6px rgba(217,164,65,.30),
                0 0 90px 8px rgba(217,164,65,.14);
   }
-  /* Links and buttons are small; the card halo swamps them. The nav's
-     links are out of this and the lift: they carry the burning-steel
-     light and the aura instead (NAV — BURNING STEEL). */
+  /* Links and buttons are small; the card halo swamps them. The nav's and
+     footer's links are out of this and the lift: they carry the
+     burning-steel light or the molten fill instead (NAV — BURNING STEEL,
+     LIQUID LIGHT). */
   .btn:hover,
-  .foot__grid a:hover,.tlink:hover,
+  .tlink:hover,
   .cta__meta a:hover,.cta__meta .copy:hover{
     box-shadow:0 0 18px -4px rgba(217,164,65,.45),
                0 10px 18px -12px rgba(20,18,15,.5);
@@ -1651,7 +1655,7 @@ body>section .btn--ghost:hover{
   .tiernotes:hover,
   .alsotile:hover,.plaque:hover,.circle__band:hover,
   .btn:hover,
-  .nav__list a:hover,.foot__grid a:hover,.tlink:hover,
+  .tlink:hover,
   .cta__meta a:hover,.cta__meta .copy:hover{
     transform:none;
   }
@@ -2026,7 +2030,24 @@ body>section .btn--ghost:hover{
 .foot__grid a{font-size:var(--fs-sm);color:var(--on-dark-mute);
   overflow-wrap:break-word;
   transition:color var(--t-fast) var(--ease)}
+/* Lit on hover rather than lightened: .ll--link keeps the muted fill at
+   rest and hands the letters to the molten light while the pointer is on
+   them (liquidLight() in main.js adds the class). */
 .foot__grid a:hover{color:var(--on-dark)}
+.ll--link{
+  --glow:0;
+  background-image:none,none,none,none,none,none,
+    linear-gradient(180deg,#B9B2A6,#9E978B);
+  filter:none;
+}
+.ll--link.is-hot{
+  --glow:1;
+  background-image:var(--ll-layers);
+  filter:
+    drop-shadow(0 1px 0 rgba(0,0,0,.5))
+    drop-shadow(0 0 1px color-mix(in srgb,var(--halo) 55%,transparent))
+    drop-shadow(0 0 4px color-mix(in srgb,var(--halo) 22%,transparent));
+}
 /* Brand-column pull quote. Sits under the wordmark, so it stays quiet —
    the gold is spent on the column headings, not here. */
 .foot__quote{

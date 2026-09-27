@@ -846,7 +846,8 @@
     preselectDoor();
     copyEmail();
     edgeLight();
-    navGlass();          // before liquidLight: it tags the logo's SPADERS
+    footLight();         // first: navGlass's steel loop must see its ACE
+    navGlass();          // before liquidLight: both tag elements for it
     liquidLight();
   }
 
@@ -885,7 +886,7 @@
     }
 
     var words = [].slice.call(document.querySelectorAll(
-      '.site-head .brand__ace, .nav__list a, .mnav a:not(.mnav__cta), .mnav__toggle'));
+      '.brand__ace, .nav__list a, .mnav a:not(.mnav__cta), .mnav__toggle'));
     words.forEach(function (w) { w.classList.add('steel'); });
     var hover = window.matchMedia('(hover: hover)').matches;
     var still = reduce.matches;
@@ -970,6 +971,43 @@
       aura(ul, [].slice.call(ul.querySelectorAll('a')));
       ul.addEventListener('pointerenter', function () { top.classList.add('is-faint'); });
       ul.addEventListener('pointerleave', function () { top.classList.remove('is-faint'); });
+    });
+  }
+
+  /* ── FOOTER LIGHT ─────────────────────────────────────────────
+     Gives the footer the header's treatment: the wordmark splits the same
+     way (ACE steel, SPADERS gentle molten gold), the gold column headings
+     and the address note take the molten light, and the link lists stay
+     muted until the pointer lights them (.ll--link). Tagging happens here;
+     liquidLight() below drives every .ll on the page. */
+  function footLight() {
+    var foot = document.querySelector('.foot');
+    if (!foot) return;
+
+    var word = foot.querySelector('.foot__word');
+    if (word) {
+      var t = word.firstChild;
+      if (t && t.nodeType === 3 && /\S/.test(t.nodeValue)) {
+        // "ACE SPADERS" is one text node here, unlike the header's two spans
+        var parts = t.nodeValue.trim().split(/\s+/);
+        var tail = parts.slice(1).join(' ');
+        var ace = document.createElement('span');
+        ace.className = 'brand__ace steel';
+        ace.textContent = parts[0];
+        word.replaceChild(ace, t);
+        if (tail) {
+          var rest = document.createElement('span');
+          rest.className = 'brand__word-b ll ll--gentle';
+          rest.textContent = tail;
+          word.appendChild(rest);
+        }
+      }
+    }
+    [].forEach.call(foot.querySelectorAll('.foot__h,.foot__addr-note'), function (el) {
+      el.classList.add('ll');
+    });
+    [].forEach.call(foot.querySelectorAll('.foot__grid a'), function (el) {
+      el.classList.add('ll', 'll--link');
     });
   }
 
