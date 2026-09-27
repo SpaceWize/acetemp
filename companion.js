@@ -222,14 +222,18 @@ if(!LOG_URL){const f=panel.querySelector('.ace-chat-foot span');if(f)f.textConte
 const chatId=Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);
 let turn=0,lastQ='';
 const scrubPII=t=>t.replace(/[^\s@]+@[^\s@]+\.[^\s@]+/g,'[email]').replace(/(\+?\d[\d ().-]{7,}\d)/g,'[phone]');
+/* The engine rotates its wording, so the flags match against every variant
+   it can say rather than one sentence copied from it. */
+const INTERIM=(knowledge.LINES&&knowledge.LINES.interim)||[],MISSED=(knowledge.LINES&&knowledge.LINES.frustrated)||[];
+const says=(text,list)=>list.some(l=>text.includes(l));
 const words=t=>new Set(t.toLowerCase().replace(/[^a-z0-9$ ]/g,' ').split(/\s+/).filter(w=>w.length>2));
 function similar(a,b){const A=words(a),B=words(b);if(!A.size||!B.size)return false;let n=0;for(const w of A)if(B.has(w))n++;return n/(A.size+B.size-n)>=.6;}
 function logTurn(q,a,source){
  if(!LOG_URL)return;
  const flags=[];
  if(a.id==='NONSENSE')flags.push('fallback');
- if(/doesn['’]t cover that yet/i.test(a.text))flags.push('noinfo');
- if(a.id==='FRUSTRATED'||/^Sorry, I missed that/.test(a.text))flags.push('missed');
+ if(says(a.text,INTERIM))flags.push('noinfo');
+ if(a.id==='FRUSTRATED'||says(a.text,MISSED))flags.push('missed');
  if(a.text.includes('\n\n'))flags.push('split');
  if(lastQ&&similar(q,lastQ))flags.push('repeat');
  lastQ=q;
