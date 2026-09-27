@@ -118,8 +118,7 @@
      This also owns the video's playback, because the two share a trigger:
      the plate is invisible until the pointer is over the stage, so there
      is no reason to decode a frame before then. */
-  var VIDEO_SPEED = 1;      // real time; the clip is ~12s, so a full there-
-                            // and-back cycle is ~24s
+  var VIDEO_SPEED = 1;      // real time; the clip is a ~12s there-and-back
 
   function heroSpotlight() {
     if (reduce.matches || !window.matchMedia('(hover: hover)').matches) return;
@@ -132,55 +131,19 @@
       var running = false;
 
       var video = stage.querySelector('[data-hero-video]');
-      var dir = 1;            // 1 = playing forward, -1 = scrubbing back
-      var vRaf = 0, vLast = 0, vOn = false;
+      var vOn = false;
 
-      /* Ping-pong. The clip's first and last frames do not match, so plain
-         `loop` snaps visibly at the wrap. Forward then backward hides that:
-         the seam becomes a turn, and every frame on the way back is one the
-         viewer saw a moment earlier.
-
-         The forward leg is native playback, not a scrub. Driving both legs by
-         writing currentTime every frame made the clip advance only as fast as
-         requestAnimationFrame was served — so anything that starved rAF (a
-         busy main thread, a throttled tab, a low-power display) stalled the
-         picture, and the motion appeared tied to cursor movement rather than
-         to time. play() is driven by the media clock instead and keeps going
-         on its own.
-
-         Only the return leg scrubs, because no browser honours a negative
-         playbackRate. That is affordable here: the clip is encoded with a
-         keyframe every 12 frames, which puts a backward seek at ~0.1ms. */
+      /* Native `loop`. timeline-1.mp4 is already a palindrome — it plays
+         forward and then back within the file, so its last frame matches its
+         first and the wrap is seamless. The old clip needed a scripted reverse
+         leg (seeking currentTime every frame); on this one, with a keyframe
+         only every ~2s, each backward seek decoded up to two seconds of video
+         and the picture stuttered at the turn. */
+      if (video) video.loop = true;
       function forward() {
-        dir = 1;
         video.playbackRate = VIDEO_SPEED;
         var p = video.play();
         if (p && p.catch) p.catch(function () {});   // autoplay refusal is fine
-      }
-      function reverseStep(ts) {
-        vRaf = requestAnimationFrame(reverseStep);
-        if (!vLast) vLast = ts;
-        var dt = (ts - vLast) / 1000;
-        vLast = ts;
-        if (dt > 0.25) dt = 0.25;                    // came back from a stall
-        var t = video.currentTime - dt * VIDEO_SPEED;
-        if (t <= 0) { video.currentTime = 0; reverseStop(); forward(); return; }
-        video.currentTime = t;
-      }
-      function reverseStart() {
-        if (vRaf) return;
-        dir = -1; vLast = 0;
-        video.pause();
-        vRaf = requestAnimationFrame(reverseStep);
-      }
-      function reverseStop() {
-        if (vRaf) { cancelAnimationFrame(vRaf); vRaf = 0; }
-      }
-      if (video) {
-        // end of the forward leg — turn around rather than stop
-        video.addEventListener('ended', function () {
-          if (vOn) reverseStart();
-        });
       }
       /* halt() stops the picture without forgetting that the pointer is still
          over the stage; videoStop() is the real exit. Keeping those separate
@@ -190,12 +153,11 @@
          parked on the hero never fires another move. */
       function halt() {
         if (!video) return;
-        reverseStop();
         video.pause();
       }
       function resume() {
         if (!video) return;
-        if (dir === 1) forward(); else reverseStart();
+        forward();
       }
       function videoStart() {
         if (!video || vOn) return;
