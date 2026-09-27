@@ -1040,8 +1040,11 @@
     }
     if (still || !window.matchMedia('(hover: hover)').matches) return;
 
-    var FILL = { duration: 650, easing: 'cubic-bezier(.34,1.25,.5,1)', fill: 'forwards' };
-    var DRAIN = { duration: 700, easing: 'cubic-bezier(.45,0,.3,1)', fill: 'forwards' };
+    /* Unhurried on purpose: the light should gather and ebb rather than
+       track the pointer. The drain runs longer than the fill so a word the
+       pointer has left keeps glowing for a moment. */
+    var FILL = { duration: 1200, easing: 'cubic-bezier(.34,1.12,.5,1)', fill: 'forwards' };
+    var DRAIN = { duration: 1700, easing: 'cubic-bezier(.45,0,.35,1)', fill: 'forwards' };
     var ANGLE = { left: 90, right: 270, top: 180, bottom: 0 };   // runs from that side
 
     function edge(el, x, y) {
@@ -1086,6 +1089,7 @@
     var px = -1e4, py = -1e4, queued = false;
     function pools() {
       queued = false;
+      var settling = false;
       var rects = items.map(function (el) { return el.getBoundingClientRect(); });
       items.forEach(function (el, i) {
         var r = rects[i];
@@ -1093,12 +1097,22 @@
         var dx = Math.max(r.left - px, 0, px - r.right);
         var dy = Math.max(r.top - py, 0, py - r.bottom);
         var near = Math.max(0, 1 - Math.sqrt(dx * dx + dy * dy) / POOL_REACH);
+        // eased toward the pointer rather than set outright, so the pool
+        // swells and fades instead of tracking every movement exactly
+        var prev = parseFloat(el.style.getPropertyValue('--near')) || 0;
+        var want = near;
+        near = prev + (near - prev) * 0.12;
+        if (near < 0.002) near = 0;
+        if (Math.abs(want - near) > 0.002) settling = true;
         el.style.setProperty('--near', near.toFixed(3));
         if (near) {
           el.style.setProperty('--cx', ((px - r.left) / r.width * 100).toFixed(1) + '%');
           el.style.setProperty('--cy', ((py - r.top) / r.height * 100).toFixed(1) + '%');
         }
       });
+      // keep going until every pool has caught up with the pointer, or a
+      // word the pointer has left would freeze part-lit
+      if (settling) queue();
     }
     function queue() { if (!queued) { queued = true; requestAnimationFrame(pools); } }
     window.addEventListener('pointermove', function (e) {
@@ -1107,6 +1121,7 @@
       queue();
     }, { passive: true });
     window.addEventListener('scroll', queue, { passive: true });
+    document.addEventListener('mouseleave', function () { px = py = -1e4; queue(); });
   }
 
   /* ── CURSOR-LIT EDGES ──────────────────────────────────────────

@@ -227,6 +227,13 @@ button,input,select,textarea{font:inherit;color:inherit}
 @property --near{syntax:'<number>';inherits:false;initial-value:0}
 @property --h{syntax:'<number>';inherits:false;initial-value:0}
 @property --t{syntax:'<number>';inherits:false;initial-value:0}
+/* The base fill's three stops are registered so they can be eased: the
+   footer's links ride them from muted grey to gold and back. A plain
+   custom property would jump, and swapping background-image cannot
+   transition at all. */
+@property --base-a{syntax:'<color>';inherits:false;initial-value:#D39A45}
+@property --base-b{syntax:'<color>';inherits:false;initial-value:#B87A2E}
+@property --base-c{syntax:'<color>';inherits:false;initial-value:#CB8E3E}
 
 @keyframes llDrift1{0%{--p1x:-5%;--p1y:20%}50%{--p1x:70%;--p1y:90%}100%{--p1x:105%;--p1y:10%}}
 @keyframes llDrift2{0%{--p2x:100%;--p2y:85%}50%{--p2x:25%;--p2y:5%}100%{--p2x:-10%;--p2y:70%}}
@@ -238,16 +245,14 @@ button,input,select,textarea{font:inherit;color:inherit}
   --glow:.75;
   --c1:#FFC44D; --c2:#FF9B3D; --c3:#FFE39A; --c4:#E8836B;
   --surge:#FFE7A8; --rim:#FFFFFF; --halo:#F2B04A;
+  --base-a:#D39A45; --base-b:#B87A2E; --base-c:#CB8E3E;
   /* sized to the words, so the blobs drift through the text rather than
      through the empty end of a full-width block */
   width:fit-content;max-width:100%;
   color:transparent;-webkit-text-fill-color:transparent;
   -webkit-background-clip:text;background-clip:text;
   background-repeat:no-repeat;
-  /* held in a variable so .ll--link can drop the layers at rest and put
-     them back when lit */
-  background-image:var(--ll-layers);
-  --ll-layers:
+  background-image:
     linear-gradient(var(--dir),
       transparent calc(var(--t) * 140% - 30%),
       var(--surge) calc(var(--t) * 140% - 10%),
@@ -274,7 +279,7 @@ button,input,select,textarea{font:inherit;color:inherit}
       color-mix(in srgb,var(--c4) calc(var(--glow) * 100%),transparent) 0,
       color-mix(in srgb,var(--c4) calc(var(--glow) * 45%),transparent) 45%,
       transparent 78%),
-    linear-gradient(180deg,#D39A45 0%,#B87A2E 55%,#CB8E3E 100%);
+    linear-gradient(180deg,var(--base-a) 0%,var(--base-b) 55%,var(--base-c) 100%);
   filter:
     drop-shadow(0 1px 0 rgba(0,0,0,.5))
     drop-shadow(0 0 calc(var(--glow) * 1px) color-mix(in srgb,var(--halo) calc(var(--glow) * 55%),transparent))
@@ -284,9 +289,20 @@ button,input,select,textarea{font:inherit;color:inherit}
     llDrift2 15s ease-in-out infinite alternate,
     llDrift3 13s ease-in-out infinite alternate,
     llDrift4 19s ease-in-out infinite alternate;
-  transition:--glow .6s var(--ease);
+  /* The light gathers over ~1.2s and ebbs over ~1.8s rather than snapping
+     on and off with the pointer. Carried in a variable rather than set
+     directly on .is-hot: any element with a transition of its own (the
+     footer's links declare one for colour) outranks .ll and would drop
+     these, but it cannot touch what the variable holds. */
+  --ll-fade:--glow 1.8s var(--ease),--base-a 1.8s var(--ease),
+            --base-b 1.8s var(--ease),--base-c 1.8s var(--ease);
+  transition:var(--ll-fade);
 }
-.ll.is-hot{--glow:1}
+.ll.is-hot{
+  --glow:1;
+  --ll-fade:--glow 1.2s var(--ease),--base-a 1.2s var(--ease),
+            --base-b 1.2s var(--ease),--base-c 1.2s var(--ease);
+}
 /* the logo's SPADERS: slower drift, lower glow */
 .ll--gentle{--glow:.5;animation-duration:18s,24s,21s,30s}
 .ll--gentle.is-hot{--glow:.8}
@@ -2034,20 +2050,13 @@ body>section .btn--ghost:hover{
    rest and hands the letters to the molten light while the pointer is on
    them (liquidLight() in main.js adds the class). */
 .foot__grid a:hover{color:var(--on-dark)}
-.ll--link{
-  --glow:0;
-  background-image:none,none,none,none,none,none,
-    linear-gradient(180deg,#B9B2A6,#9E978B);
-  filter:none;
+.ll.ll--link{
+  --glow:0;--base-a:#B9B2A6;--base-b:#9E978B;--base-c:#ABA599;
+  transition:var(--ll-fade);   /* restated to outrank .foot__grid a's */
 }
-.ll--link.is-hot{
-  --glow:1;
-  background-image:var(--ll-layers);
-  filter:
-    drop-shadow(0 1px 0 rgba(0,0,0,.5))
-    drop-shadow(0 0 1px color-mix(in srgb,var(--halo) 55%,transparent))
-    drop-shadow(0 0 4px color-mix(in srgb,var(--halo) 22%,transparent));
-}
+/* .ll's own --glow and halo already scale from nothing, so only the base
+   needs saying: the grey warms to gold as the light gathers. */
+.ll--link.is-hot{--glow:1;--base-a:#D39A45;--base-b:#B87A2E;--base-c:#CB8E3E}
 /* Brand-column pull quote. Sits under the wordmark, so it stays quiet —
    the gold is spent on the column headings, not here. */
 .foot__quote{
