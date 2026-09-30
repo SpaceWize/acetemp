@@ -987,9 +987,9 @@ body>section .btn--ghost:hover{
 }
 .hero__note a{color:var(--gold-ink);text-decoration:underline;text-underline-offset:.25em}
 .hero__note a:hover{color:var(--gold-hi)}
-/* The home hero's block rests at the foot of the screen: the buttons end
-   30px above the bottom edge of the section. */
-.hero[data-hero] .hero__content{padding-bottom:30px}
+/* The home hero's block rests near the foot of the screen: the buttons end
+   70px above the bottom edge of the section. */
+.hero[data-hero] .hero__content{padding-bottom:70px}
 /* Home hero only — subpages share .hero__stage's flex-end via .hero--page
    and should keep it. Once the choreography settles (--cy reaches 0), the
    text was sitting low against the bottom edge; centring it reads better
@@ -2157,10 +2157,12 @@ html.intro .hero__cue{opacity:0}
    room to breathe, and motion not refused by the visitor.      */
 @media (min-width:901px) and (pointer:fine){
   @media (prefers-reduced-motion:no-preference){
-    /* Reduced from 200vh — the beats still land clearly (still several
-       wheel notches apiece), it just takes noticeably less scrolling to
-       clear the hero. */
-    .js .hero{height:150vh}
+    /* The hero used to be 200vh, then 150vh, with the stage pinned while the
+       headline, subtitle and buttons were revealed a beat at a time by
+       scrolling. The intro (heroIntro() in main.js) now builds the whole
+       frame on load, so there is nothing left to scroll through: the hero is
+       one screen and the next section follows it directly. */
+    .js .hero{height:100vh}
     .js .hero__stage{position:sticky;top:0;height:100vh;min-height:100vh}
     .js .hero__cue{display:flex}
     .js .hero__content{padding-top:7rem;padding-bottom:clamp(4.5rem,10vh,7rem)}
@@ -2201,7 +2203,7 @@ html.intro .hero__cue{opacity:0}
   /* Home hero: a full screen, block centred just below the middle (the
      extra top padding clears the header), as on desktop. */
   .hero[data-hero] .hero__stage{min-height:100svh;align-items:flex-end}
-  .hero[data-hero] .hero__content{padding-top:6rem;padding-bottom:30px}
+  .hero[data-hero] .hero__content{padding-top:6rem;padding-bottom:70px}
 
   .stats{grid-template-columns:repeat(2,1fr);gap:var(--sp-4) var(--sp-3)}
   .tiers{grid-template-columns:1fr}
