@@ -1040,7 +1040,10 @@ html.intro .hero__cue{opacity:0}
 }
 .hero__asset,.hero__forge{display:inline-block}
 /* The Maxwell quote between About and For Readers */
-.network__quote{max-width:52rem;margin-bottom:var(--sp-5)}
+.network__quote{max-width:48rem;font-size:clamp(1.05rem,1.6vw,1.3rem);line-height:1.35}
+.network__cite{margin:var(--sp-2) 0 var(--sp-5);
+  font-family:var(--f-util);font-variation-settings:"wdth" 112;
+  font-size:var(--fs-label);font-weight:600;letter-spacing:.12em;text-transform:uppercase}
 /* White headings in steel (steelHeads() in main.js); the break-safe clone
    keeps the band and shadow right on headings that wrap. */
 .steel--head{-webkit-box-decoration-break:clone;box-decoration-break:clone}

@@ -859,6 +859,10 @@
         out.push(span);
       });
     });
+    // steel written straight into the markup (the quote's attribution)
+    [].forEach.call(document.querySelectorAll('.steel--head'), function (el) {
+      if (out.indexOf(el) < 0) out.push(el);
+    });
     if (!out.length) return;
     if (steelAdd) steelAdd(out);
     else out.forEach(function (el) { el.style.setProperty('--near', '0'); });
