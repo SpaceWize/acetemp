@@ -958,9 +958,12 @@
 
     // 1 → "Meet Your": wide and soft, squeezing in to sharp
     at(600, function () {
+      // ends on the headline's own (tight) spacing, or it snaps when the
+      // animation is released
+      var ls = getComputedStyle(meet).letterSpacing;
       anim(meet, [
         { opacity: 0, letterSpacing: '.45em', filter: 'blur(14px)' },
-        { opacity: 1, letterSpacing: '0em', filter: 'blur(0px)' }
+        { opacity: 1, letterSpacing: ls === 'normal' ? '0px' : ls, filter: 'blur(0px)' }
       ], { duration: 950, easing: EASE });
     });
 
