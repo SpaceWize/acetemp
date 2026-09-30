@@ -22,6 +22,7 @@
      Not input hijacking — the page scrolls normally. The stage pins
      and the panels are driven off scroll position, so the reader
      keeps full control of pace and direction.                     */
+  var HERO_DROP = 10;       // px the home hero's block sits below centre at rest
   function heroChoreography() {
     var hero = document.querySelector('[data-hero]');
     var stage = hero && hero.querySelector('[data-stage]');
@@ -65,7 +66,7 @@
       // 265, not 320: the eyebrow and lede added to the landing frame pushed
       // the gold half of the headline past the fold before any scrolling.
       // Both headline lines have to be readable on arrival.
-      s.setProperty('--cy', ((1 - easeOut(seg(p, 0.05, 0.66))) * 265).toFixed(1) + 'px');
+      s.setProperty('--cy', ((1 - easeOut(seg(p, 0.05, 0.66))) * HERO_DROP).toFixed(1) + 'px');
       s.setProperty('--cue', (1 - seg(p, 0, 0.05)).toFixed(3));
 
       // Composed from 0.68 to the release, and it stays that way. There is
