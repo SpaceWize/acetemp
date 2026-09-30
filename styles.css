@@ -887,6 +887,8 @@ body>section .btn--ghost:hover{
    the gap goes between siblings rather than on the element — otherwise the
    home hero gains a trailing space that throws off its beat spacing. */
 .hero__sub + .hero__sub{margin-top:var(--sp-2)}
+/* Fine print under the advisory format (advisory.html): smaller, italic */
+.hero__sub.hero__fine{font-size:var(--fs-sm);font-style:italic}
 /* The one-line hook under a service page's title. Gold in the display face
    so it reads as part of the heading, pulled up under the h1, and smaller
    than .hero__h3 so it never competes with the section heads below. */
