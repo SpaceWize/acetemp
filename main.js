@@ -1020,7 +1020,7 @@
         at(REHEAT, rest);
       }
     });
-    at(9500, rest);                                  // never wait on him for long
+    at(7000, rest);                                  // never wait on him for long (a slow phone runs him slow)
 
     function finish() {
       if (done) return;

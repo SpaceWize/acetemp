@@ -2178,6 +2178,10 @@ html.intro .hero__cue{opacity:0}
   .hero__stage{min-height:auto;align-items:stretch}
   .hero__content{padding-top:7.5rem;padding-bottom:5rem}
   .hero__h1{max-width:14ch}
+  /* Home hero: a full screen, block centred just below the middle (the
+     extra top padding clears the header), as on desktop. */
+  .hero[data-hero] .hero__stage{min-height:100svh;align-items:center}
+  .hero[data-hero] .hero__content{padding-top:6rem;padding-bottom:3rem}
 
   .stats{grid-template-columns:repeat(2,1fr);gap:var(--sp-4) var(--sp-3)}
   .tiers{grid-template-columns:1fr}
