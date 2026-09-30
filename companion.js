@@ -83,9 +83,9 @@ if(flashApi&&flashApi.available){
 addMessage('Hi, I’m Little Ace, the automated site guide. I can explain Ace’s work, compare the services, or find your next gathering. I answer from published site information; for personal advice, speak with Ace.','bot');
 
 /* px/s^-1-ish ease rate he glides toward the chat-stand spot at, and the
-   window the idle "he's alive" gesture is re-rolled inside of. MIN keeps
-   two plays from ever landing back to back; MAX is the 9s cap. */
-const CHAT_EASE=6, CHATPOSE_MIN=4, CHATPOSE_MAX=9;
+   the rest between one play of the idle gesture ending and the next
+   starting, re-rolled each time: never under MIN, never over MAX. */
+const CHAT_EASE=6, CHATPOSE_MIN=5, CHATPOSE_MAX=13;
 let nextChatPose=0,chatCloseTimer=null;
 
 /* ── THE CHAT STANCE ─────────────────────────────────────────
@@ -115,24 +115,26 @@ const CHAT_GAP=100;
    Cell index is the source frame index (see CHAT_ORDER in build_atlas.py):
    0/8 look at the viewer, 4 looks at the panel, 2/6 are shut, 3/5/7 are
    the lids on the way past. */
-/* PING-PONG. The gaze change above played once, then he dropped back to a
-   separate "at the viewer" frame whose eyes are set a little differently,
-   which read as a glitch. So it never stops and never lands on a frame
-   outside the sequence: forward through the gaze change, then the same
-   frames back the other way, then round again. The two turnaround points
-   are the two at-the-viewer frames (0 and 8), so nothing snaps at either
-   end. 4, the look at the panel, is held on both legs. */
+/* FORWARD AND BACK. One play goes through the gaze change and then the same
+   frames in reverse, and it begins and ends on frame 0. Between plays he
+   rests on frame 0 too, so there is no seam at either end — the old single
+   pass ended on frame 8, whose eyes are set a little differently from the
+   rest frame, and dropping from one to the other read as a glitch. 4, the
+   look at the panel, is held on both legs. The turnaround at frame 8 is the
+   other at-the-viewer frame. */
 const CHAT_GESTURE=[
-  [0,0.70],                      // at the viewer            ─┐ forward
-  [5,0.06],[2,0.10],[3,0.06],    // blink, eyes redirect      │
-  [4,1.60],                      // looking at the panel      │
-  [7,0.06],[6,0.10],[5,0.06],    // blink back                │
-  [8,0.70],                      // at the viewer again      ─┘
-  [5,0.06],[6,0.10],[7,0.06],    // the same frames in       ─┐ backward
-  [4,1.60],                      // reverse                   │
-  [3,0.06],[2,0.10],[5,0.06],    // and round to 0 again     ─┘
+  [0,0.70],                      // rest frame; a play starts past this hold
+  [5,0.06],[2,0.10],[3,0.06],    // blink, eyes redirect       ─┐ forward
+  [4,1.60],                      // looking at the panel        │
+  [7,0.06],[6,0.10],[5,0.06],    // blink back                  │
+  [8,0.70],                      // at the viewer again        ─┘ turnaround
+  [5,0.06],[6,0.10],[7,0.06],    // the same frames in         ─┐ backward
+  [4,1.60],                      // reverse                     │
+  [3,0.06],[2,0.10],[5,0.06],    // and round to rest          ─┘
 ];
 const CHAT_GESTURE_LEN=CHAT_GESTURE.reduce((a,f)=>a+f[1],0);
+/* A play skips the leading rest hold (he is already on that frame). */
+const CHAT_LEAD=CHAT_GESTURE[0][1],CHAT_PLAY_LEN=CHAT_GESTURE_LEN-CHAT_LEAD;
 /* Which cell the gesture is showing t seconds in, or -1 once it is done. */
 function chatCellAt(t){
   for(const [cell,dur] of CHAT_GESTURE){if(t<dur)return cell;t-=dur;}
@@ -190,7 +192,7 @@ function showChat(){
     900px he stays hidden, and a phone should not pay 900KB for a picture
     it will never show. */
  if(innerWidth>=900)loadChatSheet();
- chatGestureStart=clock;nextChatPose=0;
+ chatGestureStart=-1;nextChatPose=clock+1.5+Math.random()*4;
  chatX=state.x-SPRITE_W/2;chatY=state.y-FEET_Y/2;   // glide starts where he is
  /* Unhide at the closed state (scale .82, opacity 0), force the browser to
     compute it, THEN flip to open — otherwise the transition has no prior
@@ -1044,9 +1046,15 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
     chatCanvas.style.height=t.h.toFixed(1)+'px';
     chatX+=(t.x-chatX)*Math.min(1,dt*CHAT_EASE);
     chatY+=(t.y-chatY)*Math.min(1,dt*CHAT_EASE);
-    if(chatGestureStart<0)chatGestureStart=clock;
-    // the loop never rests: the phase just wraps round the ping-pong cycle
-    const cell=Math.max(0,chatCellAt((clock-chatGestureStart)%CHAT_GESTURE_LEN));
+    if(clock>=nextChatPose){
+      chatGestureStart=clock;
+      nextChatPose=clock+CHAT_PLAY_LEN+CHATPOSE_MIN+Math.random()*(CHATPOSE_MAX-CHATPOSE_MIN);
+    }
+    let cell=0;                                   // rests on frame 0, where every play also begins and ends
+    if(chatGestureStart>=0){
+      const t=clock-chatGestureStart+CHAT_LEAD;
+      if(t>=CHAT_GESTURE_LEN)chatGestureStart=-1;else cell=chatCellAt(t);
+    }
     renderChat(cell);
     pet.style.transform=`translate3d(${chatX.toFixed(1)}px,${chatY.toFixed(1)}px,0)`;
   }
