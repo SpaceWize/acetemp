@@ -785,8 +785,13 @@ body>section .btn--ghost:hover{
      (picture hugs the stage's right edge) and left is pulled in a bit
      from before to size the picture up; top is small and bottom is large,
      pushing the picture up toward the top of the stage. */
-  object-fit:contain;
-  padding:25px .5% 16% 30%;
+  /* The clip fills the whole hero. It used to be contained and pushed up
+     and to the right with padding, which left a bar of black under the
+     footage before the next section. cover scales it to fill the box and
+     crops what overhangs; the box (and so the mask) is unchanged. */
+  object-fit:cover;
+  object-position:70% 50%;
+  padding:0;
   opacity:0;
   /* The cutout is the spade itself, not a circle — the same glyph the brand
      mark and eyebrows use. An SVG mask rather than a gradient, because a
