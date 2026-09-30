@@ -33,6 +33,7 @@
 (function(){try{
   var d=document.documentElement,n=performance.getEntriesByType('navigation')[0];
   var seen=false;try{seen=sessionStorage.getItem('ace-intro')==='1';sessionStorage.setItem('ace-intro','1');}catch(e){}
+  if(n&&n.type==='reload')seen=false;          // a refresh always replays it
   if(seen||matchMedia('(prefers-reduced-motion: reduce)').matches||location.hash||(n&&n.type==='back_forward'))return;
   if('scrollRestoration' in history)history.scrollRestoration='manual';
   d.classList.add('intro','intro-lock');
