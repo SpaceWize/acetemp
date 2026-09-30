@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Little Ace Compare</title>
+<style>
+  :root { --bg:#EFECE6; --fg:#14120F; --mute:#5C574F; --line:#D5CFC4; --gold:#7A5610; }
+  :root[data-bg="ink"] { --bg:#1A1816; --fg:#F1EDE6; --mute:#A29C93; --line:#2E2A26; --gold:#D9A441; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; height:100%; background:var(--bg); color:var(--fg);
+    font:14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  body { display:flex; flex-direction:column; }
+  header { padding:12px 16px; border-bottom:1px solid var(--line); display:flex; flex-wrap:wrap; gap:8px 18px; align-items:center; }
+  h1 { font-size:15px; margin:0; }
+  .group { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  .group > span { font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--mute); margin-right:2px; }
+  button { font:inherit; font-size:13px; padding:4px 10px; border-radius:999px; cursor:pointer;
+    border:1px solid var(--line); background:transparent; color:var(--fg); }
+  button:hover { border-color:var(--mute); }
+  button[aria-pressed="true"] { background:var(--fg); color:var(--bg); border-color:var(--fg); }
+  input[type=range] { accent-color:var(--gold); width:110px; }
+  main { flex:1; position:relative; min-height:0; }
+  #gl, #sprite { position:absolute; top:0; height:100%; }
+  #sprite { left:0; width:33.333%; }
+  #gl { left:33.333%; width:66.667%; }
+  .labels { position:absolute; inset:0 0 auto 0; display:grid; grid-template-columns:repeat(3,1fr); pointer-events:none; }
+  .labels div { padding:10px 14px; font-size:12px; color:var(--mute); }
+  .labels b { color:var(--fg); font-weight:600; display:block; font-size:13px; }
+  .divider { position:absolute; top:0; bottom:0; width:1px; background:var(--line); }
+  #status { position:absolute; inset:0; display:grid; place-items:center; color:var(--mute); }
+  @media (max-width:700px) { .labels div { padding:6px; } .labels div span { display:none; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Little Ace · compare</h1>
+  <div class="group" id="clips"><span>Clip</span></div>
+  <div class="group"><span>Facing</span>
+    <button id="faceL" aria-pressed="false">◀</button><button id="faceR" aria-pressed="true">▶</button></div>
+  <div class="group" id="dragGroup" hidden><span>Swing</span><input type="range" id="dragLevel" min="0" max="4" step="1" value="0"></div>
+  <div class="group"><span>3D</span><button id="chat">Chat glance</button><button id="viewSite" aria-pressed="true">Full</button><button id="viewFace" aria-pressed="false">Face</button></div>
+  <div class="group"><span>Bg</span><button id="bgPaper" aria-pressed="true">Paper</button><button id="bgInk" aria-pressed="false">Ink</button></div>
+</header>
+<main>
+  <canvas id="sprite"></canvas>
+  <canvas id="gl"></canvas>
+  <div class="divider" style="left:33.333%"></div>
+  <div class="divider" style="left:66.667%"></div>
+  <div class="labels">
+    <div><b>Site today</b><span>2D sprite atlas, companion.js timings</span></div>
+    <div><b>3D · soft (the site)</b><span>two soft tones, warm shadows</span></div>
+    <div><b>3D · three.js lit</b><span>Lambert, no rim, no outline</span></div>
+  </div>
+  <div id="status">Loading…</div>
+</main>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+/* Cache-busted: python -m http.server sends no cache headers. */
+const { loadLittleAce } = await import('./little-ace-3d.js?v=' + Date.now());
+
+const BG = { paper: 0xEFECE6, ink: 0x1A1816 };
+const GLB = 'assets/models/little-ace/little-ace.glb';
+
+/* ── The 2D Ace, drawn the way companion.js draws him: same atlas, same
+   frame lists and rates (its CLIPS table), same mirroring rule. ── */
+const CELL_W = 240, CELL_H = 280, ATLAS_COLS = 8, FEET_Y = 273;
+const SPRITE_CLIPS = {
+  idle:   { f: [0, 1, 2, 3, 4, 5, 6, 7], fps: 2.5, loop: true, dir: 0 },
+  wave:   { f: [8, 9, 10, 11, 12], fps: 9, loop: true, dir: 0 },
+  run:    { f: [13, 14, 15, 16, 17, 18, 19, 20], fps: 11, loop: true, dir: 1 },
+  crouch: { f: [21, 22, 23], fps: 16, loop: false, dir: 1 },
+  rise:   { f: [24, 25], fps: 10, loop: false, dir: 1 },
+  apex:   { f: [26, 27], fps: 7, loop: true, dir: 1 },
+  fall:   { f: [28, 29], fps: 9, loop: true, dir: 1 },
+  land:   { f: [30, 31, 32, 33], fps: 17, loop: false, dir: 1 },
+  climb:  { f: [34, 35, 36, 37, 38, 39, 40, 41], fps: 11, loop: true, dir: 0 },
+  point:  { f: [42, 43, 44, 45, 46, 47, 48, 49], fps: 6, loop: false, dir: 0 },
+  drag:   { f: [50, 51, 52, 53, 54], fps: 0, loop: false, dir: -1 },
+};
+const atlas = new Image();
+atlas.src = 'assets/images/ace-atlas.webp';
+const spriteCanvas = document.getElementById('sprite');
+const sctx = spriteCanvas.getContext('2d');
+
+/* ── The two 3D Aces, one renderer, a scissored half each. ── */
+const gl = document.getElementById('gl');
+const renderer = new THREE.WebGLRenderer({ canvas: gl, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setScissorTest(true);
+const camera = new THREE.PerspectiveCamera(28, 1, 0.05, 50);
+const VIEWS = {
+  site: { target: new THREE.Vector3(0, 0.5, 0), dir: new THREE.Vector3(0, 0.12, 1).normalize(), dist: 3.1 },
+  face: { target: new THREE.Vector3(0, 0.74, 0.03), dir: new THREE.Vector3(-0.2, 0.08, 1).normalize(), dist: 0.6 },
+};
+let view = 'site';
+function placeCamera() {
+  const v = VIEWS[view];
+  camera.position.copy(v.target).addScaledVector(v.dir, v.dist);
+  camera.lookAt(v.target);
+}
+placeCamera();
+
+function shadowDisc() {
+  const c = document.createElement('canvas'); c.width = c.height = 128;
+  const g = c.getContext('2d');
+  const grad = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  grad.addColorStop(0, 'rgba(0,0,0,.28)'); grad.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = grad; g.fillRect(0, 0, 128, 128);
+  const disc = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.9),
+    new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false }));
+  disc.rotation.x = -Math.PI / 2; disc.position.y = 0.001;
+  return disc;
+}
+
+const status = document.getElementById('status');
+const panels = await Promise.all(['soft', 'lit'].map(async shading => {
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(BG.paper);
+  scene.add(shadowDisc());
+  const ace = await loadLittleAce(THREE, GLTFLoader, GLB, { shading });
+  scene.add(ace.object);
+  if (ace.lights) scene.add(ace.lights);
+  return { scene, ace };
+})).catch(err => { status.textContent = 'Could not load Little Ace: ' + err.message; throw err; });
+status.remove();
+const aces = panels.map(p => p.ace);
+window.littleAces = aces;
+
+/* ── shared state, driven the way the site drives him ── */
+let clip = 'idle', clipStart = 0, facing = 1, dragPose = 0, clock = 0;
+let jump = null, jumpY = 0;
+function play(name) {
+  if (name !== clip) { clip = name; clipStart = clock; }
+  for (const a of aces) a.play(name);
+}
+const G = 9.0, HOP = 0.55;
+function stepJump(dt) {
+  if (!jump) return;
+  jump.t += dt;
+  if (jump.phase === 'crouch' && jump.t > 0.22) { jump.phase = 'air'; jump.vy = Math.sqrt(2 * G * HOP); }
+  if (jump.phase === 'air') {
+    jump.vy -= G * dt; jumpY += jump.vy * dt;
+    if (jumpY <= 0) { jumpY = 0; jump.phase = 'land'; jump.t = 0; play('land'); }
+    else {
+      /* The sprite still names a phase by speed, as companion.js does; the
+         3D Aces fly one continuous leap placed by the same speed. */
+      const phase = jump.vy > 1.2 ? 'rise' : jump.vy > -1.0 ? 'apex' : 'fall';
+      if (phase !== clip) { clip = phase; clipStart = clock; }
+      /* One continuous flight, placed by speed: lift-off 0, top .5, touchdown 1. */
+      const v0 = Math.sqrt(2 * G * HOP);
+      const p = jump.vy >= 0 ? 0.5 * (1 - jump.vy / v0) : 0.5 + 0.5 * Math.min(1, -jump.vy / v0);
+      for (const a of aces) { a.setAir(p); a.play('air'); }
+    }
+  }
+  if (jump.phase === 'land' && jump.t > 0.23) { jump = null; play('idle'); }
+}
+
+const pressed = (el, on) => el.setAttribute('aria-pressed', String(!!on));
+const clipBox = document.getElementById('clips');
+const buttons = {};
+for (const [name, label] of Object.entries({ idle: 'Idle', wave: 'Wave', run: 'Run', jump: 'Jump', climb: 'Climb', point: 'Point', drag: 'Drag' })) {
+  const b = document.createElement('button');
+  b.textContent = label; pressed(b, name === 'idle');
+  b.onclick = () => {
+    jump = null; jumpY = 0;
+    if (name === 'jump') { jump = { phase: 'crouch', t: 0, vy: 0 }; clip = null; play('crouch'); }
+    else { clip = null; play(name); for (const a of aces) a.play(name, { restart: true }); }
+    for (const [n, x] of Object.entries(buttons)) pressed(x, n === name);
+    document.getElementById('dragGroup').hidden = name !== 'drag';
+  };
+  clipBox.append(b); buttons[name] = b;
+}
+function setFacing(f) {
+  facing = f;
+  for (const a of aces) a.setFacing(f);
+  pressed(document.getElementById('faceL'), f < 0); pressed(document.getElementById('faceR'), f > 0);
+}
+document.getElementById('faceL').onclick = () => setFacing(-1);
+document.getElementById('faceR').onclick = () => setFacing(1);
+document.getElementById('dragLevel').oninput = e => { dragPose = +e.target.value; for (const a of aces) a.setDrag(dragPose); };
+document.getElementById('chat').onclick = () => { for (const a of aces) a.chatGesture(1); };
+function setView(v) {
+  view = v; placeCamera();
+  pressed(document.getElementById('viewSite'), v === 'site'); pressed(document.getElementById('viewFace'), v === 'face');
+}
+document.getElementById('viewSite').onclick = () => setView('site');
+document.getElementById('viewFace').onclick = () => setView('face');
+function setBg(which) {
+  document.documentElement.dataset.bg = which;
+  for (const p of panels) p.scene.background.set(BG[which]);
+  pressed(document.getElementById('bgPaper'), which === 'paper'); pressed(document.getElementById('bgInk'), which === 'ink');
+}
+document.getElementById('bgPaper').onclick = () => setBg('paper');
+document.getElementById('bgInk').onclick = () => setBg('ink');
+
+/* ── sizing ── */
+function resize() {
+  const main = document.querySelector('main').getBoundingClientRect();
+  renderer.setSize(main.width * 2 / 3, main.height, false);
+  const size = renderer.getDrawingBufferSize(new THREE.Vector2());
+  for (const a of aces) a.setResolution(size.x / 2, size.y);
+  camera.aspect = (main.width / 3) / main.height;
+  camera.updateProjectionMatrix();
+  const dpr = Math.min(devicePixelRatio, 2);
+  spriteCanvas.width = Math.round(main.width / 3 * dpr);
+  spriteCanvas.height = Math.round(main.height * dpr);
+}
+addEventListener('resize', resize);
+resize();
+
+/* The sprite is scaled so he stands as tall as the 3D Ace in the full
+   view, feet on the same line: the 3D camera sees 2·d·tan(fov/2) metres
+   of height, and the atlas figure is ~210 of the cell's 280 px. */
+const FIGURE_PX = 210, ACE_M = 1.0;
+function drawSprite() {
+  const W = spriteCanvas.width, H = spriteCanvas.height;
+  sctx.clearRect(0, 0, W, H);
+  sctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--bg');
+  sctx.fillRect(0, 0, W, H);
+  if (!atlas.complete || !atlas.naturalWidth) return;
+  const v = VIEWS.site;
+  const seenM = 2 * v.dist * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+  const pxPerM = H / seenM;
+  const scale = pxPerM * ACE_M / FIGURE_PX;
+  const feetY = H / 2 + (v.target.y) * pxPerM * 0.97;
+  const c = SPRITE_CLIPS[clip] || SPRITE_CLIPS.idle;
+  const n = Math.floor((clock - clipStart) * c.fps);
+  const cell = clip === 'drag' ? c.f[dragPose] : c.f[c.loop ? n % c.f.length : Math.min(n, c.f.length - 1)];
+  const flip = c.dir !== 0 && facing !== c.dir;
+  const sx = (cell % ATLAS_COLS) * CELL_W, sy = Math.floor(cell / ATLAS_COLS) * CELL_H;
+  // the same soft contact shadow as the 3D panels, seen from the front
+  const r = 0.45 * pxPerM;
+  sctx.save();
+  sctx.globalAlpha = Math.max(0.25, 1 - jumpY * 1.2);
+  sctx.translate(W / 2, feetY);
+  sctx.scale(1, 0.22);
+  const sg = sctx.createRadialGradient(0, 0, 0, 0, 0, r);
+  sg.addColorStop(0, 'rgba(0,0,0,.28)'); sg.addColorStop(1, 'rgba(0,0,0,0)');
+  sctx.fillStyle = sg;
+  sctx.fillRect(-r, -r, 2 * r, 2 * r);
+  sctx.restore();
+  // figure
+  sctx.save();
+  sctx.translate(W / 2, feetY - jumpY * pxPerM);
+  sctx.scale(flip ? -scale : scale, scale);
+  sctx.imageSmoothingQuality = 'high';
+  sctx.drawImage(atlas, sx, sy, CELL_W, CELL_H, -CELL_W / 2, -FEET_Y, CELL_W, CELL_H);
+  sctx.restore();
+}
+
+const timer = new THREE.Timer();
+renderer.setAnimationLoop(now => {
+  timer.update(now);
+  const dt = Math.min(timer.getDelta(), 0.1);
+  clock += dt;
+  stepJump(dt);
+  const size = renderer.getDrawingBufferSize(new THREE.Vector2());
+  const half = size.x / 2 / renderer.getPixelRatio();
+  const h = size.y / renderer.getPixelRatio();
+  panels.forEach((p, i) => {
+    p.ace.object.position.y = jumpY;
+    p.ace.update(dt);
+    p.scene.children[0].material.opacity = Math.max(0.25, 1 - jumpY * 1.2);
+    renderer.setViewport(i * half, 0, half, h);
+    renderer.setScissor(i * half, 0, half, h);
+    renderer.render(p.scene, camera);
+  });
+  drawSprite();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Little Ace 3D Lit</title>
+<style>
+  :root { --bg:#EFECE6; --fg:#14120F; --mute:#5C574F; --line:#D5CFC4; --panel:rgba(239,236,230,.88); --gold:#7A5610; }
+  :root[data-bg="ink"] { --bg:#1A1816; --fg:#F1EDE6; --mute:#A29C93; --line:#2E2A26; --panel:rgba(18,17,16,.85); --gold:#D9A441; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; height:100%; background:var(--bg); color:var(--fg);
+    font:14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; overflow:hidden; }
+  canvas { display:block; width:100vw; height:100vh; touch-action:none; }
+  .panel { position:fixed; top:16px; left:16px; bottom:16px; width:252px; max-width:calc(100vw - 32px);
+    overflow:auto; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px;
+    backdrop-filter:blur(8px); }
+  h1 { font-size:15px; margin:0 0 2px; }
+  .sub { color:var(--mute); font-size:12px; margin:0 0 4px; }
+  .label { font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--mute); margin:14px 0 6px; }
+  .row { display:flex; justify-content:space-between; align-items:baseline; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; }
+  button { font:inherit; font-size:13px; padding:5px 10px; border-radius:999px; cursor:pointer;
+    border:1px solid var(--line); background:transparent; color:var(--fg); }
+  button:hover { border-color:var(--mute); }
+  button[aria-pressed="true"] { background:var(--fg); color:var(--bg); border-color:var(--fg); }
+  input[type=range] { width:100%; accent-color:var(--gold); }
+  select { width:100%; font:inherit; padding:4px 6px; border-radius:6px; border:1px solid var(--line);
+    background:transparent; color:var(--fg); }
+  select option { color:#14120F; }
+  label.check { display:flex; gap:8px; align-items:center; font-size:13px; margin-top:6px; cursor:pointer; }
+  input[type=checkbox] { accent-color:var(--gold); }
+  .val { font-variant-numeric:tabular-nums; color:var(--mute); font-size:12px; }
+  details summary { cursor:pointer; font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--mute); margin:14px 0 6px; }
+  #drag { display:none; }
+  #status { position:fixed; inset:0; display:grid; place-items:center; color:var(--mute); pointer-events:none; }
+  #now { position:fixed; right:16px; bottom:16px; font-size:12px; color:var(--mute); font-variant-numeric:tabular-nums; }
+  @media (max-width:600px) { .panel { top:auto; max-height:45vh; } }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="status">Loading Little Ace…</div>
+<div id="now"></div>
+
+<div class="panel">
+  <h1 id="title">Little Ace · three.js</h1>
+  <p class="sub">Drag to orbit, scroll to zoom.</p>
+
+  <div class="label">Site clips</div>
+  <div class="chips" id="site"></div>
+
+  <div class="label">Facing</div>
+  <div class="chips">
+    <button id="faceL" aria-pressed="false">◀ Left</button>
+    <button id="faceR" aria-pressed="true">Right ▶</button>
+  </div>
+
+  <div id="drag">
+    <div class="label row"><span>Drag swing</span><span class="val" id="dragVal">0°</span></div>
+    <input type="range" id="dragLevel" min="0" max="4" step="1" value="0">
+  </div>
+
+  <div class="label">Face</div>
+  <div class="chips">
+    <button id="blink">Blink</button>
+    <button id="chat">Chat glance</button>
+  </div>
+  <label class="check"><input type="checkbox" id="autoBlink" checked> Blink on his own</label>
+  <label class="check"><input type="checkbox" id="follow"> Head &amp; eyes follow the pointer</label>
+
+  <div class="label">Hands</div>
+  <select id="hands"><option value="">From clip</option></select>
+
+  <div class="label">Lighting</div>
+  <div class="chips" id="lighting"></div>
+
+  <div class="label row"><span>Outline</span><span class="val" id="outlineVal">1.25 px</span></div>
+  <input type="range" id="outline" min="0" max="4" step="0.25" value="1.25">
+
+  <div class="label">View</div>
+  <div class="chips">
+    <button id="viewSite">Site</button>
+    <button id="viewBody">3/4</button>
+    <button id="viewFace">Face</button>
+  </div>
+
+  <div class="label">Background</div>
+  <div class="chips">
+    <button id="bgPaper" aria-pressed="true">Paper</button>
+    <button id="bgInk" aria-pressed="false">Ink</button>
+  </div>
+
+  <details>
+    <summary>Blender clips (whole)</summary>
+    <div class="chips" id="blender"></div>
+  </details>
+</div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+/* Cache-busted: python -m http.server sends no cache headers, so a
+   browser would otherwise keep running an old copy of the module. */
+const { loadLittleAce } = await import('./little-ace-3d.js?v=' + Date.now());
+
+/* 'cel' = the Blender toon look rebuilt as a shader; 'soft' = the site's
+   two soft tones; 'lit' = three.js's
+   own Lambert material under ordinary lights (no rim, no highlights). */
+const SHADING = 'lit';
+document.getElementById('title').textContent = 'Little Ace · ' + ({ cel: 'cel', soft: 'soft (site)', lit: 'three.js lit' })[SHADING];
+
+const BG = { paper: 0xEFECE6, ink: 0x1A1816 };
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(BG.paper);
+
+const camera = new THREE.PerspectiveCamera(28, 1, 0.05, 50);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.minDistance = 0.5;
+controls.maxDistance = 8;
+controls.maxPolarAngle = Math.PI * 0.55;
+
+/* A soft contact shadow; he is unlit, so nothing else grounds him. It
+   stays on the floor and fades as he jumps. */
+const shadow = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 128;
+  const g = c.getContext('2d');
+  const grad = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  grad.addColorStop(0, 'rgba(0,0,0,.28)'); grad.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = grad; g.fillRect(0, 0, 128, 128);
+  const disc = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.9),
+    new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false }));
+  disc.rotation.x = -Math.PI / 2; disc.position.y = 0.001;
+  scene.add(disc);
+  return disc;
+})();
+
+const status = document.getElementById('status');
+const ace = await loadLittleAce(THREE, GLTFLoader, 'assets/models/little-ace/little-ace.glb', {
+  shading: SHADING,
+  onProgress: e => { if (e.total) status.textContent = `Loading Little Ace… ${Math.round(e.loaded / e.total * 100)}%`; },
+}).catch(err => { status.textContent = 'Could not load Little Ace: ' + err.message; throw err; });
+status.remove();
+scene.add(ace.object);
+if (ace.lights) scene.add(ace.lights);
+window.littleAce = ace;   // for poking at from the console
+
+const pressed = (el, on) => el.setAttribute('aria-pressed', String(!!on));
+
+/* ── A stand-in for companion.js's jump: crouch, then a ballistic hop,
+   with the clip chosen from vertical speed the way the site picks
+   rise / apex / fall. ── */
+const G = 9.0, HOP = 0.55;
+let jump = null;
+function startJump() { jump = { phase: 'crouch', t: 0, y: 0, vy: 0 }; ace.play('crouch', { restart: true }); }
+function stepJump(dt) {
+  if (!jump) return;
+  jump.t += dt;
+  if (jump.phase === 'crouch' && jump.t > 0.22) { jump.phase = 'air'; jump.vy = Math.sqrt(2 * G * HOP); }
+  if (jump.phase === 'air') {
+    jump.vy -= G * dt; jump.y += jump.vy * dt;
+    if (jump.y <= 0) { jump.y = 0; jump.phase = 'land'; jump.t = 0; ace.play('land'); }
+    else {
+      /* One continuous flight, placed by speed: lift-off 0, top .5, touchdown 1. */
+      const v0 = Math.sqrt(2 * G * HOP);
+      const p = jump.vy >= 0 ? 0.5 * (1 - jump.vy / v0) : 0.5 + 0.5 * Math.min(1, -jump.vy / v0);
+      ace.setAir(p); ace.play('air');
+    }
+  }
+  if (jump.phase === 'land' && jump.t > 0.23) { jump = null; ace.play('idle'); }
+  ace.object.position.y = jump ? jump.y : 0;
+}
+
+/* ── UI ── */
+const siteBox = document.getElementById('site');
+const buttons = {};
+const SITE_LABEL = { idle: 'Idle', wave: 'Wave', run: 'Run', jump: 'Jump', climb: 'Climb', point: 'Point', drag: 'Drag' };
+for (const [name, label] of Object.entries(SITE_LABEL)) {
+  const b = document.createElement('button');
+  b.textContent = label; pressed(b, false);
+  b.onclick = () => { jump = null; ace.object.position.y = 0; if (name === 'jump') startJump(); else ace.play(name, { restart: true }); };
+  siteBox.append(b); buttons[name] = b;
+}
+const blenderBox = document.getElementById('blender');
+for (const name of ace.blenderClips) {
+  const b = document.createElement('button');
+  b.textContent = name; pressed(b, false);
+  b.onclick = () => { jump = null; ace.object.position.y = 0; ace.play(name, { restart: true }); };
+  blenderBox.append(b); buttons[name] = b;
+}
+
+const faceL = document.getElementById('faceL'), faceR = document.getElementById('faceR');
+function setFacing(f) { ace.setFacing(f); pressed(faceL, f < 0); pressed(faceR, f > 0); }
+faceL.onclick = () => setFacing(-1);
+faceR.onclick = () => setFacing(1);
+
+const dragBox = document.getElementById('drag');
+const dragLevel = document.getElementById('dragLevel');
+const DRAG_DEG = [0, 8, 17, 28, 40];
+dragLevel.oninput = () => {
+  ace.setDrag(+dragLevel.value);
+  document.getElementById('dragVal').textContent = DRAG_DEG[+dragLevel.value] + '°';
+};
+
+document.getElementById('blink').onclick = () => ace.blink();
+document.getElementById('chat').onclick = () => ace.chatGesture(1);
+document.getElementById('autoBlink').onchange = e => ace.setAutoBlink(e.target.checked);
+const follow = document.getElementById('follow');
+follow.onchange = () => { if (!follow.checked) ace.look(null); };
+
+const hands = document.getElementById('hands');
+for (const p of ace.handPoses) hands.append(new Option(p, p));
+hands.onchange = () => ace.setHands(hands.value || null);
+
+const lightBox = document.getElementById('lighting');
+const lightButtons = {};
+for (const name of ace.lightings) {
+  const b = document.createElement('button');
+  b.textContent = name === 'site' ? 'Site (front)' : 'Blender scene';
+  b.onclick = () => { ace.setLighting(name); for (const [n, x] of Object.entries(lightButtons)) pressed(x, n === name); };
+  lightBox.append(b); lightButtons[name] = b;
+}
+pressed(lightButtons.site, true);
+
+const outline = document.getElementById('outline');
+outline.oninput = () => {
+  ace.setOutline(+outline.value);
+  document.getElementById('outlineVal').textContent = (+outline.value).toFixed(2) + ' px';
+};
+/* The outline is part of the cel look; the lit one starts without. */
+outline.value = SHADING === 'cel' ? 1.25 : 0;
+outline.oninput();
+
+function setBg(which) {
+  document.documentElement.dataset.bg = which;
+  scene.background.set(BG[which]);
+  pressed(document.getElementById('bgPaper'), which === 'paper');
+  pressed(document.getElementById('bgInk'), which === 'ink');
+}
+document.getElementById('bgPaper').onclick = () => setBg('paper');
+document.getElementById('bgInk').onclick = () => setBg('ink');
+
+/* Framing presets: glide the orbit target and camera. 'site' looks
+   at him square on, the way the page sees the sprite. */
+const VIEWS = {
+  site: { target: new THREE.Vector3(0, 0.5, 0), dir: new THREE.Vector3(0, 0.12, 1).normalize(), dist: 3.1 },
+  body: { target: new THREE.Vector3(0, 0.5, 0), dir: new THREE.Vector3(-2.3, 0.35, 1.6).normalize(), dist: 2.82 },
+  face: { target: new THREE.Vector3(0, 0.74, 0.03), dir: new THREE.Vector3(-0.2, 0.08, 1).normalize(), dist: 0.6 },
+};
+let glide = null;
+function frame(which, now = false) {
+  const v = VIEWS[which];
+  const toP = v.target.clone().addScaledVector(v.dir, v.dist);
+  if (now) { controls.target.copy(v.target); camera.position.copy(toP); controls.update(); return; }
+  glide = { t: 0, fromT: controls.target.clone(), toT: v.target, fromP: camera.position.clone(), toP };
+}
+document.getElementById('viewSite').onclick = () => frame('site');
+document.getElementById('viewBody').onclick = () => frame('body');
+document.getElementById('viewFace').onclick = () => frame('face');
+frame('site', true);
+window.littleAceView = { camera, controls, frame, renderer, scene, render: () => renderer.render(scene, camera) };
+
+/* Pointer → where he looks: the pointer relative to his head on
+   screen, in half-widths. */
+const pointer = new THREE.Vector2(0, 0);
+let pointerSeen = false;
+canvas.addEventListener('pointermove', e => {
+  pointer.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  pointerSeen = true;
+});
+const headPos = new THREE.Vector3();
+
+/* ── loop ── */
+function resize() {
+  const w = innerWidth, h = innerHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h; camera.updateProjectionMatrix();
+  const size = renderer.getDrawingBufferSize(new THREE.Vector2());
+  ace.setResolution(size.x, size.y);
+}
+addEventListener('resize', resize);
+resize();
+
+const timer = new THREE.Timer();
+const nowEl = document.getElementById('now');
+let shown = null;
+renderer.setAnimationLoop(now => {
+  timer.update(now);
+  const dt = Math.min(timer.getDelta(), 0.1);
+  stepJump(dt);
+  if (follow.checked && pointerSeen) {
+    ace.object.getObjectByName('Head')?.getWorldPosition(headPos);
+    headPos.project(camera);
+    ace.look((pointer.x - headPos.x) * 1.5, (pointer.y - headPos.y) * 1.5);
+  }
+  ace.update(dt);
+  shadow.material.opacity = Math.max(0.25, 1 - ace.object.position.y * 1.2);
+
+  const clip = ace.clip;
+  const key = ['crouch', 'rise', 'apex', 'fall', 'land'].includes(clip) ? 'jump' : clip;
+  if (key !== shown) {
+    if (buttons[shown]) pressed(buttons[shown], false);
+    shown = key;
+    if (buttons[shown]) pressed(buttons[shown], true);
+    dragBox.style.display = clip === 'drag' || clip === 'Drag' ? 'block' : 'none';
+  }
+  nowEl.textContent = clip;
+
+  if (glide) {
+    glide.t = Math.min(1, glide.t + dt / 0.6);
+    const k = glide.t * glide.t * (3 - 2 * glide.t);
+    controls.target.lerpVectors(glide.fromT, glide.toT, k);
+    camera.position.lerpVectors(glide.fromP, glide.toP, k);
+    if (glide.t === 1) glide = null;
+  }
+  controls.update();
+  renderer.render(scene, camera);
+});
+</script>
+</body>
+</html>
