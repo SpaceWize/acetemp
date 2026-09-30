@@ -343,11 +343,13 @@ const CLIPS={
      one-shot, so it then holds the plain stand it ends on. */
   point :{f:[42,43,44,45,46,47,48,49],fps:6,  loop:false,dir:0},
   /* Held up by the hood. Not played on a clock: the frame is chosen from how
-     fast he is being dragged, so fps is unused and clipFrame() special-cases
-     it. The five are ordered by how far the body has swung out from under the
-     pivot. The art swings him to the RIGHT of the hood, which is what
-     trailing behind a hand moving LEFT looks like — hence dir:-1. */
-  drag  :{f:[50,51,52,53,54],        fps:0,  loop:false,dir:-1},
+     the hand is moving (dragPoseNow below), so fps is unused and clipFrame()
+     special-cases it. Fifteen frames, a pendulum in the order they are laid
+     out: 0-2 swung well to the LEFT of the hood, 3 a little left, 4 hanging
+     straight, 5-7 hanging straight with a face (happy blink, sweat drop, flat
+     look), 8-9 a little right, 10-14 swung fully right. dir:0 because it
+     swings both ways on its own and must never be mirrored. */
+  drag  :{f:[50,51,52,53,54,55,56,57,58,59,60,61,62,63,64],fps:0,loop:false,dir:0},
 };
 /* Vertical bounce while running, in CSS px. The cycle carries its own rise
    and fall now, so this is a light garnish rather than the load-bearing
@@ -377,7 +379,7 @@ img.onload=()=>{
 img.onerror=()=>{pet.hidden=true;shadow.hidden=true;};
 /* WebP, not the PNG the build writes: 435KB against 1.8MB, with the alpha
    identical and colour within ~1.5/255 on average. Re-export after a rebuild. */
-img.src='assets/images/ace-atlas.webp';
+img.src='assets/images/ace-atlas.webp?v=2';   // bump when the sheet changes: the page caches it
 
 function play(name){if(clipName!==name){clipName=name;clipStart=clock;}}
 /* Where a clip has got to. A looping clip wraps; a one-shot holds its last
@@ -617,7 +619,33 @@ function decide(){
    taken once the drag is real, and a fast flick can leave the button before
    any pointermove lands on it — which would strand the gesture. */
 const DRAG_SLOP=6;                  // px of travel before a press is a drag
-const DRAG_STEPS=[150,320,700,1200];// px/s thresholds between the five poses
+/* Which drag frame to show. The body trails the hand: a hand moving RIGHT
+   leaves him swung to the left of the hood, moving LEFT swings him right. The
+   speed picks how far (DRAG_STEPS, px/s), and held still he hangs straight
+   and now and then pulls a face. Indices are into CLIPS.drag.f. */
+const DRAG_STEPS=[70,170,340,620];    // px/s between: straight, a little, some, well, fully
+const DRAG_LEFT=[4,3,2,1,0];          // straight → fully left (hand moving right)
+const DRAG_RIGHT=[4,8,9,10];          // straight → well right (hand moving left); fully = 10-14 cycled
+const DRAG_FACES=[5,6,7];             // straight, with a face
+let dragSwingV=0,dragStill=0,dragFace=-1,dragFaceUntil=0,dragNextFace=0;
+function dragPoseNow(dt){
+  dragSwingV+=(dragVX-dragSwingV)*Math.min(1,dt*12);     // eased, so the frame does not flicker
+  const v=dragSwingV,a=Math.abs(v);
+  const step=a<DRAG_STEPS[0]?0:a<DRAG_STEPS[1]?1:a<DRAG_STEPS[2]?2:a<DRAG_STEPS[3]?3:4;
+  if(step===0){
+    dragStill+=dt;
+    if(dragFace<0&&dragStill>1.2&&clock>=dragNextFace){
+      dragFace=DRAG_FACES[Math.floor(Math.random()*DRAG_FACES.length)];
+      dragFaceUntil=clock+.7+Math.random()*.6;
+      dragNextFace=clock+2.5+Math.random()*3;
+    }
+    if(dragFace>=0){if(clock<dragFaceUntil)return dragFace;dragFace=-1;}
+    return 4;
+  }
+  dragStill=0;dragFace=-1;
+  if(v>0)return DRAG_LEFT[step];
+  return step<4?DRAG_RIGHT[step]:10+Math.floor(clock*6)%5;
+}
 let dragging=false,dragPointer=null,dragOffX=0,dragOffY=0,
     dragSpeed=0,dragLastT=0,dragDownX=0,dragDownY=0,suppressClick=false;
 /* The hand's velocity, kept as a vector so letting go can throw him. Below
@@ -641,6 +669,7 @@ addEventListener('pointermove',e=>{
     pet.classList.add('is-dragging');
     climb=null;runGoal=null;pendingJump=null;pointUntil=0;
     state.vx=0;state.vy=0;state.ground=null;state.bouncy=false;dragVX=dragVY=0;
+    dragPose=4;dragSwingV=0;dragStill=0;dragFace=-1;dragNextFace=clock+1.5;
   }
   const nx=clampX(e.clientX+dragOffX),dx=nx-state.x;
   const ny=Math.max(-10,Math.min(innerHeight+40,e.clientY+dragOffY)),dy=ny-state.y;
@@ -907,8 +936,7 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
   if(dragging){
     dragSpeed*=Math.pow(.002,dt);   // ~half a second from a hard yank to still
     const decay=Math.pow(.0005,dt);dragVX*=decay;dragVY*=decay;  // a hand that stops, then lets go, drops him
-    dragPose=dragSpeed<DRAG_STEPS[0]?0:dragSpeed<DRAG_STEPS[1]?1
-            :dragSpeed<DRAG_STEPS[2]?2:dragSpeed<DRAG_STEPS[3]?3:4;
+    dragPose=dragPoseNow(dt);
     play('drag');renderSprite(facing);
   }
   else if(stationary){state.x=innerWidth-85;state.y=innerHeight-68;state.vx=0;state.vy=0;state.ground=null;play('idle');renderSprite(1);}
