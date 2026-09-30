@@ -893,6 +893,8 @@ body>section .btn--ghost:hover{
 .hero__sub.hero__small{font-size:var(--fs-sm)}
 /* Space between the rates box and the copy that follows it */
 .tiers + .hero__sub{margin-top:var(--sp-5)}
+/* Mastermind tier footnotes: small and italic */
+.tiernotes .tiernotes__fn{font-size:var(--fs-sm);font-style:italic}
 /* The one-line hook under a service page's title. Gold in the display face
    so it reads as part of the heading, pulled up under the h1, and smaller
    than .hero__h3 so it never competes with the section heads below. */
