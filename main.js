@@ -825,6 +825,34 @@
     });
   }
 
+  /* ── STEEL HEADINGS ────────────────────────────────────────────
+     Every white heading takes the nav's burning steel. Chosen by computed
+     colour, so headings on the cream cards (dark ink) and the gold ones
+     (.ll) are left alone. The words go in an inline span so the band sits
+     on the text rather than across the full width of the block, and they
+     join navGlass's loop so they warm as the pointer comes near. */
+  function steelHeads() {
+    var heads = [].slice.call(document.querySelectorAll('h1,h2,h3,h4'));
+    var out = [];
+    heads.forEach(function (h) {
+      if (h.closest('.site-head,.mnav,.foot,#ace-chat,.ll,.steel,[data-ll-test]')) return;
+      if (h.querySelector('.ll,.steel,.hero__meet')) return;       // the hero forges its own
+      if (!h.textContent.trim()) return;
+      var m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(getComputedStyle(h).color);
+      if (!m) return;
+      var r = +m[1], g = +m[2], b = +m[3];
+      if (Math.min(r, g, b) < 200 || Math.max(r, g, b) - Math.min(r, g, b) > 40) return;
+      var span = document.createElement('span');
+      span.className = 'steel steel--head';
+      while (h.firstChild) span.appendChild(h.firstChild);
+      h.appendChild(span);
+      out.push(span);
+    });
+    if (!out.length) return;
+    if (steelAdd) steelAdd(out);
+    else out.forEach(function (el) { el.style.setProperty('--near', '0'); });
+  }
+
   /* ── HOME HERO INTRO ───────────────────────────────────────────
      The load sequence described under "HOME HERO INTRO" in styles.css.
      index.html's head decides whether it plays (html.intro); either way the
@@ -1044,6 +1072,7 @@
     footLight();         // first: navGlass's steel loop must see its ACE
     navGlass();          // before liquidLight: both tag elements for it
     liquidLight();
+    steelHeads();        // after navGlass, whose loop it joins
     heroIntro();         // last: it borrows navGlass's loop and liquidLight's gold
   }
 
