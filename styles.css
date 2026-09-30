@@ -1305,6 +1305,13 @@ html.intro .hero__cue{opacity:0}
 .tier__price--custom{font-size:clamp(1.15rem,1.7vw,1.4rem);line-height:1.25}
 .tier--lead .tier__price{color:var(--gold);margin-inline:auto;text-align:center}
 .tier--lead .tier__price small{color:#B8B2A8}
+/* Three Ways Forward: the middle card is centred, the third right-aligned.
+   The middle title is a shrink-to-fit block (.ll), so it needs auto margins
+   as well as centred text. */
+.tier--lead{text-align:center}
+.tier--lead .tier__name{margin-inline:auto}
+.tier--right{text-align:right}
+.tier--right .tier__price{text-align:right}
 
 .spec{margin-block:var(--sp-3) var(--sp-4);flex:1}
 /* Label above value, not beside it. Side-by-side at a fixed 8.5rem label
