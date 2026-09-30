@@ -660,7 +660,8 @@
       texts.forEach(function (t) { tio.observe(t); });
     }
 
-    function spadeR() { return Math.min(Math.max(130, window.innerWidth * 0.15), 235); }
+    // 75% of the size the light started at (kept in step with --gr in styles.css)
+    function spadeR() { return Math.min(Math.max(130, window.innerWidth * 0.15), 235) * 0.75; }
     var gr = spadeR();
     var range = document.createRange();
     function textBox(el) {

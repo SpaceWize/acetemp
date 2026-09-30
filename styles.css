@@ -112,7 +112,7 @@ body{
    stays on the page ground and never crawls across a panel. */
 .aop{
   position:fixed;inset:0;z-index:0;pointer-events:none;
-  --gx:-999px; --gy:-999px; --gr:clamp(130px,15vw,235px);
+  --gx:-999px; --gy:-999px; --gr:calc(clamp(130px,15vw,235px) * .75);
   /* The gold-spades plate, not a gradient. The layer is position:fixed, so
      the pattern is pinned to the viewport while only the mask moves — which
      is the whole idea: one continuous field behind the page, seen through a
