@@ -2090,8 +2090,8 @@ html.intro .hero__cue{opacity:0}
 .foot__nav--stacked{margin-top:var(--sp-4)}
 /* Spade beside the wordmark, as in the header, rather than stacked over it. */
 .foot__lockup{display:flex;align-items:center;gap:.85rem;margin-bottom:var(--sp-2)}
-.brand__mark--lg{width:40px;height:40px}
-.brand__mark--lg svg{width:20px;height:20px}
+.brand__mark--lg{width:44px;height:44px}
+.brand__mark--lg svg{width:22px;height:22px}   /* the wordmark is 21.6px: spade = text height, box = twice that, as in the header */
 .foot__word{font:400 1.35rem/1 var(--f-display);letter-spacing:.02em;color:var(--on-dark)}
 .foot__tag{margin-top:.6rem;font-size:var(--fs-sm);color:var(--on-dark-mute);max-width:26ch}
 .foot__addr{
