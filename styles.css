@@ -1040,6 +1040,9 @@ html.intro .hero__cue{opacity:0}
 }
 .hero__asset,.hero__forge{display:inline-block}
 /* The Maxwell quote between About and For Readers */
+/* Tighten the gap between the wife's tag (end of About) and the quote */
+.about{padding-bottom:clamp(1rem,2vw,2rem)}
+.network{padding-top:0}
 .network__quote{max-width:48rem;font-size:clamp(1.05rem,1.6vw,1.3rem);line-height:1.35}
 .network__cite{margin:var(--sp-2) 0 var(--sp-5);
   font-family:var(--f-util);font-variation-settings:"wdth" 112;
