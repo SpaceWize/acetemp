@@ -870,7 +870,7 @@
     var out = [];
     heads.forEach(function (h) {
       if (h.closest('.site-head,.mnav,.foot,#ace-chat,.ll,.steel,[data-ll-test]')) return;
-      if (h.querySelector('.ll,.steel,.hero__meet')) return;       // the hero forges its own
+      if (h.querySelector('.steel,.hero__meet')) return;           // the hero forges its own
       if (!h.textContent.trim()) return;
       var m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(getComputedStyle(h).color);
       if (!m) return;
@@ -880,6 +880,26 @@
       // is wrapped line by line: an inline span's background can't paint
       // text inside block children, so wrapping the heading whole leaves
       // those lines transparent and invisible.
+      /* A heading with molten words in it ("Known as Ace") is steel around
+         them: each run of the other nodes gets its own span, and the molten
+         word is left as it is. */
+      if (h.querySelector(':scope > .ll')) {
+        var runs = [], run = [];
+        [].slice.call(h.childNodes).forEach(function (n) {
+          if (n.nodeType === 1 && n.classList.contains('ll')) { if (run.length) runs.push(run); run = []; }
+          else run.push(n);
+        });
+        if (run.length) runs.push(run);
+        runs.forEach(function (nodes) {
+          if (!nodes.some(function (n) { return n.textContent.trim(); })) return;
+          var span = document.createElement('span');
+          span.className = 'steel steel--head';
+          nodes[0].parentNode.insertBefore(span, nodes[0]);
+          nodes.forEach(function (n) { span.appendChild(n); });
+          out.push(span);
+        });
+        return;
+      }
       var blocks = [].filter.call(h.children, function (c) {
         return /^(block|flex|grid|list-item)$/.test(getComputedStyle(c).display);
       });
