@@ -22,7 +22,7 @@
      Not input hijacking — the page scrolls normally. The stage pins
      and the panels are driven off scroll position, so the reader
      keeps full control of pace and direction.                     */
-  var HERO_DROP = 10;       // px the home hero's block sits below centre at rest
+  var HERO_DROP = 0;        // the block rests at the foot of the screen; no extra offset
   function heroChoreography() {
     var hero = document.querySelector('[data-hero]');
     var stage = hero && hero.querySelector('[data-stage]');

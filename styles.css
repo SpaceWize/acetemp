@@ -983,13 +983,15 @@ body>section .btn--ghost:hover{
 }
 .hero__note a{color:var(--gold-ink);text-decoration:underline;text-underline-offset:.25em}
 .hero__note a:hover{color:var(--gold-hi)}
-.hero[data-hero] .hero__content{padding-bottom:clamp(2rem,4.5vh,3.5rem)}
+/* The home hero's block rests at the foot of the screen: the buttons end
+   30px above the bottom edge of the section. */
+.hero[data-hero] .hero__content{padding-bottom:30px}
 /* Home hero only — subpages share .hero__stage's flex-end via .hero--page
    and should keep it. Once the choreography settles (--cy reaches 0), the
    text was sitting low against the bottom edge; centring it reads better
    at rest without touching the padding that controls the gap to the tray
    below. */
-.hero[data-hero] .hero__stage{align-items:center}
+.hero[data-hero] .hero__stage{align-items:flex-end}
 .hero__cue{
   position:absolute;right:var(--gutter);bottom:clamp(4rem,9vh,7rem);z-index:2;
   display:none;align-items:center;gap:.75rem;opacity:var(--cue);
@@ -2194,8 +2196,8 @@ html.intro .hero__cue{opacity:0}
   .hero__h1{max-width:14ch}
   /* Home hero: a full screen, block centred just below the middle (the
      extra top padding clears the header), as on desktop. */
-  .hero[data-hero] .hero__stage{min-height:100svh;align-items:center}
-  .hero[data-hero] .hero__content{padding-top:6rem;padding-bottom:3rem}
+  .hero[data-hero] .hero__stage{min-height:100svh;align-items:flex-end}
+  .hero[data-hero] .hero__content{padding-top:6rem;padding-bottom:30px}
 
   .stats{grid-template-columns:repeat(2,1fr);gap:var(--sp-4) var(--sp-3)}
   .tiers{grid-template-columns:1fr}
