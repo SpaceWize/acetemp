@@ -1541,6 +1541,8 @@ html.intro .hero__cue{opacity:0}
 }
 .about__copy p{color:var(--on-light-mute);margin-bottom:var(--sp-2);max-width:56ch}
 .about__copy .h2{margin-bottom:var(--sp-3)}
+/* Centred molten subheading above the portrait and copy */
+.about__tag{margin:0 auto var(--sp-5);text-align:center;max-width:100%}
 
 /* ═══ 7b. NETWORK ═════════════════════════════════════════════ */
 /* Narrative section between About and the Reservoir tiles — same "light"
