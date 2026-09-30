@@ -1039,6 +1039,8 @@ html.intro .hero__cue{opacity:0}
     brightness(calc(1 + var(--near) * .45));
 }
 .hero__asset,.hero__forge{display:inline-block}
+/* The Maxwell quote between About and For Readers */
+.network__quote{max-width:52rem;margin-bottom:var(--sp-5)}
 /* White headings in steel (steelHeads() in main.js); the break-safe clone
    keeps the band and shadow right on headings that wrap. */
 .steel--head{-webkit-box-decoration-break:clone;box-decoration-break:clone}
