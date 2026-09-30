@@ -1285,7 +1285,7 @@ html.intro .hero__cue{opacity:0}
    size it wraps to three lines and shouts louder than the two real
    numbers it sits beside. */
 .tier__price--custom{font-size:clamp(1.15rem,1.7vw,1.4rem);line-height:1.25}
-.tier--lead .tier__price{color:var(--gold)}
+.tier--lead .tier__price{color:var(--gold);margin-inline:auto;text-align:center}
 .tier--lead .tier__price small{color:#B8B2A8}
 
 .spec{margin-block:var(--sp-3) var(--sp-4);flex:1}
