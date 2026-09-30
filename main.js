@@ -18,6 +18,30 @@
     return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
   };
 
+  /* ── FLASHLIGHT SWITCH ─────────────────────────────────────────
+     Turns the page-wide spade light (pageSpade() below) off and on. Only
+     that: the hero's Cybertruck spotlight has its own logic and is not
+     touched. The flashlight buttons live in companion.js (beside the Ask
+     Little Ace button, and in the chat's footer) and drive this. The choice
+     is remembered between visits. Where there is no cursor light to switch
+     (touch, reduced motion) `available` is false and no button is made. */
+  var flash = (function () {
+    var off = false, subs = [];
+    try { off = localStorage.getItem('ace-flashlight') === 'off'; } catch (e) {}
+    var api = {
+      available: !reduce.matches && window.matchMedia('(hover: hover)').matches,
+      isOn: function () { return !off; },
+      toggle: function () {
+        off = !off;
+        try { localStorage.setItem('ace-flashlight', off ? 'off' : 'on'); } catch (e) {}
+        subs.forEach(function (f) { f(!off); });
+      },
+      subscribe: function (f) { subs.push(f); f(!off); }
+    };
+    window.AceFlashlight = api;
+    return api;
+  })();
+
   /* ── 1. HERO CHOREOGRAPHY ──────────────────────────────────────
      Not input hijacking — the page scrolls normally. The stage pins
      and the panels are driven off scroll position, so the reader
@@ -697,6 +721,7 @@
 
     window.addEventListener('pointermove', function (e) {
       if (e.pointerType === 'touch') return;
+      if (!flash.isOn()) return;
       raw.x = e.clientX;
       raw.y = e.clientY;
       /* Snap on the first move. Lerping from the off-canvas rest position
@@ -709,6 +734,14 @@
       }
       if (!running) { running = true; requestAnimationFrame(frame); }
     }, { passive: true });
+
+    // the flashlight switch: off puts the light and every text backdrop away
+    flash.subscribe(function (isOn) {
+      if (isOn) return;
+      on = false;
+      layer.classList.remove('is-on');
+      queueReveal();
+    });
 
     // fade out when the cursor leaves the window entirely
     document.addEventListener('mouseleave', function () {

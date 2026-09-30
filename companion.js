@@ -50,6 +50,36 @@ function addMessage(text,who,links=[],suggest=[]){const el=document.createElemen
    clickable follow-ups; each button simply asks its question. */
 if(suggest&&suggest.length){const row=document.createElement('div');row.className='ace-msg-suggest';for(const s of suggest){const b=document.createElement('button');b.type='button';b.textContent=s;b.addEventListener('click',()=>ask(s,'chip'));row.append(b);}el.append(row);}
 log.append(el);while(log.children.length>50)log.firstElementChild.remove();log.scrollTop=log.scrollHeight;}
+/* ── FLASHLIGHT BUTTONS ───────────────────────────────────────
+   Two switches for the page's spade light (window.AceFlashlight, made by
+   main.js): one beside the Ask Little Ace button, one beside Park Little
+   Ace in the chat's footer. Only made where the light exists at all.
+   The launcher one is positioned from the launcher's own box, so it stays
+   beside it whatever width its label takes, and hides with it when the chat
+   is open. */
+const flashApi=window.AceFlashlight;
+if(flashApi&&flashApi.available){
+  const ICON='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><g class="ace-flash__rays"><path d="M12 1v2.6M6.4 2.6l1.5 1.8M17.6 2.6l-1.5 1.8"/></g><path d="M8.6 9.2 7.2 5.4h9.6l-1.4 3.8z"/><rect x="9" y="9.2" width="6" height="11.6" rx="1.3"/><rect class="ace-flash__sw" x="11.2" y="12.4" width="1.6" height="3.2" rx=".8" fill="currentColor" stroke="none"/></svg>';
+  const make=cls=>{const b=document.createElement('button');b.type='button';b.className='ace-flash '+cls;b.setAttribute('aria-label','Spade flashlight');b.innerHTML=ICON;return b;};
+  const beside=make('ace-flash--launcher');document.body.append(beside);
+  const inChat=make('ace-flash--chat');
+  const parkBtn=panel.querySelector('.ace-park');
+  const group=document.createElement('div');group.className='ace-foot-btns';
+  parkBtn.replaceWith(group);group.append(inChat,parkBtn);
+  const both=[beside,inChat];
+  flashApi.subscribe(on=>{for(const b of both){b.setAttribute('aria-pressed',String(on));b.classList.toggle('is-off',!on);b.title=on?'Spade flashlight: on. Click to turn it off':'Spade flashlight: off. Click to turn it on';}});
+  for(const b of both)b.addEventListener('click',()=>flashApi.toggle());
+  const place=()=>{
+    const r=launcher.getBoundingClientRect();
+    beside.hidden=launcher.hidden||!r.width;
+    if(beside.hidden)return;
+    beside.style.width=beside.style.height=r.height.toFixed(1)+'px';
+    beside.style.right=(document.documentElement.clientWidth-r.left+8).toFixed(1)+'px';
+  };
+  place();addEventListener('resize',place);addEventListener('load',place);
+  if(window.ResizeObserver)new ResizeObserver(place).observe(launcher);
+  new MutationObserver(place).observe(launcher,{attributes:true,attributeFilter:['hidden']});
+}
 addMessage('Hi, I’m Little Ace, the automated site guide. I can explain Ace’s work, compare the services, or find your next gathering. I answer from published site information; for personal advice, speak with Ace.','bot');
 
 /* px/s^-1-ish ease rate he glides toward the chat-stand spot at, and the

@@ -257,3 +257,22 @@ body:has(.ace-companion.is-dragging) .hero__plate{opacity:0}
   .ace-companion,.ace-shadow{will-change:auto}
   .ace-companion::after{transition:none}
 }
+
+/* ── Flashlight buttons (companion.js): the spade light's switch ── */
+.ace-flash{
+  border:1px solid rgba(217,164,65,.55);background:var(--ink-800,#121110);color:var(--gold-hi,#EEBE63);
+  display:grid;place-items:center;padding:0;cursor:pointer;
+}
+.ace-flash svg{width:60%;height:60%;display:block}
+.ace-flash .ace-flash__rays{transition:opacity .2s ease}
+.ace-flash.is-off{color:var(--on-dark-mute,#A29C93);border-color:rgba(217,164,65,.25)}
+.ace-flash.is-off .ace-flash__rays{opacity:0}
+.ace-flash:hover{border-color:var(--gold,#D9A441)}
+.ace-flash:focus-visible{outline:2px solid var(--gold-hi,#EEBE63);outline-offset:2px}
+.ace-flash--launcher{
+  position:fixed;bottom:20px;right:190px;z-index:85;width:46px;height:46px;
+  box-shadow:0 5px 28px rgba(0,0,0,.6),0 0 18px rgba(217,164,65,.15);
+}
+.ace-flash--launcher[hidden]{display:none}
+.ace-flash--chat{width:26px;height:26px;border-color:rgba(217,164,65,.4)}
+.ace-foot-btns{display:flex;align-items:center;gap:10px}
