@@ -843,11 +843,21 @@
       if (!m) return;
       var r = +m[1], g = +m[2], b = +m[3];
       if (Math.min(r, g, b) < 200 || Math.max(r, g, b) - Math.min(r, g, b) > 40) return;
-      var span = document.createElement('span');
-      span.className = 'steel steel--head';
-      while (h.firstChild) span.appendChild(h.firstChild);
-      h.appendChild(span);
-      out.push(span);
+      // A heading built from block lines (the subpage titles' .hero__line)
+      // is wrapped line by line: an inline span's background can't paint
+      // text inside block children, so wrapping the heading whole leaves
+      // those lines transparent and invisible.
+      var blocks = [].filter.call(h.children, function (c) {
+        return /^(block|flex|grid|list-item)$/.test(getComputedStyle(c).display);
+      });
+      (blocks.length ? blocks : [h]).forEach(function (box) {
+        if (!box.textContent.trim()) return;
+        var span = document.createElement('span');
+        span.className = 'steel steel--head';
+        while (box.firstChild) span.appendChild(box.firstChild);
+        box.appendChild(span);
+        out.push(span);
+      });
     });
     if (!out.length) return;
     if (steelAdd) steelAdd(out);
