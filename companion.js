@@ -344,12 +344,11 @@ const CLIPS={
   point :{f:[42,43,44,45,46,47,48,49],fps:6,  loop:false,dir:0},
   /* Held up by the hood. Not played on a clock: the frame is chosen from how
      the hand is moving (dragPoseNow below), so fps is unused and clipFrame()
-     special-cases it. Fifteen frames, a pendulum in the order they are laid
-     out: 0-2 swung well to the LEFT of the hood, 3 a little left, 4 hanging
-     straight, 5-7 hanging straight with a face (happy blink, sweat drop, flat
-     look), 8-9 a little right, 10-14 swung fully right. dir:0 because it
+     special-cases it. Thirteen frames in swing order, left to right: 0-3 swung to the LEFT of the
+     hood (0 furthest), 4-6 hanging straight (6 is a happy blink), 7-10 a little
+     to well RIGHT, 11-12 swung furthest right. dir:0 because it
      swings both ways on its own and must never be mirrored. */
-  drag  :{f:[50,51,52,53,54,55,56,57,58,59,60,61,62,63,64],fps:0,loop:false,dir:0},
+  drag  :{f:[50,51,52,53,54,55,56,57,58,59,60,61,62],fps:0,loop:false,dir:0},
 };
 /* Vertical bounce while running, in CSS px. The cycle carries its own rise
    and fall now, so this is a light garnish rather than the load-bearing
@@ -379,7 +378,7 @@ img.onload=()=>{
 img.onerror=()=>{pet.hidden=true;shadow.hidden=true;};
 /* WebP, not the PNG the build writes: 435KB against 1.8MB, with the alpha
    identical and colour within ~1.5/255 on average. Re-export after a rebuild. */
-img.src='assets/images/ace-atlas.webp?v=2';   // bump when the sheet changes: the page caches it
+img.src='assets/images/ace-atlas.webp?v=5';   // bump when the sheet changes: the page caches it
 
 function play(name){if(clipName!==name){clipName=name;clipStart=clock;}}
 /* Where a clip has got to. A looping clip wraps; a one-shot holds its last
@@ -624,9 +623,9 @@ const DRAG_SLOP=6;                  // px of travel before a press is a drag
    speed picks how far (DRAG_STEPS, px/s), and held still he hangs straight
    and now and then pulls a face. Indices are into CLIPS.drag.f. */
 const DRAG_STEPS=[70,170,340,620];    // px/s between: straight, a little, some, well, fully
-const DRAG_LEFT=[4,3,2,1,0];          // straight → fully left (hand moving right)
-const DRAG_RIGHT=[4,8,9,10];          // straight → well right (hand moving left); fully = 10-14 cycled
-const DRAG_FACES=[5,6,7];             // straight, with a face
+const DRAG_LEFT=[6,3,1,2,0];          // straight → fully left (hand moving right)
+const DRAG_RIGHT=[6,7,9,10];          // straight → well right (hand moving left); fully = 11-12 alternated
+const DRAG_FACES=[];                  // none: held still he always shows frame 7 (the happy blink)
 let dragSwingV=0,dragStill=0,dragFace=-1,dragFaceUntil=0,dragNextFace=0;
 function dragPoseNow(dt){
   dragSwingV+=(dragVX-dragSwingV)*Math.min(1,dt*12);     // eased, so the frame does not flicker
@@ -634,17 +633,17 @@ function dragPoseNow(dt){
   const step=a<DRAG_STEPS[0]?0:a<DRAG_STEPS[1]?1:a<DRAG_STEPS[2]?2:a<DRAG_STEPS[3]?3:4;
   if(step===0){
     dragStill+=dt;
-    if(dragFace<0&&dragStill>1.2&&clock>=dragNextFace){
+    if(DRAG_FACES.length&&dragFace<0&&dragStill>1.2&&clock>=dragNextFace){
       dragFace=DRAG_FACES[Math.floor(Math.random()*DRAG_FACES.length)];
       dragFaceUntil=clock+.7+Math.random()*.6;
       dragNextFace=clock+2.5+Math.random()*3;
     }
     if(dragFace>=0){if(clock<dragFaceUntil)return dragFace;dragFace=-1;}
-    return 4;
+    return 6;
   }
   dragStill=0;dragFace=-1;
   if(v>0)return DRAG_LEFT[step];
-  return step<4?DRAG_RIGHT[step]:10+Math.floor(clock*6)%5;
+  return step<4?DRAG_RIGHT[step]:11+Math.floor(clock*6)%2;
 }
 let dragging=false,dragPointer=null,dragOffX=0,dragOffY=0,
     dragSpeed=0,dragLastT=0,dragDownX=0,dragDownY=0,suppressClick=false;
@@ -669,7 +668,7 @@ addEventListener('pointermove',e=>{
     pet.classList.add('is-dragging');
     climb=null;runGoal=null;pendingJump=null;pointUntil=0;
     state.vx=0;state.vy=0;state.ground=null;state.bouncy=false;dragVX=dragVY=0;
-    dragPose=4;dragSwingV=0;dragStill=0;dragFace=-1;dragNextFace=clock+1.5;
+    dragPose=6;dragSwingV=0;dragStill=0;dragFace=-1;dragNextFace=clock+1.5;
   }
   const nx=clampX(e.clientX+dragOffX),dx=nx-state.x;
   const ny=Math.max(-10,Math.min(innerHeight+40,e.clientY+dragOffY)),dy=ny-state.y;
