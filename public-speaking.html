@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="companion.css">
 <script>document.documentElement.classList.replace('no-js','js');</script>
+<script src="gate.js?v=9"></script>
 </head>
 <body>
 
@@ -123,14 +124,93 @@
       <h1 class="hero__h1">
         <span class="hero__line">Public Speaking</span>
       </h1>
-      <p class="hero__tagline">Need someone who understands the halo effect?<br>Maybe someone who doesn’t need to steal the show or burn the ship because he can’t be captain?</p>
+      <p class="hero__tagline ll">Need someone who understands the halo effect?<br>Maybe someone who doesn’t need to steal the show or burn the ship because he can’t be captain?</p>
 
-      <p class="hero__sub">Ace is available for keynotes and talks focused on resilience, personal development, and the practical benefits of networking. He can also speak on nearly any topic required when he is given some preparation time, and information on the topic.</p>
-      <p class="hero__sub">He is selective about what he takes on and prefers situations where he is aligned with the message so that he can ensure it lands with the room.</p>
-  
-      <div class="hero__cta">
-        <a class="btn btn--gold" href="index.html#contact">Book Ace to Speak</a>
-      </div>
+      <p class="hero__sub">Ace is available for keynotes and talks focused on resilience, personal development, and the practical benefits of networking.
+</p>
+      <p class="hero__sub">Given enough time and preparation, he can speak on any topic required. However, messages he aligns with are preferred to ensure it lands with the room. </p>
+      <p class="hero__sub">Most talks run 20 to 45 minutes, plus questions. Although, Ace is fully capable of conducting full-day interactive workshops or discussions on the above-mentioned topics, among others.</p>
+      <p class="hero__sub">To book Ace to speak, fill out the form below.</p>
+
+      <form class="form form--apply" novalidate data-form data-subject="Speaking Request" data-ready="Your request is ready." action="#" method="post">
+        <div class="form__head field--full">
+          <h2 class="form__h">Speaking Request</h2>
+        </div>
+        <div class="field">
+          <label for="s-name">Full name</label>
+          <input id="s-name" name="Full name" type="text" autocomplete="name" required data-msg="Add your name." aria-describedby="e-name">
+          <p class="err" id="e-name" data-err></p>
+        </div>
+        <div class="field">
+          <label for="s-email">Email</label>
+          <input id="s-email" name="Email" type="email" autocomplete="email" required data-msg="Add an email Ace’s Assistant can reply to." aria-describedby="e-email">
+          <p class="err" id="e-email" data-err></p>
+        </div>
+        <div class="field">
+          <label for="s-phone">Phone</label>
+          <input id="s-phone" name="Phone" type="tel" autocomplete="tel" required data-msg="Add a phone number." aria-describedby="e-phone">
+          <p class="err" id="e-phone" data-err></p>
+        </div>
+        <div class="field">
+          <label for="s-org">(Optional) Company/ Organization</label>
+          <input id="s-org" name="(Optional) Company/ Organization" type="text" autocomplete="organization" aria-describedby="e-org">
+          <p class="err" id="e-org" data-err></p>
+        </div>
+        <div class="field field--full">
+          <label for="s-dates">What date(s) would you need?</label>
+          <input id="s-dates" name="What date(s) would you need Ace?" type="text" required data-msg="Please answer this one." aria-describedby="e-dates">
+          <p class="err" id="e-dates" data-err></p>
+        </div>
+        <div class="field field--full">
+          <label for="s-topic">What topic do you want covered?</label>
+          <textarea id="s-topic" name="What topic do you want Ace to cover?" rows="3" required data-msg="Please answer this one." aria-describedby="e-topic h-topic"></textarea>
+          <p class="hint" id="h-topic">Resilience, personal development, other?</p>
+          <p class="err" id="e-topic" data-err></p>
+        </div>
+        <div class="field field--full">
+          <label for="s-where">Where is the event, and what is the occasion?</label>
+          <textarea id="s-where" name="Where is the event, and what is the occasion?" rows="3" required data-msg="Please answer this one." aria-describedby="e-where"></textarea>
+          <p class="err" id="e-where" data-err></p>
+        </div>
+        <div class="field field--full">
+          <label for="s-format">Talk or full-day workshop, and roughly how long?</label>
+          <input id="s-format" name="Talk or full-day workshop, and roughly how long?" type="text" required data-msg="Please answer this one." aria-describedby="e-format">
+          <p class="err" id="e-format" data-err></p>
+        </div>
+        <div class="field field--full">
+          <label for="s-leave">What do you want people to leave with?</label>
+          <textarea id="s-leave" name="What do you want people to leave with?" rows="3" required data-msg="Please answer this one." aria-describedby="e-leave h-leave"></textarea>
+          <p class="hint" id="h-leave">Motivation, something improved, call to action?</p>
+          <p class="err" id="e-leave" data-err></p>
+        </div>
+        <div class="field field--full">
+          <label for="s-room">Who will be in the room?</label>
+          <textarea id="s-room" name="Who will be in the room?" rows="3" required data-msg="Please answer this one." aria-describedby="e-room h-room"></textarea>
+          <p class="hint" id="h-room">Students, employees, others?</p>
+          <p class="err" id="e-room" data-err></p>
+        </div>
+        <div class="field field--full">
+          <fieldset class="checks" data-checkgroup data-msg="Pick a range.">
+            <legend>Number of attendees?</legend>
+            <ul class="checks__grid">
+            <li><label class="check"><input type="radio" name="Number of attendees?" value="5-20" aria-describedby="e-count"><span>5-20</span></label></li>
+            <li><label class="check"><input type="radio" name="Number of attendees?" value="20-50"><span>20-50</span></label></li>
+            <li><label class="check"><input type="radio" name="Number of attendees?" value="50-200"><span>50-200</span></label></li>
+            <li><label class="check"><input type="radio" name="Number of attendees?" value="200-500"><span>200-500</span></label></li>
+            <li><label class="check"><input type="radio" name="Number of attendees?" value="500-2000"><span>500-2000</span></label></li>
+            <li><label class="check"><input type="radio" name="Number of attendees?" value="2000+"><span>2000+</span></label></li>
+            </ul>
+            <p class="err" id="e-count" data-err></p>
+          </fieldset>
+        </div>
+        <div class="form__foot">
+          <button class="btn btn--gold" type="submit" style="justify-self:start">Submit</button>
+          <p class="form__status" role="status" data-status></p>
+        </div>
+      </form>
+
+      <p class="hero__sub">Ace’s Assistant reviews all requests before bringing them to him for consideration.</p>
+      <p class="hero__sub">Please allow 1-2 business days for an email response. If it is a fit, you will be immediately scheduled for a 30-minute meeting to discuss further.</p>
 
       <a class="hero__back hero__back--bottom" href="index.html"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-arrow"></use></svg> Back</a>
     </div>
@@ -146,22 +226,22 @@
           <span class="brand__mark brand__mark--lg"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-spade"></use></svg></span>
           <p class="foot__word">ACE SPADERS</p>
         </div>
-        <blockquote class="foot__quote">"If you're gonna suffer, suffer success. I Love Gold &amp; Gold People."</blockquote>
+        <blockquote class="foot__quote">"If you're gonna suffer, suffer success. <br> I Love Gold &amp; Gold People."</blockquote>
         <p class="foot__quote-by">- Matthew Ferguson</p>
 
-        <p class="foot__addr">1281 Hornby St, Vancouver, BC V6Z 0G8<br><span class="foot__addr-note">By appointment only</span></p>
+        <p class="foot__addr">1628 W 1st Ave, Vancouver, BC V6J 1G1<br><span class="foot__addr-note">By appointment only</span></p>
 
         <blockquote class="foot__quote">"Understanding people just takes a willingness to Listen."</blockquote>
-        <p class="foot__quote-by">- T, Queen Of Hearts</p>
+        <p class="foot__quote-by">- T. Queen Of Hearts</p>
       </div>
       <div class="foot__col">
         <nav class="foot__nav" aria-label="The work">
           <p class="foot__h">The work</p>
           <ul>
+            <li><a href="mastermind-membership.html">The Invested Aces Mastermind</a></li>
             <li><a href="advisory.html">Ongoing Private Advisory</a></li>
             <li><a href="private-working-session.html">Private Working Session</a></li>
-            <li><a href="#" class="js-ace-ask" data-ace-topic="onsite">Onsite Assignments</a></li>
-            <li><a href="mastermind-membership.html">The Invested Aces Mastermind</a></li>
+            <li><a href="#" class="js-ace-ask" data-ace-topic="onsite">On-site Assignments</a></li>
             <li><a href="group-activities.html">Ace’s Group Activities</a></li>
           </ul>
         </nav>
@@ -169,7 +249,7 @@
         <nav class="foot__nav foot__nav--stacked" aria-label="Make Life Better">
           <p class="foot__h">Make Life Better</p>
           <ul>
-            <li><a href="https://www.makelifebetter.today" target="_blank" rel="noopener noreferrer">www.makelifebetter.today</a></li>
+            <li><a href="https://www.makelifebetter.today" target="_blank" rel="noopener noreferrer">www.MakeLifeBetter.Today</a></li>
           </ul>
         </nav>
       </div>
@@ -178,8 +258,8 @@
         <nav class="foot__nav" aria-label="Also available">
           <p class="foot__h">Also available</p>
           <ul>
-            <li><a href="premium-pickup-transport.html">Premium pickup &amp; transport</a></li>
-            <li><a href="public-speaking.html">Public speaking</a></li>
+            <li><a href="premium-pickup-transport.html">Premium Pickup &amp; Transport</a></li>
+            <li><a href="public-speaking.html">Public Speaking</a></li>
           </ul>
         </nav>
 
@@ -197,16 +277,16 @@
         <nav class="foot__nav" aria-label="Start">
           <p class="foot__h">Start</p>
           <ul>
-             <li><a href="mastermind-application.html">Apply to the Mastermind</a></li>
             <li><a href="index.html#contact">Book an Assessment Call</a></li>
-            <li><a href="mailto:info@acespaders.com">info@acespaders.com</a></li>
+            <li><a href="mastermind-application.html">Apply to the Mastermind</a></li>
+            <li><a href="mailto:info@acespaders.com">info@AceSpaders.com</a></li>
           </ul>
         </nav>
 
         <nav class="foot__nav foot__nav--stacked" aria-label="Hire Ace's Webmaster">
           <p class="foot__h">Hire Ace's Webmaster</p>
           <ul>
-            <li><a href="https://spacewize.dev/webdev" target="_blank" rel="noopener noreferrer">spacewize.dev/webdev</a></li>
+            <li><a href="https://spacewize.dev/webdev" target="_blank" rel="noopener noreferrer">SpaceWize.dev/webdev</a></li>
           </ul>
         </nav>
 
@@ -223,7 +303,7 @@
 <!-- Little Ace. knowledge and physics have to be parsed before
      companion.js runs, and all three are deferred so none of them
      block the page. -->
-<script src="knowledge.js" defer></script>
+<script src="knowledge.js?v=2" defer></script>
 <script src="physics.js" defer></script>
 <script src="companion.js" defer></script>
 </body>

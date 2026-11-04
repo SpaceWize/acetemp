@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="companion.css">
 <script>document.documentElement.classList.replace('no-js','js');</script>
+<script src="gate.js?v=9"></script>
 </head>
 <body>
 
@@ -124,9 +125,9 @@
         <span class="hero__line">All Aces Networking Events</span>
       </h1>
 
-      <p class="hero__tagline">The value of time is a gift. Give and receive to improve everything.</p>
+      <p class="hero__tagline ll">The value of time is a gift.<br> Give and receive to improve everything.</p>
 
-      <p class="hero__sub">A quarterly full-day networking event to build real relationships with peers. Ace opens with a short talk, then actively facilitates conversations throughout the evening over food and coffee. Come and go as you please.</p>
+      <p class="hero__sub">A quarterly, full-day networking event to build real relationships with peers. Ace opens with a short talk, then actively facilitates conversations throughout the evening over food and coffee. Come and go as you please.</p>
 
       <p class="hero__sub">There are only four of these events per year.</p>
 
@@ -137,7 +138,7 @@
 
       <h2 class="hero__h3">Non-Members</h2>
       <div class="hero__cta">
-        <a class="btn btn--gold" href="https://www.eventbrite.ca/e/all-aces-networking-event-tickets-1998522196689" target="_blank" rel="noopener noreferrer">RSVP on Eventbrite</a>
+        <button type="button" class="btn btn--gold" data-waitlist>Join the waitlist for 2027</button>
       </div>
       <a class="hero__back hero__back--bottom" href="index.html"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-arrow"></use></svg> Back</a>
     </div>
@@ -154,22 +155,22 @@
           <span class="brand__mark brand__mark--lg"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-spade"></use></svg></span>
           <p class="foot__word">ACE SPADERS</p>
         </div>
-        <blockquote class="foot__quote">"If you're gonna suffer, suffer success. I Love Gold &amp; Gold People."</blockquote>
+        <blockquote class="foot__quote">"If you're gonna suffer, suffer success. <br> I Love Gold &amp; Gold People."</blockquote>
         <p class="foot__quote-by">- Matthew Ferguson</p>
 
-        <p class="foot__addr">1281 Hornby St, Vancouver, BC V6Z 0G8<br><span class="foot__addr-note">By appointment only</span></p>
+        <p class="foot__addr">1628 W 1st Ave, Vancouver, BC V6J 1G1<br><span class="foot__addr-note">By appointment only</span></p>
 
         <blockquote class="foot__quote">"Understanding people just takes a willingness to Listen."</blockquote>
-        <p class="foot__quote-by">- T, Queen Of Hearts</p>
+        <p class="foot__quote-by">- T. Queen Of Hearts</p>
       </div>
       <div class="foot__col">
         <nav class="foot__nav" aria-label="The work">
           <p class="foot__h">The work</p>
           <ul>
+            <li><a href="mastermind-membership.html">The Invested Aces Mastermind</a></li>
             <li><a href="advisory.html">Ongoing Private Advisory</a></li>
             <li><a href="private-working-session.html">Private Working Session</a></li>
-            <li><a href="#" class="js-ace-ask" data-ace-topic="onsite">Onsite Assignments</a></li>
-            <li><a href="mastermind-membership.html">The Invested Aces Mastermind</a></li>
+            <li><a href="#" class="js-ace-ask" data-ace-topic="onsite">On-site Assignments</a></li>
             <li><a href="group-activities.html">Ace’s Group Activities</a></li>
           </ul>
         </nav>
@@ -177,7 +178,7 @@
         <nav class="foot__nav foot__nav--stacked" aria-label="Make Life Better">
           <p class="foot__h">Make Life Better</p>
           <ul>
-            <li><a href="https://www.makelifebetter.today" target="_blank" rel="noopener noreferrer">www.makelifebetter.today</a></li>
+            <li><a href="https://www.makelifebetter.today" target="_blank" rel="noopener noreferrer">www.MakeLifeBetter.Today</a></li>
           </ul>
         </nav>
       </div>
@@ -186,8 +187,8 @@
         <nav class="foot__nav" aria-label="Also available">
           <p class="foot__h">Also available</p>
           <ul>
-            <li><a href="premium-pickup-transport.html">Premium pickup &amp; transport</a></li>
-            <li><a href="public-speaking.html">Public speaking</a></li>
+            <li><a href="premium-pickup-transport.html">Premium Pickup &amp; Transport</a></li>
+            <li><a href="public-speaking.html">Public Speaking</a></li>
           </ul>
         </nav>
 
@@ -205,16 +206,16 @@
         <nav class="foot__nav" aria-label="Start">
           <p class="foot__h">Start</p>
           <ul>
-             <li><a href="mastermind-application.html">Apply to the Mastermind</a></li>
             <li><a href="index.html#contact">Book an Assessment Call</a></li>
-            <li><a href="mailto:info@acespaders.com">info@acespaders.com</a></li>
+            <li><a href="mastermind-application.html">Apply to the Mastermind</a></li>
+            <li><a href="mailto:info@acespaders.com">info@AceSpaders.com</a></li>
           </ul>
         </nav>
 
         <nav class="foot__nav foot__nav--stacked" aria-label="Hire Ace's Webmaster">
           <p class="foot__h">Hire Ace's Webmaster</p>
           <ul>
-            <li><a href="https://spacewize.dev/webdev" target="_blank" rel="noopener noreferrer">spacewize.dev/webdev</a></li>
+            <li><a href="https://spacewize.dev/webdev" target="_blank" rel="noopener noreferrer">SpaceWize.dev/webdev</a></li>
           </ul>
         </nav>
 
@@ -231,7 +232,7 @@
 <!-- Little Ace. knowledge and physics have to be parsed before
      companion.js runs, and all three are deferred so none of them
      block the page. -->
-<script src="knowledge.js" defer></script>
+<script src="knowledge.js?v=2" defer></script>
 <script src="physics.js" defer></script>
 <script src="companion.js" defer></script>
 </body>

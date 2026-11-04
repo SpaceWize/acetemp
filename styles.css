@@ -61,6 +61,7 @@
   --fs-lead:clamp(1.05rem,1.35vw,1.28rem);
   --fs-body:1.0625rem;
   --fs-sm:.9375rem;
+  --fs-note:.8125rem;     /* the italic notes: clearly smaller than body copy and .hero__sub */
   --fs-label:.75rem;
 
   /* space */
@@ -84,7 +85,9 @@
 
 /* ── RESET / BASE ───────────────────────────────────────────── */
 *,*::before,*::after{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;overflow-x:clip}
+/* scrollbar-gutter: the scrollbar's strip is always reserved, so the page never widens or narrows by its width
+   when scrolling is locked (the home intro, the waitlist gate) and released. */
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;overflow-x:clip;scrollbar-gutter:stable}
 /* The fixed header sits on top of every section (z-index:100, no reserved
    space above the content), so a bare anchor jump lands each target's
    heading partly hidden behind it — confirmed on #process, but every
@@ -381,13 +384,13 @@ button,input,select,textarea{font:inherit;color:inherit}
 .btn,
 .tier,.quote,.tiers,.quotes,.form,.cta__copy,.cta__shot,.tiernotes,
 .alsotile,.plaque,.portrait,.circle__band,
-.brand__mark,.four__node,.burger{
+.brand__mark,.four__node,.burger,.lit{
   position:relative;isolation:isolate;
 }
 .btn,
 .tier,.quote,.tiers,.quotes,.form,.cta__copy,.cta__shot,.tiernotes,
 .alsotile,.plaque,.portrait,.circle__band,
-.brand__mark,.four__node,.burger,.toast{
+.brand__mark,.four__node,.burger,.toast,.lit{
   --orbit-glow:var(--gold-hi);
   --light-a:-50deg;          /* before the first pointer move: lit from above left */
   --light-i:.55;
@@ -405,7 +408,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .cta__copy::after,.cta__shot::after,.tiernotes::after,
 .alsotile::after,.plaque::after,
 .portrait::after,.circle__band::after,
-.brand__mark::after,.four__node::after,.burger::after,
+.brand__mark::after,.four__node::after,.burger::after,.lit::after,
 .toast::after{
   content:"";position:absolute;inset:0;border-radius:inherit;
   pointer-events:none;padding:2px;
@@ -445,6 +448,29 @@ button,input,select,textarea{font:inherit;color:inherit}
   mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
   mask-composite:exclude;
   filter:blur(5px);opacity:calc(var(--light-i) * .85);
+}
+/* ── RACE-AROUND EDGE LIGHT (phones and small tablets) ───────────
+   There is no cursor to aim the edge arc at, so on small screens the arc
+   circles every box, tray and button on a timer, all the way round, the way
+   it originally did. --light-a is registered as an <angle> so it can be
+   animated; it inherits, so the box's own value still reaches its rings.
+   The animation sits on the rings themselves (::after, and the button's
+   ::before glow) so it cannot collide with any animation on the box. Left
+   still under reduced motion. edgeLight() in main.js stands down here. */
+@property --light-a{syntax:'<angle>';inherits:true;initial-value:-50deg}
+@keyframes race-around{from{--light-a:0deg}to{--light-a:360deg}}
+@media (max-width:900px) and (prefers-reduced-motion:no-preference){
+  .btn,
+  .tier,.quote,.tiers,.quotes,.form,.cta__copy,.cta__shot,.tiernotes,
+  .alsotile,.plaque,.portrait,.circle__band,
+  .brand__mark,.four__node,.burger,.toast,.lit{--light-i:.9}
+  .btn::after,.btn::before,
+  .tier::after,.quote::after,.tiers::after,.quotes::after,.form::after,
+  .cta__copy::after,.cta__shot::after,.tiernotes::after,
+  .alsotile::after,.plaque::after,.portrait::after,.circle__band::after,
+  .brand__mark::after,.four__node::after,.burger::after,.toast::after,.lit::after{
+    animation:race-around 7s linear infinite;
+  }
 }
 .btn--gold{background:var(--gold);color:#100E0B}
 .btn--gold:hover{background:var(--gold-hi)}
@@ -672,6 +698,9 @@ body>section .btn--ghost:hover{
   font-size:.95rem;font-weight:900;letter-spacing:.15em;
 }
 .brand__word-b.ll{margin-left:.3em}
+/* In the footer the wordmark is larger than the header's, so ACE follows it (em,
+   not the header's fixed .95rem) and matches SPADERS at every width. */
+.foot__word .brand__ace{font-size:1em}
 
 .nav__sub::before{
   content:"";position:absolute;inset:0 -90px -70px;z-index:-1;pointer-events:none;
@@ -819,6 +848,30 @@ body>section .btn--ghost:hover{
 @media (hover:none),(prefers-reduced-motion:reduce){
   .hero__plate{display:none}
 }
+/* Phones and small tablets: there is no cursor to carry the spade, so the
+   clip just plays, the whole 16:9 frame, sitting in the upper part of the
+   hero. A strong elliptical vignette is masked onto the plate itself, so the
+   edges of the footage dissolve into the black on all four sides. (Reduced
+   motion still gets no video.) main.js heroVideoSmall() does the playback. */
+@media (max-width:900px) and (prefers-reduced-motion:no-preference){
+  .hero__plate{
+    display:block;opacity:1;
+    /* 140% wide, so the frame runs past both edges and the vignette (not the
+       screen edge) is what ends it; its bottom sits just over the headline. */
+    inset:auto;left:-20vw;right:auto;width:140vw;height:calc(140vw * 9 / 16);
+    top:max(4.75rem,calc(100svh - 412px - 140vw * 9 / 16));
+    object-fit:contain;object-position:50% 50%;background:none;
+    -webkit-mask-image:radial-gradient(ellipse 52% 52% at 50% 50%,#000 0%,#000 42%,rgba(0,0,0,.5) 72%,transparent 100%);
+    mask-image:radial-gradient(ellipse 52% 52% at 50% 50%,#000 0%,#000 42%,rgba(0,0,0,.5) 72%,transparent 100%);
+    -webkit-mask-size:100% 100%;mask-size:100% 100%;
+    -webkit-mask-position:0 0;mask-position:0 0;
+    -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+  }
+  /* the side-to-side dark ramp was for the desktop text column; here the
+     text sits below the footage, so the footage is left clean */
+  .hero__scrim{background:none}
+}
+
 
 /* The bed is fixed and guarantees the headline a dark surface no matter what
    the spotlight is doing under it; the ::after is the atmosphere that
@@ -893,13 +946,13 @@ body>section .btn--ghost:hover{
    home hero gains a trailing space that throws off its beat spacing. */
 .hero__sub + .hero__sub{margin-top:var(--sp-2)}
 /* Fine print under the advisory format (advisory.html): smaller, italic */
-.hero__sub.hero__fine{font-size:var(--fs-sm);font-style:italic}
+.hero__sub.hero__fine{font-size:var(--fs-note);font-style:italic}
 /* Smaller, upright: the session details on private-working-session.html */
 .hero__sub.hero__small{font-size:var(--fs-sm)}
 /* Space between the rates box and the copy that follows it */
 .tiers + .hero__sub{margin-top:var(--sp-5)}
 /* Mastermind tier footnotes: small and italic */
-.tiernotes .tiernotes__fn{font-size:var(--fs-sm);font-style:italic}
+.tiernotes .tiernotes__fn{font-size:var(--fs-note);font-style:italic}
 /* The one-line hook under a service page's title. Gold in the display face
    so it reads as part of the heading, pulled up under the h1, and smaller
    than .hero__h3 so it never competes with the section heads below. */
@@ -908,6 +961,8 @@ body>section .btn--ghost:hover{
   font:400 clamp(1.15rem,1.8vw,1.5rem)/1.3 var(--f-display);
   letter-spacing:-.01em;color:var(--gold);
 }
+/* one page (the running group) sets its line larger */
+.hero__tagline--lg{font-size:clamp(1.45rem,2.3vw,1.9rem)}
 /* A short bulleted list inside hero copy — Premium Pickup & Transport and
    Public Speaking both need one for their "ways to access this" lines.
    Kept to the hero's own type scale rather than borrowing a denser list
@@ -1059,6 +1114,9 @@ html.intro .hero__cue{opacity:0}
 .about{padding-bottom:clamp(1rem,2vw,2rem)}
 .network{padding-top:0}
 .network__quote{max-width:48rem;font-size:clamp(1.05rem,1.6vw,1.3rem);line-height:1.35}
+/* The quote sits in its own band under About, inside the page's .wrap so it lines up with everything else. */
+.maxwell{padding-top:0;padding-bottom:clamp(1.5rem,3vw,3rem)}
+.maxwell .network__cite{margin-bottom:0}
 .network__cite{margin:var(--sp-2) 0 var(--sp-5);
   font-family:var(--f-util);font-variation-settings:"wdth" 112;
   font-size:var(--fs-label);font-weight:600;letter-spacing:.12em;text-transform:uppercase}
@@ -1317,6 +1375,10 @@ html.intro .hero__cue{opacity:0}
 .tier--lead .tier__name{margin-inline:auto}
 .tier--right{text-align:right}
 .tier--right .tier__price{text-align:right}
+/* Premium Pickup & Transport's cards are all left-aligned, at every width: this
+   out-ranks the homepage's centred middle / right-aligned third / phone centring. */
+.tiers--left .tier,.tiers--left .tier--lead,.tiers--left .tier--right{text-align:left}
+.tiers--left .tier .tier__name,.tiers--left .tier .tier__price{margin-inline:0;text-align:left;align-items:flex-start}
 
 .spec{margin-block:var(--sp-3) var(--sp-4);flex:1}
 /* Label above value, not beside it. Side-by-side at a fixed 8.5rem label
@@ -1574,6 +1636,8 @@ html.intro .hero__cue{opacity:0}
 /* Halved from the --sp-sec default; pairs with .also' halved top padding
    to halve the gap into "Also available". */
 .network{padding-bottom:clamp(1.5rem,3vw,3rem)}
+/* For Readers now follows the Reservoir tiles instead of the About section, so it needs room above the quote. */
+.network{padding-top:clamp(3rem,6vw,5.5rem)}
 /* No max-width: the heading is one line by design and the 52ch cap was
    folding it to three. At the shared --fs-h2 it still needed 1159px in a
    1144px column, so this one heading is sized to hold on a single line. */
@@ -2219,6 +2283,9 @@ html.intro .hero__cue{opacity:0}
 
   .stats{grid-template-columns:repeat(2,1fr);gap:var(--sp-4) var(--sp-3)}
   .tiers{grid-template-columns:1fr}
+  /* Stacked, the Three Ways Forward cards all centre their text. */
+  .tier,.tier--right{text-align:center}
+  .tier .tier__name,.tier .tier__price{margin-inline:auto;text-align:center;align-items:center}
   /* The spade is decoration; at one column it would push the headline
      down a full screen before it is read. */
   .circle__band{grid-template-columns:1fr}
@@ -2233,7 +2300,18 @@ html.intro .hero__cue{opacity:0}
   .foot__grid{grid-template-columns:1fr 1fr}
 }
 
+.br-mobile{display:none}   /* a line break that only exists on phones */
+.about__tag--m{display:none}
+/* Footnote asterisks (advisory, mastermind membership) are a little smaller on
+   phones, where full-size ones crowd the words they mark. */
+@media (max-width:900px){.ast{font-size:.75em}}
+/* Stacked (tablet and phone): the about title moves from above the portrait to below it. */
+@media (max-width:900px){
+  .about>.wrap:first-child{display:none}
+  .about__tag--m{display:block}
+}
 @media (max-width:620px){
+  .br-mobile{display:inline}
   :root{--fs-body:1rem}
   .four__item{grid-template-columns:40px minmax(0,1fr)}
   .four__node{width:26px;height:26px}

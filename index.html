@@ -30,16 +30,17 @@
    then goes dark. Skipped for reduced motion and for links to a section
    further down. A back/forward return restored from the browser's cache
    runs no scripts, so that case reloads to play it too. The timeout is a
-   failsafe: if main.js never runs, nothing stays hidden or locked. */
+   failsafe: if main.js never runs, nothing stays hidden or locked (long enough for a visitor already on the waitlist to come in through the gates first). */
 addEventListener('pageshow',function(e){if(e.persisted&&!location.hash)location.reload();});
 (function(){try{
   var d=document.documentElement;
   if(matchMedia('(prefers-reduced-motion: reduce)').matches||location.hash)return;
   if('scrollRestoration' in history)history.scrollRestoration='manual';
   d.classList.add('intro','intro-lock');
-  setTimeout(function(){d.classList.remove('intro','intro-lock');},12000);
+  setTimeout(function(){d.classList.remove('intro','intro-lock');},22000);
 }catch(e){}})();
 </script>
+<script src="gate.js?v=9"></script>
 </head>
 <body>
 <div class="hero-intro" aria-hidden="true"><i></i></div>
@@ -259,8 +260,8 @@ addEventListener('pageshow',function(e){if(e.persisted&&!location.hash)location.
       <div class="circle__copy">
         <p class="circle__eyebrow">Additional Access & Activities for members of
 </p>
-        <h2 class="circle__h" id="circle-h">I-AM: Invested Aces Mastermind</h2>
-        <p>Private Mastermind Meetings and Group Gatherings.</p>
+        <h2 class="circle__h" id="circle-h">I-AM:<br class="br-mobile"> Invested Aces Mastermind</h2>
+        <p>Private Mastermind Meetings<br class="br-mobile"> and Group Gatherings.</p>
         <p>Friendly faces worth making time for. Join a vetted community built through consistently showing up.</p>
         <p class="circle__links">
           <a class="circle__link" href="mastermind-membership.html">Explore the Membership</a>
@@ -305,6 +306,9 @@ addEventListener('pageshow',function(e){if(e.persisted&&!location.hash)location.
       <figcaption class="portrait__cap">Matthew Ferguson AKA "Ace Spaders"</figcaption>
     </figure>
 
+    <!-- Phones only: the same title, sitting under the picture instead of above it. -->
+    <h3 class="h3 about__tag about__tag--m ll">Ace Success Strategist, Evaluator &amp; Transformationalist</h3>
+
     <div class="about__copy">
       <p class="eyebrow eyebrow--gold ll"><svg class="eyebrow__spade" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-spade"></use></svg> THE ASSET IN YOUR CORNER</p>
       <h2 class="h2" id="about-h">Matthew Ferguson<br> Known as <span class="ll">Ace</span></h2>
@@ -322,36 +326,13 @@ addEventListener('pageshow',function(e){if(e.persisted&&!location.hash)location.
   </div>
 </section>
 
-
-<!-- ══════════════ 7b. NETWORK ══════════════ -->
-<section class="section network" id="network" aria-labelledby="network-h">
+<!-- Maxwell quote, directly under About -->
+<section class="section maxwell" aria-label="Quote">
   <div class="wrap">
     <p class="h3 network__quote ll">"Gold mines tap out. Stock markets crash. Real estate investments can go sour. But a human mind with the ability to think well is like a diamond mine that never runs out. It's priceless."</p>
     <p class="network__cite"><span class="steel steel--head">- John C. Maxwell, How Successful People Think</span></p>
-    <div class="network__head">
-      <h2 class="h2" id="network-h">For Readers</h2>
-      <h3 class="h3 network__sub ll">Ace loves Plato’s Allegory of the Cave.</h3>
-    </div>
-    <div class="network__copy">
-      <p>People who spend time around Ace tend to notice that certain things start happening. Not because he is hired for a specific task, but because he notices what others miss, says the things that need saying, and can navigate delicate or stressful situations without causing extra drama.</p>
-      <p>When people share a personal story or something complex they are building with Ace, he has a way of seeing the whole picture without overtaking the conversation. He spots the gaps and friction that usually stay invisible, asks questions, and points out what needs fixing or addressing. </p>
-      <p>The same pattern shows up when growth starts creating more pressure than progress. He offers clear observations and possible next steps so the person in charge can pivot as needed and see the path in front of them.</p>
-      <p>At times when Ace has been asked to join people in rooms that matter, he’s shown up with the posture and authority the situation requires. Sometimes this has been as a casual observer looking out for things the person is missing, as a respectable guest ensuring conversations are constructive and details are not overlooked, or as a discreet partner representing someone else’s interests in a meeting or negotiation. But regardless of the room or the other people in it, Ace’s focus always stays on the desired outcome, not on making himself the center of attention.</p>
-      <p>
-If someone in his network needs to make a decision with incomplete information, Ace has often been asked to go take a look at things for them. This has been in places across the Lower Mainland and Northern parts of BC, Gabriola Island, Saskatchewan, and Japan. He travels to the area or site, assesses the actual conditions and reports back so the choice is grounded in reality rather than photos and second-hand accounts.</p>
-      <p>There is also a quieter side to what he does. People who stay in conversation with him often find their perspective on a specific situation, decision, or long-term pattern begins to shift. Sometimes the shift is one that just needed reinforcing, other times it needed to be identified, but either way, the end result is a positive one. Many times the shift has been in regards to how someone relates to their own health, and Ace simply gave them a better way of seeing and approaching the things they already knew were needed.</p>
-      <p>Join the growing number of people who have privately benefited from knowing Ace personally.</p>
-      <p>When the Invested Aces Mastermind, Aces Poker Night, or any Group Activity grows beyond the room or seats available, Ace can easily deputise other Aces to manage additional meetings. As seen by his other business, Make Life Better Events Inc., he is fully capable of addressing the expansion of any event roster.</p>
-      <p>To meet him for yourself, you can book a Private Working Session or join one of his Group Activities, but you will get the most from Ace through his Ongoing Private Advisory; Or by becoming a member of the Invested Aces Mastermind. Having personal access to him on an ongoing basis will lead to a more successful and mutually beneficial relationship, because he enjoys helping out those within his circle.</p>
-      <p>There are also two things Ace has done for himself and others that still remain available:</p>
-      <ul class="network__list">
-        <li><a href="premium-pickup-transport.html">Premium Pickup and Transport</a> with his Cybertruck when the situation calls for something more reliable and with more presence than Uber or Lyft. (For Mastermind Members or as a premium engagement.)</li>
-        <li><a href="public-speaking.html">Public Speaking</a> on resilience, personal development, the benefits of networking, and, with enough preparation and desire, nearly any topic required. (Premium engagement.)</li>
-      </ul>
-    </div>
   </div>
 </section>
-
 
 <!-- ══════════════ 8. SECONDARY — MOTION #4: hover only ══════════════ -->
 <section class="section also" id="also" aria-labelledby="also-h">
@@ -383,6 +364,26 @@ If someone in his network needs to make a decision with incomplete information, 
       <li class="alsotile"><a class="alsotile__link" href="#contact"><span class="alsotile__ico"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-alert"></use></svg></span>
         <h3>Crisis Navigation</h3><p>Direct, grounded guidance when facing sudden, life-altering business or personal situations or decisions.</p></a></li>
       </ul>
+  </div>
+</section>
+
+
+<!-- ══════════════ 7b. NETWORK ══════════════ -->
+<section class="section network" id="network" aria-labelledby="network-h">
+  <div class="wrap">
+    <div class="network__head">
+      <h2 class="h2" id="network-h">For Readers</h2>
+      <h3 class="h3 network__sub ll">Ace loves Plato’s Allegory of the Cave.</h3>
+    </div>
+    <div class="network__copy">
+      <p>People who spend time around Ace will notice things happening over time. What happens may differ from person to person, but generally things improve: A problem gets easier to see. A struggle gets easier to manage. A perspective that had been stuck starts to shift. This is because he notices what others miss, says what needs saying, and can handle a delicate or stressful situation without adding drama to it.</p>
+      <p>Rather than rip someone out of their cave, blinding them with a light they’re not ready for, Ace allows time for their eyes to adjust. When someone shares a personal story, or something complex they are building, he sees the whole picture without taking over the conversation. He marks the gaps that usually stay invisible, asks questions that bring them into view, and points out what needs fixing. The same pattern shows up when growth starts creating more pressure than progress. He offers a clear observation and a possible next step, so the person in charge can pivot and see the path in front of them.</p>
+      <p>He has also been asked into meetings and negotiations where someone wanted a second set of eyes. That has meant sitting in as a casual observer, looking out for what the person was missing, or joining as a guest so the conversation stayed constructive and the details were attended to. He has also sat in as a discreet partner, representing someone else’s interests. Whatever the room, Ace’s focus always stayed on the desired outcome of the one who invited him there.</p>
+      <p>When someone in his network has needed to decide on something with incomplete information, he has often been asked to go and check on it person. That work has taken him across the Lower Mainland and the northern parts of BC, to Gabriola Island, Saskatchewan, and Japan. He travels to the area or the site, assesses the actual conditions, and reports back, so the choice rests on what is actually there. </p>
+      <p>People who stay in conversation with him often find that their view of a situation, a decision, or a long-term pattern begins to shift. The shift may still need to be named, or it may already be clear and only need reinforcing. Often, it is about how someone relates to their own health or relationships. The person usually already knew what was required, and Ace gave them a better way of seeing and approaching it.</p>
+      <p>While the Allegory of the Cave focuses on one cave, in practice there is rarely only one. You can move from one to another, and each move is an adjustment. With Ace around, that adjustment comes faster, and with less fiction in the way. The shadows become easier to name. The real world becomes easier to face. You leave each cave with more confidence, and more certainty, than you had when you sat down.</p>
+      <p>The Golden Ones are those who can appreciate the person who named the shadows, after the adjustment it took to face the light.</p>
+    </div>
   </div>
 </section>
 
@@ -463,7 +464,7 @@ If someone in his network needs to make a decision with incomplete information, 
       
       <dl class="cta__meta">
         <div><dt>Direct</dt><dd><button class="copy" type="button" data-copy="info@acespaders.com">info@acespaders.com</button></dd></div>
-        <div><dt>Office</dt><dd>1281 Hornby St · Vancouver, BC V6Z 0G8</dd></div>
+        <div><dt>Office</dt><dd>1628 W 1st Ave · Vancouver, BC V6J 1G1</dd></div>
         <div><dt>Reply time</dt><dd>Two business days</dd></div>
       </dl>
       <p class="cta__fine">Every application is bot-screened, then read by Ace's Assistant, then reviewed by Ace.
@@ -471,7 +472,7 @@ If someone in his network needs to make a decision with incomplete information, 
     </div>
 
     <figure class="cta__shot">
-      <img src="assets/images/office-burrard-place.jpg" alt="One Burrard Place, the tower beside the Hornby Street office" loading="lazy" width="796" height="818">
+      <img src="assets/images/office-w-1st-ave.jpg" alt="Inside the Ace Spaders office: a Meet Ace Here mural, wooden desks and a kitchenette" loading="lazy" width="1632" height="1216">
     </figure>
 
     <!-- Wire `action` to your endpoint (Formspree, Basin, your own handler).
@@ -504,13 +505,13 @@ If someone in his network needs to make a decision with incomplete information, 
           <p class="hint" id="hint-door">Choose all that apply</p>
           <ul class="checks__grid">
             <li><label class="check"><input type="checkbox" name="door" value="Ongoing Private Advisory" aria-describedby="hint-door e-door"><span>Ongoing Private Advisory</span></label></li>
-            <li><label class="check"><input type="checkbox" name="door" value="Private Working Session"><span>Private Working Session</span></label></li>
-            <li><label class="check"><input type="checkbox" name="door" value="Onsite Assignments"><span>Onsite Assignments</span></label></li>
             <li><label class="check"><input type="checkbox" name="door" value="The Invested Aces Mastermind"><span>The Invested Aces Mastermind</span></label></li>
-            <li><label class="check"><input type="checkbox" name="door" value="All Aces Networking Events"><span>All Aces Networking Events</span></label></li>
-            <li><label class="check"><input type="checkbox" name="door" value="Aces Running Group"><span>Aces Running Group</span></label></li>
-            <li><label class="check"><input type="checkbox" name="door" value="Aces Poker Night"><span>Aces Poker Night</span></label></li>
             <li><label class="check"><input type="checkbox" name="door" value="Premium Pickup &amp; Transport"><span>Premium Pickup &amp; Transport</span></label></li>
+            <li><label class="check"><input type="checkbox" name="door" value="All Aces Networking Events"><span>All Aces Networking Events</span></label></li>
+            <li><label class="check"><input type="checkbox" name="door" value="Private Working Session"><span>Private Working Session</span></label></li>
+            <li><label class="check"><input type="checkbox" name="door" value="Aces Running Group"><span>Aces Running Group</span></label></li>
+            <li><label class="check"><input type="checkbox" name="door" value="On-site Assignments"><span>On-site Assignments</span></label></li>
+            <li><label class="check"><input type="checkbox" name="door" value="Aces Poker Night"><span>Aces Poker Night</span></label></li>
             <li><label class="check"><input type="checkbox" name="door" value="Public Speaking"><span>Public Speaking</span></label></li>
             <li><label class="check"><input type="checkbox" name="door" value="Other"><span>Other</span></label></li>
           </ul>
@@ -522,7 +523,7 @@ If someone in his network needs to make a decision with incomplete information, 
         <textarea id="f-what" name="what" rows="5" required
                   data-msg="Tell me what’s stuck — a sentence is enough."
                   aria-describedby="e-what hint-what"></textarea>
-        <p class="hint" id="hint-what">Give me a brief overview of what you want to discuss or work on.
+        <p class="hint" id="hint-what">Give a brief overview of what you want to discuss or work on.
 </p>
         <p class="err" id="e-what" data-err></p>
       </div>
@@ -530,13 +531,13 @@ If someone in his network needs to make a decision with incomplete information, 
         <label for="f-when">Desired Follow-Up Timeline</label>
         <select id="f-when" name="when">
           <option>I needed to start yesterday</option>
+          <option>At Ace’s earliest convenience</option>
+          <option>I’m not too worried about it</option>
           <option>As soon as possible</option>
-          <option>At Ace's earliest convenience</option>
           <option>This week</option>
           <option>This month</option>
           <option>This quarter</option>
           <option>Next quarter</option>
-          <option>I'm not too worried about it</option>
         </select>
       </div>
       <div class="form__foot">
@@ -562,7 +563,7 @@ If someone in his network needs to make a decision with incomplete information, 
         <blockquote class="foot__quote">"If you're gonna suffer, suffer success. <br> I Love Gold &amp; Gold People."</blockquote>
         <p class="foot__quote-by">- Matthew Ferguson</p>
 
-        <p class="foot__addr">1281 Hornby St, Vancouver, BC V6Z 0G8<br><span class="foot__addr-note">By appointment only</span></p>
+        <p class="foot__addr">1628 W 1st Ave, Vancouver, BC V6J 1G1<br><span class="foot__addr-note">By appointment only</span></p>
 
         <blockquote class="foot__quote">"Understanding people just takes a willingness to Listen."</blockquote>
         <p class="foot__quote-by">- T. Queen Of Hearts</p>
@@ -574,7 +575,7 @@ If someone in his network needs to make a decision with incomplete information, 
             <li><a href="mastermind-membership.html">The Invested Aces Mastermind</a></li>
             <li><a href="advisory.html">Ongoing Private Advisory</a></li>
             <li><a href="private-working-session.html">Private Working Session</a></li>
-            <li><a href="#" class="js-ace-ask" data-ace-topic="onsite">Onsite Assignments</a></li>
+            <li><a href="#" class="js-ace-ask" data-ace-topic="onsite">On-site Assignments</a></li>
             <li><a href="group-activities.html">Ace’s Group Activities</a></li>
           </ul>
         </nav>
@@ -619,7 +620,7 @@ If someone in his network needs to make a decision with incomplete information, 
         <nav class="foot__nav foot__nav--stacked" aria-label="Hire Ace's Webmaster">
           <p class="foot__h">Hire Ace's Webmaster</p>
           <ul>
-            <li><a href="https://spacewize.dev/webdev" target="_blank" rel="noopener noreferrer">spacewize.dev/webdev</a></li>
+            <li><a href="https://spacewize.dev/webdev" target="_blank" rel="noopener noreferrer">SpaceWize.dev/webdev</a></li>
           </ul>
         </nav>
 
@@ -636,7 +637,7 @@ If someone in his network needs to make a decision with incomplete information, 
 <!-- Little Ace. knowledge and physics have to be parsed before
      companion.js runs, and all three are deferred so none of them
      block the page. -->
-<script src="knowledge.js" defer></script>
+<script src="knowledge.js?v=2" defer></script>
 <script src="physics.js" defer></script>
 <script src="companion.js" defer></script>
 </body>

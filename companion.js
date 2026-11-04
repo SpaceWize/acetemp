@@ -342,6 +342,12 @@ const CLIPS={
      6fps lean in, point, and straighten up again in 1.3s; the clip is a
      one-shot, so it then holds the plain stand it ends on. */
   point :{f:[42,43,44,45,46,47,48,49],fps:6,  loop:false,dir:0},
+  /* The other point: arm up, finger to the sky, for when he is standing on
+     something (a tray, a card) with a button overhead. Six drawn frames,
+     1 = the plain stand and 6 = arm fully up; played 1-6, held at the peak
+     for three beats, then 6-1 back to the stand: 14 steps at 8fps = 1.75s,
+     inside POINT_HOLD. dir:0, never mirrored (the raised arm is his right). */
+  pointup:{f:[63,64,65,66,67,68,68,68,68,67,66,65,64,63],fps:8,loop:false,dir:0},
   /* Held up by the hood. Not played on a clock: the frame is chosen from how
      the hand is moving (dragPoseNow below), so fps is unused and clipFrame()
      special-cases it. Thirteen frames in swing order, left to right: 0-3 swung to the LEFT of the
@@ -378,7 +384,7 @@ img.onload=()=>{
 img.onerror=()=>{pet.hidden=true;shadow.hidden=true;};
 /* WebP, not the PNG the build writes: 435KB against 1.8MB, with the alpha
    identical and colour within ~1.5/255 on average. Re-export after a rebuild. */
-img.src='assets/images/ace-atlas.webp?v=5';   // bump when the sheet changes: the page caches it
+img.src='assets/images/ace-atlas.webp?v=6';   // bump when the sheet changes: the page caches it
 
 function play(name){if(clipName!==name){clipName=name;clipStart=clock;}}
 /* Where a clip has got to. A looping clip wraps; a one-shot holds its last
@@ -536,7 +542,7 @@ let surfaces=[],clock=0,last=0,nextDecision=1.8,lastSurfaceUpdate=-1,scroll=scro
 /* climb: {el, x} while he is going up a block of copy.
    textSurface: the block he climbed, standable for as long as he is on it.
    pointUntil: how long he holds the point once he has landed on a button. */
-let climb=null,textSurface=null,pointUntil=0,waveUntil=0;
+let climb=null,textSurface=null,pointUntil=0,waveUntil=0,pointKind='point';   // pointKind: 'point' (down at the button he is on) or 'pointup'
 /* ── A SCRIPTED VISIT ─────────────────────────────────────────
    The home hero's intro (heroIntro() in main.js) sends him to stand on a
    word and point at it: window.AceCompanion.visit(el,{onPoint,onLeave}).
@@ -573,6 +579,13 @@ window.AceCompanion={
       visit={el,phase:'start',onPoint:opts&&opts.onPoint,onLeave:opts&&opts.onLeave,res,until:clock+9};
       climb=null;runGoal=null;pendingJump=null;waveUntil=0;pointUntil=0;scan();
     });
+  },
+  /* Where he is right now, read-only: centre x and feet y in viewport px, his drawn height, whether he is in the
+     air and falling, and whether he is on the way back from a visit. The waitlist gate uses it to hand him over
+     to the Little Ace running behind the gates at the very spot he will run in. */
+  where(){
+    return {x:state.x,y:state.y,h:SPRITE_H,airborne:state.ground===null,vy:state.vy,vx:state.vx,
+            returning:!!(visit&&visit.phase==='back')};
   }
 };
 const state={x:Math.max(70,innerWidth-160),y:innerHeight-20,vx:0,vy:0,ground:'floor'};
@@ -791,6 +804,20 @@ const POINT_HOLD=2.2;    // seconds he holds the point at a button
    remaining hold is a SENSIBLE length means a nonsense value simply reads
    as "not pointing" and he carries on. */
 function holdingPoint(){const left=pointUntil-clock;return left>0&&left<=POINT_HOLD;}
+/* The nearest button clearly overhead: its bottom edge above his head (he is
+   about 120px tall) and no more than ~520px up, with him under some part of
+   it, give or take 80px. */
+function buttonAbove(){
+  let best=null,bd=1e9;
+  for(const q of perches){
+    if(!q.button)continue;
+    const r=q.el.getBoundingClientRect();
+    if(!r.width||r.bottom>state.y-110||r.bottom<state.y-520)continue;
+    if(state.x<r.left-80||state.x>r.right+80)continue;
+    const d=state.y-r.bottom;if(d<bd){bd=d;best=q;}
+  }
+  return best;
+}
 
 const SURFACE_EDGE=60;
 /* How often a decision made ON THE FLOOR is just "walk somewhere else
@@ -1019,13 +1046,25 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
      const p=perches[Number(hit.id)];
      if(visit){
        if(hit.id==='visit'){
-         pointUntil=clock+VISIT_POINT;play('point');visit.phase='point';nextDecision=clock+99;
+         pointKind='point';pointUntil=clock+VISIT_POINT;play('point');visit.phase='point';nextDecision=clock+99;
          if(visit.onPoint)visit.onPoint();
        }else if(visit.phase==='back')endVisit(true);
        else{visit.phase='start';}          // came down short: try again from here
      }
-     else if(p&&p.button&&Math.random()<.75){
-       pointUntil=clock+POINT_HOLD;play('point');runGoal=null;nextDecision=pointUntil+.2;
+     else if(p){
+       /* Two ways to point. On a button he can point DOWN at it, as before, or
+          (when there is another button overhead) point UP at that one; the two
+          are used interchangeably. Standing on anything else, a tray or a card,
+          with a button above him, he points up at it. Nothing above and nothing
+          under him that is a button: no gesture. */
+       const up=buttonAbove();
+       if(p.button&&Math.random()<.75){
+         pointKind=(up&&Math.random()<.5)?'pointup':'point';
+         pointUntil=clock+POINT_HOLD;play(pointKind);runGoal=null;nextDecision=pointUntil+.2;
+       }else if(!p.button&&up&&Math.random()<.7){
+         pointKind='pointup';
+         pointUntil=clock+POINT_HOLD;play('pointup');runGoal=null;nextDecision=pointUntil+.2;
+       }
      }
    }}
    if(state.y>innerHeight+60){state.y=innerHeight-16;state.ground='floor';state.vy=state.vx=0;nextDecision=clock+.5;}
@@ -1037,7 +1076,7 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
       physics beat locomotion, locomotion beats standing still. */
    if(!ascending){
      if(clock<waveUntil&&state.ground!==null)play('wave');
-     else if(holdingPoint())play('point');
+     else if(holdingPoint())play(pointKind);
      else if(pendingJump)play('crouch');
      else if(clock<landingUntil)play('land');
      else if(state.ground===null)play(state.vy<-180?'rise':state.vy<100?'apex':'fall');

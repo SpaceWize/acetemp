@@ -140,8 +140,30 @@
      is no reason to decode a frame before then. */
   var VIDEO_SPEED = 1;      // real time; the clip is a ~12s there-and-back
 
+  /* Small screens: no cursor, so the hero clip simply plays (muted, inline),
+     looping, and only while it is on screen and the tab is visible. The
+     matching CSS lives under (max-width:900px) next to .hero__plate. */
+  function heroVideoSmall() {
+    if (reduce.matches || !window.matchMedia('(max-width: 900px)').matches) return;
+    var video = document.querySelector('[data-hero-video]');
+    if (!video) return;
+    video.muted = true; video.loop = true; video.setAttribute('playsinline', '');
+    video.preload = 'auto';
+    var inView = true;
+    function sync() {
+      if (inView && !document.hidden) { var p = video.play(); if (p && p.catch) p.catch(function () {}); }
+      else video.pause();
+    }
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (es) { inView = es[0].isIntersecting; sync(); }, { threshold: 0.1 }).observe(video);
+    }
+    document.addEventListener('visibilitychange', sync);
+    sync();
+  }
+
   function heroSpotlight() {
     if (reduce.matches || !window.matchMedia('(hover: hover)').matches) return;
+    if (window.matchMedia('(max-width: 900px)').matches) return;   // phones: heroVideoSmall() instead
     var stages = [].slice.call(document.querySelectorAll('.hero__stage'));
     if (!stages.length) return;
 
@@ -549,7 +571,7 @@
       pick.appendChild(note);
 
       form.querySelector('.form__foot').appendChild(pick);
-      status.textContent = 'Your application is ready.';
+      status.textContent = form.getAttribute('data-ready') || 'Your application is ready.';
       // move focus so a keyboard or screen-reader user lands on the choices
       row.firstChild.focus();
     }
@@ -937,10 +959,19 @@
      3500  Little Ace hops onto ASSET and points; ASSET reheats to 0.6
      then  subtitle, buttons, scroll cue, and the scroll lock lets go
      A click or any key skips straight to the end. */
+  /* 'ace:intro-done' (and data-intro-done on <html>) tells the waitlist gate (gate.js) to close: sent the moment
+     Little Ace lands back on his button after pointing at ASSET, or when the intro ends if he did not go. */
+  function introDone() {
+    var root = document.documentElement;
+    if (root.hasAttribute('data-intro-done')) return;
+    root.setAttribute('data-intro-done', '');
+    try { document.dispatchEvent(new Event('ace:intro-done')); } catch (e) {}
+  }
+
   function heroIntro() {
     var hero = document.querySelector('[data-hero]');
     var root = document.documentElement;
-    if (!hero) { root.classList.remove('intro', 'intro-lock'); return; }
+    if (!hero) { root.classList.remove('intro', 'intro-lock'); introDone(); return; }
     var meet = hero.querySelector('.hero__meet');
     var asset = hero.querySelector('.hero__asset');
     var gold = hero.querySelector('.hero__line--gold');
@@ -948,7 +979,7 @@
     var cta = hero.querySelector('.hero__cta');
     var cue = hero.querySelector('.hero__cue');
     var overlay = document.querySelector('.hero-intro');
-    if (!meet || !asset) { root.classList.remove('intro', 'intro-lock'); return; }
+    if (!meet || !asset) { root.classList.remove('intro', 'intro-lock'); introDone(); return; }
 
     // Steel, as in the nav: "Meet Your" as one word, ASSET a letter at a time
     // so each can be forged on its own.
@@ -976,7 +1007,23 @@
       else steel.forEach(function (el) { el.style.setProperty('--near', '0'); });
     }
 
-    if (!root.classList.contains('intro')) { handOver(); return; }
+    /* The intro plays on load for everyone. A first-time visitor watches it with the waitlist gates (gate.js)
+       standing open at the screen edges; the gates swing shut once it has finished. Someone already on the list
+       comes in through the gates instead (html.gate-entry): it plays once they have swung open. */
+    if (root.classList.contains('gate-entry')) {
+      var entered = false;
+      var enter = function () {
+        if (entered) return;
+        entered = true;
+        document.removeEventListener('ace:gate-open', enter);
+        play();
+      };
+      document.addEventListener('ace:gate-open', enter);
+      setTimeout(enter, 9000);                       // never hold it for long
+    } else play();
+
+    function play() {
+    if (!root.classList.contains('intro')) { handOver(); introDone(); return; }
     window.scrollTo(0, 0);
 
     steel.forEach(function (el) { el.setAttribute('data-heat-lock', ''); });
@@ -1029,10 +1076,17 @@
       // ends on the headline's own (tight) spacing, or it snaps when the
       // animation is released
       var ls = getComputedStyle(meet).letterSpacing;
-      anim(meet, [
+      // Held at its finished width while it squeezes in, so the wide start spills sideways instead of pushing
+      // ASSET onto a new line: that reflow grew the headline, and the centred hero jumped up then dropped back.
+      // (Only when it is on one line; where it already wraps, as on a narrow phone, it is left alone.)
+      var mr = meet.getBoundingClientRect(), lh = parseFloat(getComputedStyle(meet).lineHeight) || mr.height;
+      if (mr.height < lh * 1.5) { meet.style.width = mr.width + 'px'; meet.style.whiteSpace = 'nowrap'; }
+      var squeeze = anim(meet, [
         { opacity: 0, letterSpacing: '.45em', filter: 'blur(14px)' },
         { opacity: 1, letterSpacing: ls === 'normal' ? '0px' : ls, filter: 'blur(0px)' }
       ], { duration: 950, easing: EASE });
+      var unhold = function () { meet.style.width = ''; meet.style.whiteSpace = ''; };
+      if (squeeze) squeeze.finished.then(unhold, unhold); else unhold();
     });
 
     // 2 → ASSET, forged a letter at a time
@@ -1080,11 +1134,14 @@
       at(1300, finish);
     }
     function startReheat() { reheat = performance.now() - t0; }
+    var aceBack = Promise.resolve();                 // settles when Little Ace is back on his button
     at(3500, function () {
       var ace = window.AceCompanion;
       if (ace && ace.visit) {
-        ace.visit(asset, { onPoint: startReheat, onLeave: rest }).then(function (went) {
+        // the line under "Ace Spaders" and the buttons arrive while he points (rest() runs once; onLeave is a backstop)
+        aceBack = ace.visit(asset, { onPoint: function () { startReheat(); rest(); }, onLeave: rest }).then(function (went) {
           if (!went) { startReheat(); at(REHEAT, rest); }
+          else introDone();                          // he has landed back on his button: the gates close now
         });
       } else {
         startReheat();
@@ -1111,6 +1168,10 @@
         gold.removeAttribute('data-heat-lock');
       }
       handOver();
+      // If he did not go (parked, mid-chat) the signal goes now; if he is still on his way back, his landing
+      // sends it (above), and a slow phone gets 6s at most.
+      setTimeout(introDone, 6000);
+      aceBack.then(function (went) { if (went === false || went === undefined) introDone(); }, introDone);
     }
     function skip(e) {
       if (e.type === 'keydown' && (e.ctrlKey || e.metaKey || e.altKey)) return;
@@ -1123,7 +1184,39 @@
     addEventListener('keydown', skip, true);
     addEventListener('wheel', hold, { passive: false });
     addEventListener('touchmove', hold, { passive: false });
+    }
   }
+
+  /* ── HERO SHINE ─────────────────────────────────────────────
+     When the waitlist gates open (gate.js fires 'ace:gate-open'), the headline catches the light for a moment:
+     a heat band sweeps across the steel words, letter by letter, and the gold line flares. The intro itself is
+     not replayed; the visitor already watched it before the gates closed. */
+  function heroShine(e) {
+    var hero = document.querySelector('[data-hero]');
+    if (!hero || reduce.matches) return;
+    if (e && e.detail && e.detail.entry) return;      // an entrance: the intro plays instead (heroIntro)
+    var steel = [].slice.call(hero.querySelectorAll('.hero__steel'));
+    var gold = hero.querySelector('.hero__line--gold');
+    if (!steel.length && !gold) return;
+    steel.forEach(function (el) { el.setAttribute('data-heat-lock', ''); });
+    if (gold) gold.classList.add('is-hot');
+    var t0 = performance.now(), D = 1500;
+    function f(now) {
+      var p = Math.min(1, (now - t0) / D);
+      steel.forEach(function (el, i) {
+        var k = Math.max(0, Math.min(1, p * 1.7 - i * 0.07));
+        el.style.setProperty('--near', (Math.sin(k * Math.PI) * 0.9).toFixed(3));
+        el.style.setProperty('--sx', (10 + k * 85).toFixed(1) + '%');
+      });
+      if (p < 1) requestAnimationFrame(f);
+      else {
+        steel.forEach(function (el) { el.removeAttribute('data-heat-lock'); });
+        setTimeout(function () { if (gold) gold.classList.remove('is-hot'); }, 500);
+      }
+    }
+    requestAnimationFrame(f);
+  }
+  document.addEventListener('ace:gate-open', heroShine);
 
   /* ── boot ──────────────────────────────────────────────────── */
   function init() {
@@ -1131,6 +1224,7 @@
     if (y) y.textContent = new Date().getFullYear();
     heroChoreography();
     heroSpotlight();
+    heroVideoSmall();
     pageSpade();
     flagshipReveal();
     proofCounters();
@@ -1445,10 +1539,12 @@
      source and nothing more. */
   var LIT = '.btn,.tier,.quote,.tiers,.quotes,.form,.cta__copy,.cta__shot,' +
             '.tiernotes,.alsotile,.plaque,.portrait,.circle__band,' +
-            '.brand__mark,.four__node,.burger,.toast';
+            '.brand__mark,.four__node,.burger,.toast,.lit';
   var LIGHT_REACH = 700;     // px from a box at which its edge is dimmest
 
   function edgeLight() {
+    // small screens: the rings race around on a CSS timer instead (see styles.css)
+    if (!reduce.matches && window.matchMedia('(max-width: 900px)').matches) return;
     var boxes = [].slice.call(document.querySelectorAll(LIT));
     if (!boxes.length) return;
 
