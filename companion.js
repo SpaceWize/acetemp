@@ -35,7 +35,7 @@ const shadow=document.createElement('div');shadow.className='ace-shadow';shadow.
    this darkens without taking the page hostage. */
 const scrim=document.createElement('div');scrim.className='ace-scrim';scrim.ariaHidden='true';document.body.append(scrim);
 const launcher=document.createElement('button');launcher.type='button';launcher.className='ace-launcher';launcher.innerHTML='<span aria-hidden="true"><img class="ace-spade" src="assets/icons/favicon-192.png" alt=""></span><span>Ask Little Ace</span>';launcher.setAttribute('aria-controls','ace-chat');launcher.setAttribute('aria-expanded','false');document.body.append(launcher);
-const panel=document.createElement('section');panel.id='ace-chat';panel.className='ace-chat';panel.hidden=true;panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','false');panel.setAttribute('aria-labelledby','ace-chat-title');panel.innerHTML='<div class="ace-chat-head"><span class="ace-chat-symbol" aria-hidden="true"><img class="ace-spade" src="assets/icons/favicon-192.png" alt=""></span><div><h2 id="ace-chat-title">Little Ace</h2><p>Your guide to Ace Spaders</p></div><button type="button" class="ace-chat-close" aria-label="Close chat">×</button></div><div class="ace-chat-messages" role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversation"></div><div class="ace-chat-suggestions" aria-label="Suggested questions"><button type="button">Advisory fees</button><button type="button">About Ace</button><button type="button">Upcoming events</button></div><form class="ace-chat-form"><label class="ace-sr" for="ace-question">Ask about Ace or the website</label><input id="ace-question" name="question" maxlength="600" autocomplete="off" placeholder="Ask about Ace, services, events…" required><button type="submit" aria-label="Send question">↑</button></form><div class="ace-chat-foot"><span>Published-site answers · questions logged anonymously</span><button class="ace-park" type="button">Park Little Ace</button></div>';document.body.append(panel);
+const panel=document.createElement('section');panel.id='ace-chat';panel.className='ace-chat';panel.hidden=true;panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','false');panel.setAttribute('aria-labelledby','ace-chat-title');panel.innerHTML='<div class="ace-chat-head"><span class="ace-chat-symbol" aria-hidden="true"><img class="ace-spade" src="assets/icons/favicon-192.png" alt=""></span><div><h2 id="ace-chat-title">Little Ace</h2><p>Your guide to Ace Spaders</p></div><button type="button" class="ace-chat-close" aria-label="Close chat">×</button></div><div class="ace-chat-messages" role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversation"></div><div class="ace-chat-suggestions" aria-label="Suggested questions"><button type="button">Advisory fees</button><button type="button">About Ace</button><button type="button">Upcoming events</button></div><form class="ace-chat-form"><label class="ace-sr" for="ace-question">Ask about Ace or the website</label><input id="ace-question" name="question" maxlength="600" autocomplete="off" placeholder="Ask about Ace, services, events…" required><button type="submit" aria-label="Send question">↑</button></form><div class="ace-chat-foot"><span>Published-site answers · questions logged anonymously</span><span class="ace-foot-actions"><button class="ace-type" type="button" aria-pressed="false" aria-label="Serif type"><span aria-hidden="true">Aa</span></button><button class="ace-depth" type="button" aria-pressed="true" aria-label="3D headline"><span aria-hidden="true">3D</span></button><button class="ace-park" type="button">Park Little Ace</button></span></div>';document.body.append(panel);
 const log=panel.querySelector('.ace-chat-messages'),input=panel.querySelector('input'),close=panel.querySelector('.ace-chat-close'),parkButton=panel.querySelector('.ace-park');
 
 /* Reduced motion parks him by default rather than hiding him: the chat is
@@ -295,6 +295,18 @@ function ask(q,source='typed'){q=q.trim();if(!q)return;
 panel.querySelector('form').addEventListener('submit',e=>{e.preventDefault();ask(input.value);});panel.querySelectorAll('.ace-chat-suggestions button').forEach(b=>b.addEventListener('click',()=>ask(b.textContent,'chip')));
 function updatePark(){parkButton.textContent=parked?'Let Little Ace roam':'Park Little Ace';}
 parkButton.addEventListener('click',()=>{parked=!parked;try{sessionStorage.setItem('ace-parked',parked?'yes':'no');}catch{}updatePark();if(!parked){state.ground=null;state.vy=0;nextDecision=clock+.5;}});updatePark();
+/* Serif type: html[data-type="serif"] sets the gold eyebrow labels, "Getting Started" and the "Ace" in "Known as
+   Ace" in a serif (SERIF TYPE in styles.css). The choice is kept for every page and the next visit; each page's
+   head re-applies it before first paint. */
+const typeButton=panel.querySelector('.ace-type'),docEl=document.documentElement;
+function serifOn(){return docEl.getAttribute('data-type')==='serif';}
+function updateType(){const on=serifOn();typeButton.setAttribute('aria-pressed',String(on));typeButton.classList.toggle('is-off',!on);typeButton.title=on?'Serif type: on. Click to turn it off':'Serif type: off. Click to turn it on';}
+typeButton.addEventListener('click',()=>{const on=!serifOn();if(on)docEl.setAttribute('data-type','serif');else docEl.removeAttribute('data-type');try{localStorage.setItem('ace-type',on?'serif':'sans');}catch{}updateType();});updateType();
+/* 3D headline: on unless html[data-depth="flat"] (3D HEADLINE in styles.css). Kept like the serif choice. */
+const depthButton=panel.querySelector('.ace-depth');
+function depthOn(){return docEl.getAttribute('data-depth')!=='flat';}
+function updateDepth(){const on=depthOn();depthButton.setAttribute('aria-pressed',String(on));depthButton.classList.toggle('is-off',!on);depthButton.title=on?'3D headline: on. Click to turn it off':'3D headline: off. Click to turn it on';}
+depthButton.addEventListener('click',()=>{const on=!depthOn();if(on)docEl.removeAttribute('data-depth');else docEl.setAttribute('data-depth','flat');try{localStorage.setItem('ace-depth',on?'3d':'flat');}catch{}updateDepth();});updateDepth();
 
 /* ── SPRITE ────────────────────────────────────────────────────
    The atlas is a uniform grid, built offline by
@@ -586,10 +598,58 @@ window.AceCompanion={
   where(){
     return {x:state.x,y:state.y,h:SPRITE_H,airborne:state.ground===null,vy:state.vy,vx:state.vx,
             returning:!!(visit&&visit.phase==='back')};
-  }
+  },
+  /* Show a thought bubble now (the next line from THOUGHTS, or the text given). For trying it out. */
+  think(text){think(text);}
 };
 const state={x:Math.max(70,innerWidth-160),y:innerHeight-20,vx:0,vy:0,ground:'floor'};
 let cursorX=innerWidth/2;document.addEventListener('pointermove',e=>{cursorX=e.clientX;},{passive:true});
+
+/* ── THOUGHTS ──────────────────────────────────────────────────
+   Every five minutes of the page actually being looked at (thinkClock,
+   below, only counts while it is on screen), a thought bubble rises over his head
+   for a few seconds and follows him while it is up. THOUGHTS is the list
+   it works through, one line for now. It holds off while the chat is
+   open, while he is being dragged, while the waitlist gate is up and
+   while the home intro plays, and tries again a few seconds later.
+   Decorative, so it is hidden from screen readers rather than
+   announced every five minutes. */
+const THOUGHTS=['I’m so cute and you know it.... but don’t call me that!'];
+const THINK_EVERY=300,THINK_FOR=7;
+const bubble=document.createElement('div');bubble.className='ace-think';bubble.setAttribute('aria-hidden','true');
+bubble.innerHTML='<p></p><i class="ace-think__dot ace-think__dot--a"></i><i class="ace-think__dot ace-think__dot--b"></i>';
+document.body.append(bubble);
+/* Its own clock, in real seconds the page is on screen. Little Ace's `clock` caps each frame's step, so on a
+   slow or busy device it runs behind the wall clock and "every five minutes" would stretch. Time with the tab
+   hidden is left out (the clock restarts from the moment it is shown again), and any single gap counts for at
+   most five seconds, so a sleeping laptop does not fast-forward it. */
+let thinkClock=0,thinkLast=0;
+document.addEventListener('visibilitychange',()=>{thinkLast=0;});
+let nextThought=THINK_EVERY,thinkUntil=-1,thoughtIx=0;
+function think(text){
+  bubble.querySelector('p').textContent=text||THOUGHTS[thoughtIx++%THOUGHTS.length];
+  thinkUntil=thinkClock+THINK_FOR;placeBubble();bubble.classList.add('is-on');
+}
+function quiet(){thinkUntil=-1;bubble.classList.remove('is-on');}
+/* Up and to his right, off the top of his cap; to his left where the right side has no room. */
+function placeBubble(){
+  const w=bubble.offsetWidth,h=bubble.offsetHeight,head=state.y-FEET_Y/2;
+  const left=state.x>innerWidth-w-70;
+  bubble.classList.toggle('is-left',left);
+  let x=left?state.x-24-w:state.x+24,y=head-h+4;
+  x=Math.max(8,Math.min(innerWidth-w-8,x));y=Math.max(70,y);
+  bubble.style.transform=`translate3d(${x.toFixed(1)}px,${y.toFixed(1)}px,0)`;
+}
+// started on the next frame, not now: `dragging` is declared further down this file
+requestAnimationFrame(function thinkLoop(now){
+  if(thinkLast&&!document.hidden)thinkClock+=Math.min(5,(now-thinkLast)/1000);
+  thinkLast=now;
+  const html=document.documentElement;
+  const busy=!ready||open||dragging||html.classList.contains('gate-locked')||html.classList.contains('intro');
+  if(thinkUntil>=0){if(busy||thinkClock>=thinkUntil){quiet();nextThought=thinkClock+THINK_EVERY;}else placeBubble();}
+  else if(thinkClock>=nextThought){if(busy)nextThought=thinkClock+5;else think();}
+  requestAnimationFrame(thinkLoop);
+});
 
 /* ── PACE ─────────────────────────────────────────────────────
    He takes his energy from the visitor. While they are moving (pointer,

@@ -52,6 +52,7 @@
   --f-display:"Archivo Black","Archivo",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-util:"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-serif:"DM Serif Display",Georgia,"Times New Roman",serif;   /* SERIF TYPE, below */
 
   /* vh cap keeps the four hero lines inside a short laptop viewport */
   --fs-hero:clamp(2.6rem,min(7.4vw,11.4vh),6.6rem);
@@ -329,6 +330,21 @@ button,input,select,textarea{font:inherit;color:inherit}
    available switched to eyebrow--gold, matching About's treatment). */
 .eyebrow--quiet{color:var(--on-dark-mute)}
 .eyebrow__spade{width:.85em;height:.85em;flex:none;fill:currentColor;margin-top:.3em}
+
+/* ── SERIF TYPE (a reader's choice) ───────────────────────────
+   The switch in Little Ace's chat sets html[data-type="serif"], and each
+   page's head re-applies a saved choice before first paint, so nothing
+   flips on load. Only these take the serif: the gold eyebrow labels
+   ("The Asset in Your Corner" and the rest), the "Getting Started"
+   heading and the "Ace" in "Known as Ace". DM Serif Display has a single
+   weight, so the eyebrows drop their bold and width axis, and open up a
+   touch in size to match the sans caps they replace. */
+html[data-type="serif"] .eyebrow{
+  font-family:var(--f-serif);font-variation-settings:normal;font-weight:400;
+  font-size:calc(var(--fs-label) * 1.15);letter-spacing:.14em;
+}
+html[data-type="serif"] #process-h,
+html[data-type="serif"] #about-h .ll{font-family:var(--f-serif);font-weight:400;letter-spacing:0}
 
 .h2{
   font:400 var(--fs-h2)/1.0 var(--f-display);
@@ -2392,3 +2408,141 @@ html.intro .hero__cue{opacity:0}
    so touch devices already get the light and two competing effects on
    one element just read as noise. */
 
+
+/* ═══ THE MAXWELL QUOTE ═════════════════════════════════════════
+   A centred pull-quote with room around it, rather than a block left
+   hanging under About's text column with a wide gap to its right. A
+   gold spade between two short rules marks it as a set piece; the
+   citation sits centred under it. */
+.maxwell{padding-block:clamp(3rem,6vw,5rem)}
+.maxwell .wrap{display:flex;flex-direction:column;align-items:center;text-align:center}
+.maxwell .wrap::before{
+  content:"";width:min(15rem,60%);height:14px;margin-bottom:var(--sp-4);
+  background:
+    linear-gradient(90deg,transparent,rgba(217,164,65,.55)) left center/calc(50% - 16px) 1px no-repeat,
+    linear-gradient(270deg,transparent,rgba(217,164,65,.55)) right center/calc(50% - 16px) 1px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23D9A441' d='M12 2.2c-.45 1.7-3.05 4.1-5.25 6C4.85 9.85 3.55 11.5 3.55 13.5c0 2.6 1.9 4.35 4.3 4.35 1.3 0 2.4-.5 3.1-1.5-.12 2.35-.9 4.05-2 5.05h6.1c-1.1-1-1.88-2.7-2-5.05.7 1 1.8 1.5 3.1 1.5 2.4 0 4.3-1.75 4.3-4.35 0-2-1.3-3.65-3.2-5.3-2.2-1.9-4.8-4.3-5.25-6Z'/%3E%3C/svg%3E") center/14px 14px no-repeat;
+}
+.maxwell .network__quote{max-width:38ch;margin-inline:auto;font-size:clamp(1.15rem,1.9vw,1.55rem);
+  line-height:1.4;text-wrap:balance}
+.maxwell .network__cite{margin-top:var(--sp-3)}
+
+/* ═══ SUBPAGE BUTTONS ═══════════════════════════════════════════
+   Centred under the copy they close, not pinned to its left edge. The
+   row takes the same width as the page's paragraphs (56ch of the lead
+   size, written in the lead size's own units: 1ch of Instrument Sans is
+   .7371em, so 56ch = 41.28em), so the button sits under the middle of
+   the text column rather than the middle of the window. The note that
+   follows a button row centres with it. */
+.hero--page .hero__cta{max-width:calc(var(--fs-lead) * 41.28);justify-content:center}
+.hero--page .hero__cta + .hero__note{max-width:calc(var(--fs-lead) * 41.28);text-align:center}
+
+/* ═══ 3D HEADLINE (a reader's choice, on unless switched off) ═════
+   The hero headline gets a little depth: a short stack of one-step
+   shadows under each letter, steel-grey under the steel words and bronze
+   under the molten gold, then a soft cast shadow. Each stack is measured
+   in em so it stays in proportion from phone to desktop (about 5px on a
+   large desktop headline). The letters' own heat glow (--near) is kept
+   in each filter, after the extrusion, so the forging and the shine
+   still play on top. The switch in Little Ace's chat sets
+   html[data-depth="flat"] to turn it off; each page's head re-applies a
+   saved choice before first paint. */
+html:not([data-depth="flat"]) .hero__steel{
+  filter:
+    drop-shadow(0 .012em 0 #7E848C) drop-shadow(0 .012em 0 #626770)
+    drop-shadow(0 .012em 0 #4A4E55) drop-shadow(0 .012em 0 #34373C)
+    drop-shadow(0 .05em .05em rgba(0,0,0,.6))
+    drop-shadow(0 0 calc(var(--near) * 22px) rgba(255,170,84,calc(var(--near) * .6)))
+    brightness(calc(1 + var(--near) * .45));
+}
+html:not([data-depth="flat"]) .hero__h1 .steel:not(.hero__steel){
+  filter:
+    drop-shadow(0 .012em 0 #7E848C) drop-shadow(0 .012em 0 #626770)
+    drop-shadow(0 .012em 0 #4A4E55) drop-shadow(0 .012em 0 #34373C)
+    drop-shadow(0 .05em .05em rgba(0,0,0,.6))
+    drop-shadow(0 0 calc(var(--near) * 5px) rgba(214,148,78,calc(var(--near) * .32)))
+    brightness(calc(.9 + var(--near) * .14));
+}
+html:not([data-depth="flat"]) .hero__line--gold.ll{
+  filter:
+    drop-shadow(0 .012em 0 #A0702A) drop-shadow(0 .012em 0 #7E5420)
+    drop-shadow(0 .012em 0 #5E3D17) drop-shadow(0 .012em 0 #432B10)
+    drop-shadow(0 .05em .05em rgba(0,0,0,.6))
+    drop-shadow(0 0 calc(var(--glow) * 1px) color-mix(in srgb,var(--halo) calc(var(--glow) * 55%),transparent))
+    drop-shadow(0 0 calc(var(--glow) * 4px) color-mix(in srgb,var(--halo) calc(var(--glow) * 22%),transparent));
+}
+
+/* ═══ BOX FINISH ════════════════════════════════════════════════
+   The boxes were flat slabs: one fill, one dark hairline. Two things
+   now give them material, both taken from the card table the brand is
+   named for:
+   1. Light from above. A faint warm wash falls from the top edge and a
+      one-pixel highlight runs along it, like light catching the bevel of
+      a lacquered box. Laid as background-image only, so each box keeps
+      its own fill colour (and the tiles keep their see-through fill).
+   2. The playing-card frame. A fine gold rule set just inside the edge,
+      the way a printed card has a border inside its trim. It brightens
+      when the box lifts on hover. The three tier cards are the one place
+      the reference is made explicit: a small spade pip in the top-left
+      corner and an upside-down one bottom-right, as on an ace.
+   The trays the cards sit on (.tiers, .quotes) take the light but not
+   the frame, so frames never nest. */
+.alsotile,.plaque,.cta__copy,.form,.tiernotes,.tier--lead,.quote:nth-child(odd),.tiers,.quotes{
+  background-image:
+    linear-gradient(rgba(255,236,200,.09),rgba(255,236,200,.09)),
+    radial-gradient(120% 60% at 50% 0%,rgba(217,164,65,.075),transparent 62%),
+    linear-gradient(180deg,rgba(255,230,190,.03),transparent 45%,rgba(0,0,0,.18));
+  background-size:100% 1px,100% 100%,100% 100%;
+  background-position:top,center,center;
+  background-repeat:no-repeat;
+}
+.tier:not(.tier--lead),.quote:nth-child(even){
+  background-image:
+    linear-gradient(rgba(255,255,255,.7),rgba(255,255,255,.7)),
+    radial-gradient(120% 60% at 50% 0%,rgba(255,255,255,.45),transparent 65%),
+    linear-gradient(180deg,transparent 55%,rgba(122,86,16,.07));
+  background-size:100% 1px,100% 100%,100% 100%;
+  background-position:top,center,center;
+  background-repeat:no-repeat;
+}
+/* the frame: an inner rule 7px inside the edge */
+.alsotile,.plaque,.cta__copy,.form,.tiernotes,.tier--lead,.quote:nth-child(odd){
+  outline:1px solid rgba(217,164,65,.16);outline-offset:-7px;
+}
+.tier:not(.tier--lead),.quote:nth-child(even){outline:1px solid rgba(122,86,16,.26);outline-offset:-7px}
+.alsotile:focus-within{outline-color:rgba(217,164,65,.5)}
+/* the pips, on the tier cards only */
+.tier::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%237A5610' d='M12 2.2c-.45 1.7-3.05 4.1-5.25 6C4.85 9.85 3.55 11.5 3.55 13.5c0 2.6 1.9 4.35 4.3 4.35 1.3 0 2.4-.5 3.1-1.5-.12 2.35-.9 4.05-2 5.05h6.1c-1.1-1-1.88-2.7-2-5.05.7 1 1.8 1.5 3.1 1.5 2.4 0 4.3-1.75 4.3-4.35 0-2-1.3-3.65-3.2-5.3-2.2-1.9-4.8-4.3-5.25-6Z'/%3E%3C/svg%3E") left 13px top 13px/12px 12px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%237A5610' transform='rotate(180 12 12)' d='M12 2.2c-.45 1.7-3.05 4.1-5.25 6C4.85 9.85 3.55 11.5 3.55 13.5c0 2.6 1.9 4.35 4.3 4.35 1.3 0 2.4-.5 3.1-1.5-.12 2.35-.9 4.05-2 5.05h6.1c-1.1-1-1.88-2.7-2-5.05.7 1 1.8 1.5 3.1 1.5 2.4 0 4.3-1.75 4.3-4.35 0-2-1.3-3.65-3.2-5.3-2.2-1.9-4.8-4.3-5.25-6Z'/%3E%3C/svg%3E") right 13px bottom 13px/12px 12px no-repeat;
+  opacity:.7;
+}
+.tier--lead::before{
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23D9A441' d='M12 2.2c-.45 1.7-3.05 4.1-5.25 6C4.85 9.85 3.55 11.5 3.55 13.5c0 2.6 1.9 4.35 4.3 4.35 1.3 0 2.4-.5 3.1-1.5-.12 2.35-.9 4.05-2 5.05h6.1c-1.1-1-1.88-2.7-2-5.05.7 1 1.8 1.5 3.1 1.5 2.4 0 4.3-1.75 4.3-4.35 0-2-1.3-3.65-3.2-5.3-2.2-1.9-4.8-4.3-5.25-6Z'/%3E%3C/svg%3E") left 13px top 13px/12px 12px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23D9A441' transform='rotate(180 12 12)' d='M12 2.2c-.45 1.7-3.05 4.1-5.25 6C4.85 9.85 3.55 11.5 3.55 13.5c0 2.6 1.9 4.35 4.3 4.35 1.3 0 2.4-.5 3.1-1.5-.12 2.35-.9 4.05-2 5.05h6.1c-1.1-1-1.88-2.7-2-5.05.7 1 1.8 1.5 3.1 1.5 2.4 0 4.3-1.75 4.3-4.35 0-2-1.3-3.65-3.2-5.3-2.2-1.9-4.8-4.3-5.25-6Z'/%3E%3C/svg%3E") right 13px bottom 13px/12px 12px no-repeat;
+  opacity:.85;
+}
+/* on hover the frame catches the light with the rest of the box */
+@media (hover:hover){
+  .tier,.quote,.form,.cta__copy,.tiernotes,.plaque,.tiers,.quotes{
+    transition:transform var(--t-mid) var(--ease),box-shadow var(--t-mid) var(--ease),
+               border-color var(--t-mid) var(--ease),outline-color var(--t-mid) var(--ease);
+  }
+  .alsotile{
+    transition:transform var(--t-mid) var(--ease),border-color var(--t-mid) var(--ease),
+               box-shadow var(--t-mid) var(--ease),background-color var(--t-mid) var(--ease),
+               outline-color var(--t-mid) var(--ease);
+  }
+  .alsotile:hover,.plaque:hover,.cta__copy:hover,.form:hover,.tiernotes:hover,.tier--lead:hover,
+  .quote:nth-child(odd):hover{outline-color:rgba(217,164,65,.5)}
+  .tier:not(.tier--lead):hover,.quote:nth-child(even):hover{outline-color:rgba(122,86,16,.55)}
+}
+
+/* ═══ OFFICE PHOTO MAT ══════════════════════════════════════════
+   The gold ring that runs round each box sits on the photo's own edge,
+   where the bright picture swallowed it. A thin black mat inside the
+   frame gives the ring a dark ground to show against. */
+.cta__shot{padding:5px;background:#000}

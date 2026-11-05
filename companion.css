@@ -233,10 +233,31 @@ body:has(.ace-companion.is-dragging) .hero__plate{opacity:0}
 }
 .ace-chat-form button:hover{background:var(--gold-hi,#EEBE63)}
 
+/* Two rows: the note across the top, then the switches (serif, 3D, flashlight) on the left and Park on the
+   right. One row squeezed the note to three lines once there were three switches. */
 .ace-chat-foot{
-  padding:0 14px 12px;display:flex;justify-content:space-between;align-items:center;
+  padding:0 14px 12px;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;
   gap:8px;font-size:.6875rem;color:var(--on-dark-mute,#A29C93);flex-shrink:0;
 }
+.ace-chat-foot>span:first-child{flex:1 0 100%}
+.ace-foot-actions{display:flex;align-items:center;gap:10px;flex:1 0 100%}
+.ace-foot-actions .ace-foot-btns{flex:1}
+.ace-foot-actions .ace-park{margin-left:auto}
+/* The switches: small squares like the flashlight beside them. Lit gold when on, muted when off. */
+.ace-type,.ace-depth{
+  width:26px;height:26px;padding:0;display:grid;place-items:center;cursor:pointer;
+  border:1px solid rgba(217,164,65,.4);background:var(--ink-800,#121110);color:var(--gold-hi,#EEBE63);
+}
+.ace-type.is-off,.ace-depth.is-off{color:var(--on-dark-mute,#A29C93);border-color:rgba(217,164,65,.25)}
+.ace-type:hover,.ace-depth:hover{border-color:var(--gold,#D9A441)}
+.ace-type:focus-visible,.ace-depth:focus-visible{outline:2px solid var(--gold-hi,#EEBE63);outline-offset:2px}
+/* serif: its "Aa" set in the face it turns on */
+.ace-type{font:400 13px/1 var(--f-serif,"DM Serif Display",Georgia,serif)}
+.ace-type.is-off{font:600 12px/1 var(--f-util,"Archivo",system-ui,sans-serif)}
+/* 3D: its label stands up off the button when on, flat when off */
+.ace-depth{font:900 10px/1 var(--f-util,"Archivo",system-ui,sans-serif);letter-spacing:.02em;
+  text-shadow:0 1px 0 #8A5E22,0 2px 0 #5E3D17}
+.ace-depth.is-off{text-shadow:none}
 .ace-park{
   border:0;padding:3px 0;background:none;color:var(--gold-hi,#EEBE63);
   font:400 .75rem var(--f-body,"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif);cursor:pointer;
@@ -276,3 +297,31 @@ body:has(.ace-companion.is-dragging) .hero__plate{opacity:0}
 .ace-flash--launcher[hidden]{display:none}
 .ace-flash--chat{width:26px;height:26px;border-color:rgba(217,164,65,.4)}
 .ace-foot-btns{display:flex;align-items:center;gap:10px}
+
+/* ── THOUGHT BUBBLE ─────────────────────────────────────────────
+   Rises over his head every five minutes (THOUGHTS in companion.js) and
+   follows him while it is up. Dark ink and a gold edge like the rest of
+   the site's chrome; two small circles trail down toward his head so it
+   reads as a thought, not speech. The JS places it with transform, so the
+   pop-in uses the separate scale property and never fights it. */
+.ace-think{
+  position:fixed;left:0;top:0;z-index:84;max-width:240px;padding:10px 15px;
+  background:var(--ink-800,#121110);border:1px solid rgba(217,164,65,.55);border-radius:22px;
+  box-shadow:0 10px 30px rgba(0,0,0,.55),0 0 22px rgba(217,164,65,.12);
+  color:var(--on-dark,#F1EDE6);font:italic 400 13px/1.45 var(--f-body,"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif);
+  pointer-events:none;opacity:0;visibility:hidden;transform-origin:0 100%;
+  transition:opacity .35s ease,visibility 0s linear .35s;
+}
+.ace-think.is-left{transform-origin:100% 100%}
+.ace-think.is-on{opacity:1;visibility:visible;transition:opacity .35s ease}
+.ace-think p{margin:0}
+.ace-think__dot{position:absolute;display:block;border-radius:50%;
+  background:var(--ink-800,#121110);border:1px solid rgba(217,164,65,.55)}
+.ace-think__dot--a{width:10px;height:10px;left:10px;bottom:-14px}
+.ace-think__dot--b{width:6px;height:6px;left:-2px;bottom:-24px}
+.ace-think.is-left .ace-think__dot--a{left:auto;right:10px}
+.ace-think.is-left .ace-think__dot--b{left:auto;right:-2px}
+@keyframes aceThinkIn{from{scale:.82}to{scale:1}}
+@media (prefers-reduced-motion:no-preference){
+  .ace-think.is-on{animation:aceThinkIn .5s cubic-bezier(.2,1.5,.4,1)}
+}
