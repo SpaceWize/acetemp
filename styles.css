@@ -2546,3 +2546,37 @@ html:not([data-depth="flat"]) .hero__line--gold.ll{
    where the bright picture swallowed it. A thin black mat inside the
    frame gives the ring a dark ground to show against. */
 .cta__shot{padding:5px;background:#000}
+/* ═══ LOGO STRIP ════════════════════════════════════════════════
+   One white box under the testimonials, so every logo shows in its own
+   colours on the background it was drawn for. It keeps the gold of the
+   site's other boxes: a gold hairline border, the inner playing-card
+   frame (brightening on hover) and the gold edge light (.lit), set to
+   the deeper gold that reads on a light surface. The logos are split by
+   short gold rules. Every logo is fitted into the same box, so a wide
+   wordmark and a round badge carry an even weight. Wraps on smaller
+   screens, last row centred. */
+.results{padding-bottom:clamp(2rem,4vw,3.5rem)}   /* the strip follows straight on */
+.logos{padding-block:0 var(--sp-sec)}
+.logos__row{list-style:none;margin:0;
+  --gap:clamp(1rem,2.4vw,2rem);
+  --orbit-glow:var(--gold-on-paper);
+  display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:var(--gap) 0;
+  padding:clamp(1.25rem,2.5vw,2rem) clamp(.75rem,2vw,1.5rem);
+  background:#fff;border:1px solid var(--gold);
+  outline:1px solid rgba(122,86,16,.3);outline-offset:-7px}
+/* five to a row, never narrower than 130px */
+.logos__tile{position:relative;flex:0 1 20%;min-width:130px;height:clamp(64px,7vw,92px);padding-inline:var(--gap)}
+/* the short gold rule between neighbours */
+.logos__tile + .logos__tile::before{content:"";position:absolute;left:0;top:18%;bottom:18%;width:1px;
+  background:linear-gradient(transparent,rgba(122,86,16,.5),transparent)}
+.logos__tile img{display:block;width:100%;height:100%;object-fit:contain}
+@media (hover:hover){
+  .logos__row{transition:outline-color var(--t-mid) var(--ease)}
+  .logos__row:hover{outline-color:rgba(122,86,16,.65)}
+  .logos__tile img{transition:transform var(--t-mid) var(--ease)}
+  .logos__tile:hover img{transform:scale(1.05)}
+}
+@media (prefers-reduced-motion:reduce){.logos__tile:hover img{transform:none}}
+/* once the row wraps (phones, small tablets) a rule would land at the start
+   of a line, so the logos stand on spacing alone there */
+@media (max-width:760px){.logos__tile + .logos__tile::before{display:none}}

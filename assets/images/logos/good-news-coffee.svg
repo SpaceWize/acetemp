@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 120" role="img" aria-label="Good News Coffee (temporary logo)">
+  <!-- Temporary placeholder logo. A cup whose steam rises as a morning sun. -->
+  <g transform="translate(14 14)">
+    <circle cx="44" cy="40" r="22" fill="#F2B33D"/>
+    <g stroke="#F2B33D" stroke-width="4" stroke-linecap="round">
+      <path d="M44 6v-6M18 16l-5-5M70 16l5-5M8 40H1M80 40h7"/>
+    </g>
+    <path d="M14 46h60v12c0 18-13 32-30 32S14 76 14 58Z" fill="#4A2A1A"/>
+    <path d="M74 52h5a10 10 0 0 1 0 20h-7" fill="none" stroke="#4A2A1A" stroke-width="6"/>
+    <path d="M6 94h76" stroke="#4A2A1A" stroke-width="5" stroke-linecap="round"/>
+    <path d="M30 60c3 8 8 12 14 12" fill="none" stroke="#F7E7C8" stroke-width="3" stroke-linecap="round" opacity=".6"/>
+  </g>
+  <text x="118" y="62" font-family="Georgia,'Times New Roman',serif" font-size="34" font-weight="700" fill="#4A2A1A" textLength="168" lengthAdjust="spacingAndGlyphs">Good News</text>
+  <text x="120" y="90" font-family="'Trebuchet MS',Arial,sans-serif" font-size="15" font-weight="700" fill="#B5761F" textLength="102" lengthAdjust="spacing">COFFEE</text>
+</svg>
