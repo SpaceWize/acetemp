@@ -79,7 +79,7 @@
   if (locked || entry) try {
     var pc = document.createElement('link'); pc.rel = 'preconnect'; pc.href = 'https://cdn.jsdelivr.net'; pc.crossOrigin = '';
     (document.head || root).appendChild(pc);
-    sceneMod = import('./gate-scene.js?v=6');
+    sceneMod = import('./gate-scene.js?v=7');
     sceneMod.catch(function () {});
   } catch (e) { sceneMod = null; }
 
@@ -241,7 +241,7 @@
     var fallback = setTimeout(function () { if (!scene) { settled = true; unlock(); } }, 4000);
     sceneMod.then(function (m) {
       if (settled) return;
-      scene = m.start(host, { reduced: false, closed: true, atlasUrl: 'assets/images/ace-atlas.webp?v=6' });
+      scene = m.start(host, { reduced: false, closed: true, atlasUrl: 'assets/images/ace-atlas.webp?v=7' });
       clearTimeout(fallback);
       // two frames: the gates are on screen before the dark ground gives way to them
       requestAnimationFrame(function () { requestAnimationFrame(function () {
@@ -290,7 +290,7 @@
       var fallback = setTimeout(function () { if (!scene) plain(); }, 4000);
       sceneMod.then(function (m) {
         if (shown) return;
-        scene = m.start(host, { reduced: REDUCED, atlasUrl: 'assets/images/ace-atlas.webp?v=6' });
+        scene = m.start(host, { reduced: REDUCED, atlasUrl: 'assets/images/ace-atlas.webp?v=7' });
         clearTimeout(fallback);
         // The page shows through until the gates close. On the home page that is the moment Little Ace lands back
         // on his button after the intro (main.js sets data-intro-done); anywhere else, after a moment. 25s at most.

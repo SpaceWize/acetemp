@@ -40,7 +40,7 @@ addEventListener('pageshow',function(e){if(e.persisted&&!location.hash)location.
   setTimeout(function(){d.classList.remove('intro','intro-lock');},22000);
 }catch(e){}})();
 </script>
-<script src="gate.js?v=9"></script>
+<script src="gate.js?v=10"></script>
 </head>
 <body>
 <div class="hero-intro" aria-hidden="true"><i></i></div>
@@ -162,7 +162,7 @@ addEventListener('pageshow',function(e){if(e.persisted&&!location.hash)location.
          decodes while the pointer is over the stage. -->
     <video class="hero__plate" data-hero-video aria-hidden="true"
            muted playsinline preload="metadata" disablepictureinpicture>
-      <source src="assets/video/timeline-1.mp4" type="video/mp4">
+      <source src="assets/video/timeline-1.mp4?v=2" type="video/mp4">
     </video>
     <div class="hero__scrim" aria-hidden="true"></div>
     <div class="grain" aria-hidden="true"></div>
@@ -175,7 +175,7 @@ addEventListener('pageshow',function(e){if(e.persisted&&!location.hash)location.
         <span class="hero__line"><span class="hero__meet">Meet Your</span> <span class="hero__asset">ASSET</span></span>
         <span class="hero__line hero__line--gold ll">Ace Spaders</span>
       </h1>
-      <h3 class="hero__h3">Ace Success Strategist, Evaluator &amp; Transformationalist</h3>
+      <p class="hero__h3">Ace Success Strategist, Evaluator &amp; Transformationalist</p>
 
       <div class="hero__cta">
         <a class="btn btn--gold" href="private-working-session.html">Request a Working Session</a>
@@ -301,7 +301,7 @@ addEventListener('pageshow',function(e){if(e.persisted&&!location.hash)location.
   </div>
   <div class="wrap about__grid">
     <figure class="portrait">
-      <div class="portrait__art" style="--plate-src:url('assets/images/about-portrait.jpg')"></div>
+      <div class="portrait__art" style="--plate-src:url('assets/images/about-portrait.webp')"></div>
       <div class="grain" aria-hidden="true"></div>
       <figcaption class="portrait__cap">Matthew Ferguson AKA "Ace Spaders"</figcaption>
     </figure>
@@ -649,10 +649,9 @@ addEventListener('pageshow',function(e){if(e.persisted&&!location.hash)location.
 </footer>
 
 <script src="main.js" defer></script>
-<!-- Little Ace. knowledge and physics have to be parsed before
-     companion.js runs, and all three are deferred so none of them
-     block the page. -->
-<script src="knowledge.js?v=2" defer></script>
+<!-- Little Ace. physics has to be parsed before companion.js runs; both
+     are deferred so neither blocks the page. companion.js fetches
+     knowledge.js itself when the chat first opens. -->
 <script src="physics.js" defer></script>
 <script src="companion.js" defer></script>
 </body>

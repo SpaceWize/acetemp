@@ -15,7 +15,15 @@
    ═══════════════════════════════════════════════════════════════ */
 (() => {
 'use strict';
-const knowledge=window.AceKnowledge,physics=window.AcePhysics;if(!knowledge||!physics)return;
+const physics=window.AcePhysics;if(!physics)return;
+/* knowledge.js (~350 KB) is only needed once someone talks to him, so it
+   loads when the chat first opens rather than with every page. */
+let knowledge=window.AceKnowledge||null,knowledgeLoad=null;
+function loadKnowledge(){
+ if(knowledge)return Promise.resolve(knowledge);
+ if(!knowledgeLoad)knowledgeLoad=new Promise((res,rej)=>{const s=document.createElement('script');s.src='knowledge.js?v=2';
+  s.onload=()=>{knowledge=window.AceKnowledge||null;knowledge?res(knowledge):rej();};s.onerror=()=>{knowledgeLoad=null;s.remove();rej();};document.head.append(s);});
+ return knowledgeLoad;}
 
 /* The walkable strip. state.x is his centre, so he has to stop this far
    short of either edge or half of him leaves the viewport. Named because
@@ -185,7 +193,7 @@ function chatLayout(){
 }
 function showChat(){
  clearTimeout(chatCloseTimer);
- previousFocus=document.activeElement;open=true;panel.hidden=false;launcher.hidden=true;pet.classList.add('is-chatting');pet.setAttribute('aria-expanded','true');launcher.setAttribute('aria-expanded','true');shadow.style.opacity='0';input.focus({preventScroll:true});log.scrollTop=log.scrollHeight;
+ loadKnowledge().catch(()=>{});previousFocus=document.activeElement;open=true;panel.hidden=false;launcher.hidden=true;pet.classList.add('is-chatting');pet.setAttribute('aria-expanded','true');launcher.setAttribute('aria-expanded','true');shadow.style.opacity='0';input.focus({preventScroll:true});log.scrollTop=log.scrollHeight;
  /* Fresh schedule every time the chat opens, so the 15s cap counts from
     when he actually appears, not from some earlier session. */
  /* Only fetch the big sheet where he is actually drawn from it. Below
@@ -237,7 +245,7 @@ document.addEventListener('click',e=>{const el=e.target.closest('.js-ace-ask');i
    visitor's name, business and budget, and rotates wordings (knowledge.js).
    The page itself is context — "how much is it?" on the poker page means
    the buy-in. */
-const chat=knowledge.createSession();
+let chat=null;
 const PAGE_TOPIC={'aces-poker-night':'poker','aces-running-group':'running','all-aces-networking-events':'networking','premium-pickup-transport':'transport',
  'mastermind-membership':'MASTERMIND','mastermind-application':'MASTERMIND','public-speaking':'SPEAKING','private-working-session':'start','advisory':'ONGOING'};
 const pageTopic=PAGE_TOPIC[(location.pathname.split('/').pop()||'').replace(/\.html$/,'')]||null;
@@ -266,7 +274,8 @@ let turn=0,lastQ='';
 const scrubPII=t=>t.replace(/[^\s@]+@[^\s@]+\.[^\s@]+/g,'[email]').replace(/(\+?\d[\d ().-]{7,}\d)/g,'[phone]');
 /* The engine rotates its wording, so the flags match against every variant
    it can say rather than one sentence copied from it. */
-const INTERIM=(knowledge.LINES&&knowledge.LINES.interim)||[],MISSED=(knowledge.LINES&&knowledge.LINES.frustrated)||[];
+let INTERIM=[],MISSED=[];
+function startChat(){if(chat)return;chat=knowledge.createSession();INTERIM=(knowledge.LINES&&knowledge.LINES.interim)||[];MISSED=(knowledge.LINES&&knowledge.LINES.frustrated)||[];}
 const says=(text,list)=>list.some(l=>text.includes(l));
 const words=t=>new Set(t.toLowerCase().replace(/[^a-z0-9$ ]/g,' ').split(/\s+/).filter(w=>w.length>2));
 function similar(a,b){const A=words(a),B=words(b);if(!A.size||!B.size)return false;let n=0;for(const w of A)if(B.has(w))n++;return n/(A.size+B.size-n)>=.6;}
@@ -286,6 +295,12 @@ function logTurn(q,a,source){
 function ask(q,source='typed'){q=q.trim();if(!q)return;
  if(typingEl){clearTimeout(typingTimer);typingEl.remove();typingEl=null;}
  addMessage(q,'user');input.value='';input.focus({preventScroll:true});
+ if(!knowledge){showTyping();
+  loadKnowledge().then(()=>{if(typingEl){typingEl.remove();typingEl=null;}answer(q,source);},
+   ()=>{if(typingEl){typingEl.remove();typingEl=null;}addMessage("Little Ace couldn't load his answers. Check your connection, then ask again.",'bot');});
+  return;}
+ answer(q,source);}
+function answer(q,source){startChat();
  const a=chat.reply(q,{pageTopic});if(!a)return;
  logTurn(q,a,source);
  const wait=calm.matches?0:Math.min(1600,380+a.text.length*6);
@@ -335,7 +350,11 @@ const SPRITE_W=CELL_W/2,SPRITE_H=CELL_H/2;   // CSS px; the canvas is 2x this
    either way (the front-on idle and wave) or must never be mirrored (the
    climb, which is drawn from behind). */
 const CLIPS={
-  idle  :{f:[0,1,2,3,4,5,6,7],       fps:2.5,loop:true, dir:0},
+  /* Cells 69-82: the 14-frame idle (cells 0-7 are the old 8-frame one, kept
+     because the gate still stands him on cell 0). The two blinks are 74 (side-on)
+     and 81 (front-on); 70-77 are the head-turn frames. 6.6fps is 1.5x the
+     4.4fps that matches the old idle's 3.2s loop. */
+  idle  :{f:[69,70,71,72,73,74,75,76,77,78,79,80,81,82],fps:6.6,loop:true, dir:0},
   wave  :{f:[8,9,10,11,12],          fps:9,  loop:true, dir:0},
   /* A real eight-frame gait, played whole and in order at 11fps — the
      planted foot genuinely swings from ahead of the hips to behind them
@@ -396,7 +415,7 @@ img.onload=()=>{
 img.onerror=()=>{pet.hidden=true;shadow.hidden=true;};
 /* WebP, not the PNG the build writes: 435KB against 1.8MB, with the alpha
    identical and colour within ~1.5/255 on average. Re-export after a rebuild. */
-img.src='assets/images/ace-atlas.webp?v=6';   // bump when the sheet changes: the page caches it
+img.src='assets/images/ace-atlas.webp?v=7';   // bump when the sheet changes: the page caches it
 
 function play(name){if(clipName!==name){clipName=name;clipStart=clock;}}
 /* Where a clip has got to. A looping clip wraps; a one-shot holds its last
@@ -418,7 +437,7 @@ function clipDone(){
    rest of the idle faces front and is never mirrored. Mirrored about his
    legs (LEGS_X in cell px, where every idle frame is aligned) rather than
    the cell centre, or he would hop ~5px sideways every glance. */
-const IDLE_LOOK=new Set([3,4,5]),LEGS_X=115;
+const IDLE_LOOK=new Set([70,71,72,73,74,75,76,77]),LEGS_X=115;
 function renderSprite(facing){
   if(!ready)return;
   const cell=clipFrame();

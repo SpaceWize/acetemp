@@ -26,7 +26,7 @@ const DELAY = 0;              // s before the swing starts (the gates stand out 
 const CAM_Z = 14, FOV = 38;
 
 // Sprite sheet: 8 columns x 9 rows of 240x280 cells; the run cycle is cells 13-20 at 11fps (as in companion.js).
-const COLS = 8, ROWS = 9, RUN = [13, 14, 15, 16, 17, 18, 19, 20], RUN_FPS = 11, IDLE = 0;
+const COLS = 8, ROWS = 11, RUN = [13, 14, 15, 16, 17, 18, 19, 20], RUN_FPS = 11, IDLE = 0;
 const FALL = [28, 29], LAND = [30, 31, 32, 33], LAND_FPS = 17, GRAVITY_PX = 1650;   // the page companion's clips and gravity
 
 export function start(host, opts = {}) {

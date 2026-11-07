@@ -14,9 +14,10 @@
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="companion.css">
 <script>document.documentElement.classList.replace('no-js','js');try{var d=document.documentElement,s=localStorage;if(s.getItem('ace-type')==='serif')d.setAttribute('data-type','serif');if(s.getItem('ace-depth')==='flat')d.setAttribute('data-depth','flat')}catch(e){}</script>
-<script src="gate.js?v=9"></script>
+<script src="gate.js?v=10"></script>
 </head>
 <body>
+<a class="skip" href="#main">Skip to content</a>
 
 <svg class="sprite" aria-hidden="true" focusable="false" width="0" height="0"><defs>
   <symbol id="i-spade" viewBox="0 0 24 24"><image href="assets/icons/favicon-192.png" x="0" y="0" width="24" height="24"/></symbol>
@@ -112,6 +113,7 @@
   <a class="btn btn--gold mnav__cta" href="contact.html">Start the Conversation</a>
 </div>
 
+<main id="main" class="page">
 <!-- Standalone copy of the homepage contact form. Same markup and the same
      [data-form] hook, so main.js binds validation and the mail-app chooser
      here exactly as it does on the homepage — no JS changes needed. -->
@@ -123,7 +125,7 @@
     </figure>
     <div class="cta__copy">
       <p class="eyebrow eyebrow--gold ll"><svg class="eyebrow__spade" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-spade"></use></svg> How to Access Ace</p>
-      <h2 class="h2" id="cta-h">Meetings are by<br>Appointment Only</h2>
+      <h1 class="h2" id="cta-h">Meetings are by<br>Appointment Only</h1>
       
       <dl class="cta__meta">
         <div><dt>Direct</dt><dd><button class="copy" type="button" data-copy="info@acespaders.com">info@acespaders.com</button></dd></div>
@@ -206,6 +208,8 @@
 
   </div>
 </section>
+
+</main>
 
 <!-- ══════════════ 11. FOOTER ══════════════ -->
 <footer class="foot">
@@ -290,10 +294,9 @@
 </footer>
 
 <script src="main.js" defer></script>
-<!-- Little Ace. knowledge and physics have to be parsed before
-     companion.js runs, and all three are deferred so none of them
-     block the page. -->
-<script src="knowledge.js?v=2" defer></script>
+<!-- Little Ace. physics has to be parsed before companion.js runs; both
+     are deferred so neither blocks the page. companion.js fetches
+     knowledge.js itself when the chat first opens. -->
 <script src="physics.js" defer></script>
 <script src="companion.js" defer></script>
 </body>

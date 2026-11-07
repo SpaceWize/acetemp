@@ -176,12 +176,11 @@ body{
 /* The layer is z-index:0, so everything the reader reads has to sit above
    it. These are transparent, so the gold still shows through.
 
-   body>section rather than a list of page classes: only index.html wraps
-   its content in <main>. Every other page drops sections straight into
-   the body, and an unpositioned element paints below the fixed .aop
+   main holds every page's content (index.html's <main id="top">, the
+   other pages' <main class="page">), and an unpositioned element paints below the fixed .aop
    regardless of DOM order — the spade crawls over the text instead of
-   under it. Matching on structure covers each new page automatically. */
-main,.foot,body>section{position:relative;z-index:1}
+   under it. */
+main,.foot{position:relative;z-index:1}
 
 img,svg{display:block;max-width:100%}
 h1,h2,h3,p,ul,ol,dl,dd,figure,blockquote{margin:0}
@@ -503,16 +502,16 @@ html[data-type="serif"] #about-h .ll{font-family:var(--f-serif);font-weight:400;
    at full strength and they read as empty boxes. The tiles' fill instead:
    ink at 70%, so the spades show faintly through a real surface, lifting to
    ink-700 at the same 70% on hover. Solid first for browsers without
-   color-mix. `body>section` is every page but home, which alone wraps its
-   sections in <main>. Gold buttons keep their fill; the cream pricing
+   color-mix. `main.page` is every page but home (whose <main> has no class);
+   :where() keeps the specificity of the old body>section. Gold buttons keep their fill; the cream pricing
    cards' buttons (.tier) keep none, since their text is dark. */
-body>section .btn--outline:not(.tier__cta),
-body>section .btn--ghost{
+main:where(.page)>section .btn--outline:not(.tier__cta),
+main:where(.page)>section .btn--ghost{
   background:var(--ink-800);
   background:color-mix(in srgb,var(--ink-800) 70%,transparent);
 }
-body>section .btn--outline:not(.tier__cta):hover,
-body>section .btn--ghost:hover{
+main:where(.page)>section .btn--outline:not(.tier__cta):hover,
+main:where(.page)>section .btn--ghost:hover{
   background:var(--ink-700);
   background:color-mix(in srgb,var(--ink-700) 70%,transparent);
 }
