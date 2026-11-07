@@ -241,7 +241,7 @@
     var fallback = setTimeout(function () { if (!scene) { settled = true; unlock(); } }, 4000);
     sceneMod.then(function (m) {
       if (settled) return;
-      scene = m.start(host, { reduced: false, closed: true, atlasUrl: 'assets/images/ace-atlas.webp?v=7' });
+      scene = m.start(host, { reduced: false, closed: true, atlasUrl: 'assets/images/ace-atlas.webp?v=11' });
       clearTimeout(fallback);
       // two frames: the gates are on screen before the dark ground gives way to them
       requestAnimationFrame(function () { requestAnimationFrame(function () {
@@ -290,7 +290,7 @@
       var fallback = setTimeout(function () { if (!scene) plain(); }, 4000);
       sceneMod.then(function (m) {
         if (shown) return;
-        scene = m.start(host, { reduced: REDUCED, atlasUrl: 'assets/images/ace-atlas.webp?v=7' });
+        scene = m.start(host, { reduced: REDUCED, atlasUrl: 'assets/images/ace-atlas.webp?v=11' });
         clearTimeout(fallback);
         // The page shows through until the gates close. On the home page that is the moment Little Ace lands back
         // on his button after the intro (main.js sets data-intro-done); anywhere else, after a moment. 25s at most.

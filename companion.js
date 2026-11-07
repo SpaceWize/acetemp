@@ -350,12 +350,11 @@ const SPRITE_W=CELL_W/2,SPRITE_H=CELL_H/2;   // CSS px; the canvas is 2x this
    either way (the front-on idle and wave) or must never be mirrored (the
    climb, which is drawn from behind). */
 const CLIPS={
-  /* Cells 69-82: the 14-frame idle (cells 0-7 are the old 8-frame one, kept
-     because the gate still stands him on cell 0). The two blinks are 74 (side-on)
-     and 81 (front-on); 70-77 are the head-turn frames. 6.6fps is 1.5x the
-     4.4fps that matches the old idle's 3.2s loop. */
-  idle  :{f:[69,70,71,72,73,74,75,76,77,78,79,80,81,82],fps:6.6,loop:true, dir:0},
-  wave  :{f:[8,9,10,11,12],          fps:9,  loop:true, dir:0},
+  /* Idle, cells 0-7: eight frames from the painterly sheet. 3 and 7 are the
+     blinks, 4-6 the side glances. 3.8fps gives a 2.1s loop. */
+  idle  :{f:[0,1,2,3,4,5,6,7],       fps:3.8,loop:true, dir:0},
+  /* Wave: eight frames (cells 8-12, then 83-85): hand up, wave, hand down. */
+  wave  :{f:[8,9,10,11,12,83,84,85], fps:10, loop:true, dir:0},
   /* A real eight-frame gait, played whole and in order at 11fps — the
      planted foot genuinely swings from ahead of the hips to behind them
      across the sheet. The rear shoe is missing from frame 6 as generated;
@@ -415,7 +414,7 @@ img.onload=()=>{
 img.onerror=()=>{pet.hidden=true;shadow.hidden=true;};
 /* WebP, not the PNG the build writes: 435KB against 1.8MB, with the alpha
    identical and colour within ~1.5/255 on average. Re-export after a rebuild. */
-img.src='assets/images/ace-atlas.webp?v=7';   // bump when the sheet changes: the page caches it
+img.src='assets/images/ace-atlas.webp?v=11';   // bump when the sheet changes: the page caches it
 
 function play(name){if(clipName!==name){clipName=name;clipStart=clock;}}
 /* Where a clip has got to. A looping clip wraps; a one-shot holds its last
@@ -437,7 +436,7 @@ function clipDone(){
    rest of the idle faces front and is never mirrored. Mirrored about his
    legs (LEGS_X in cell px, where every idle frame is aligned) rather than
    the cell centre, or he would hop ~5px sideways every glance. */
-const IDLE_LOOK=new Set([70,71,72,73,74,75,76,77]),LEGS_X=115;
+const IDLE_LOOK=new Set([3,4,5]),LEGS_X=115;
 function renderSprite(facing){
   if(!ready)return;
   const cell=clipFrame();
