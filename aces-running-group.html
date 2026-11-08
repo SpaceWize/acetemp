@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wdth,wght@62..125,400..900&family=Instrument+Sans:wght@400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
-<link rel="stylesheet" href="companion.css">
+<link rel="stylesheet" href="companion.css?v=2">
 <script>document.documentElement.classList.replace('no-js','js');try{var d=document.documentElement,s=localStorage;if(s.getItem('ace-type')==='serif')d.setAttribute('data-type','serif');if(s.getItem('ace-depth')==='flat')d.setAttribute('data-depth','flat')}catch(e){}</script>
 <script src="gate.js?v=30"></script>
 </head>
@@ -67,14 +67,10 @@
           <a href="mastermind-membership.html">Mastermind</a>
           <ul class="nav__sub">
             <li><a href="mastermind-application.html">Apply</a></li>
-          </ul>
-        </li>
-        <li class="nav__item nav__item--sub">
-          <a href="group-activities.html">Activities</a>
-          <ul class="nav__sub">
-            <li><a href="aces-poker-night.html">Aces Poker Night</a></li>
-            <li><a href="aces-running-group.html">Aces Running Group</a></li>
-            <li><a href="all-aces-networking-events.html">All Aces Networking Events</a></li>
+            <li><a href="group-activities.html">Activities</a></li>
+            <li><a class="nav__sub-in" href="aces-poker-night.html">Aces Poker Night</a></li>
+            <li><a class="nav__sub-in" href="aces-running-group.html">Aces Running Group</a></li>
+            <li><a class="nav__sub-in" href="all-aces-networking-events.html">All Aces Networking Events</a></li>
           </ul>
         </li>
       </ul>
@@ -110,16 +106,10 @@
         <ul class="mnav__sub" id="msub-mastermind" hidden>
           <li><a href="mastermind-membership.html">Membership</a></li>
           <li><a href="mastermind-application.html">Apply</a></li>
-        </ul>
-      </li>
-      <li class="mnav__group">
-        <button class="mnav__toggle" type="button" aria-expanded="false"
-                aria-controls="msub-activities" data-mtoggle>Activities</button>
-        <ul class="mnav__sub" id="msub-activities" hidden>
           <li><a href="group-activities.html">Ace’s Group Activities</a></li>
-          <li><a href="aces-poker-night.html">Aces Poker Night</a></li>
-          <li><a href="aces-running-group.html">Aces Running Group</a></li>
-          <li><a href="all-aces-networking-events.html">All Aces Networking Events</a></li>
+          <li><a class="mnav__in" href="aces-poker-night.html">Aces Poker Night</a></li>
+          <li><a class="mnav__in" href="aces-running-group.html">Aces Running Group</a></li>
+          <li><a class="mnav__in" href="all-aces-networking-events.html">All Aces Networking Events</a></li>
         </ul>
       </li>
     </ul>
@@ -250,6 +240,6 @@
      are deferred so neither blocks the page. companion.js fetches
      knowledge.js itself when the chat first opens. -->
 <script src="physics.js" defer></script>
-<script src="companion.js" defer></script>
+<script src="companion.js?v=2" defer></script>
 </body>
 </html>

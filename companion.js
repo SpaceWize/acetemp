@@ -1217,12 +1217,139 @@ function stepSleigh(dt){
   }
 }
 
+/* ── SUPER SAIYAN FLOAT ───────────────────────────────────────
+   The other half of the power-up: he powers up on the spot, floats up into the air, hovers there for a moment
+   in his gold aura, then comes back down where he was and powers back down to normal. Shares the power-up's
+   triggers: Shift + A + C + E and the hold on the button pick the beam or this (never the same twice running),
+   and the big-moment timer chooses between them too. Not at Christmas (these frames have no Santa hat).
+   Frames: assets/images/ace-flight.webp, 6x4 cells of 240x280 (the same size as the atlas), loaded the first time.
+     0-4 power up on the ground, 6 rising, 14-17 hover loop, 18 coming down, 19-23 touch-down and power down
+     (23 = his idle pose). The gold aura, flames, sparks and flashes are drawn here, on the beam canvas.
+   While it runs his page sprite is hidden and the roaming code leaves him alone. Opening the chat, picking him up
+   or the gate coming up ends it at once. */
+const FLIGHT_SHEET='assets/images/ace-flight.webp?v=1',FL_PIVOT=52.5;    // FL_PIVOT: his body centre, px above his feet
+const FL_RISE=110,FL_RISE_T=1.1,FL_HOVER_T=3.2,FL_DOWN_T=1.0;            // how high (px), and how long each part takes (s)
+const FL_UP=[[0,.30],[1,.22],[2,.40],[3,.55],[4,.28]];                  // power-up frames and how long each is held (s)
+const FL_LAND=[[19,.16],[20,.26],[21,.34],[22,.32],[23,.30]];            // touch-down and power-down
+const flCv=document.createElement('canvas');flCv.width=400;flCv.height=400;flCv.setAttribute('aria-hidden','true');
+flCv.style.cssText='position:fixed;left:0;top:0;width:200px;height:200px;pointer-events:none;display:none;will-change:transform;z-index:'+(pwZ==='auto'?'60':pwZ);
+document.body.append(flCv);
+const flCtx=flCv.getContext('2d');
+let flight=null,flImg=null,flReady=false;
+function beginFlight(){
+  if(!flImg){flImg=new Image();flImg.onload=()=>{flReady=true;};flImg.src=FLIGHT_SHEET;}
+  if(!flReady){powerQueue=true;powerQueueKind='flight';powerQueueUntil=pwClock+10;return;}
+  const top=Math.max(90,state.y-FL_PIVOT-FL_RISE);                     // not up into the header
+  flight={phase:'up',t:0,fx:state.x,fy:state.y,g0:state.ground,px:state.x,py:state.y-FL_PIVOT,hy:top,vx:0,vy:0,
+          frame:0,ang:0,flipH:false,flipV:false,aura:0,sparks:[],flashes:[]};
+  runGoal=null;pendingJump=null;climb=null;waveUntil=0;nextDecision=clock+99;state.vx=state.vy=0;
+  pet.style.visibility='hidden';flCv.style.display='block';sizeBeam();beamCv.style.display='block';
+}
+function endFlight(abort){
+  const f=flight;flight=null;
+  flCv.style.display='none';beamCv.style.display='none';
+  bmCtx.setTransform(1,0,0,1,0,0);bmCtx.clearRect(0,0,beamCv.width,beamCv.height);
+  pet.style.visibility='';state.vx=state.vy=0;
+  if(f){state.x=clampX(f.fx);state.y=f.fy;}
+  // back where he stood: the floor, or (on a ledge, which may have scrolled) a short drop onto whatever is under him
+  if(!f||f.g0==='floor'||abort){state.ground='floor';state.y=innerHeight-16;}else state.ground=null;
+  runGoal=null;pendingJump=null;nextDecision=clock+(abort?.4:1.2);
+  nextAuto=pwClock+POWER_EVERY;
+}
+function stepFlight(dt){
+  const h=document.documentElement;
+  if(open||dragging||h.classList.contains('gate-locked')){endFlight(true);return;}
+  const f=flight;f.t+=dt;f.flipH=false;f.flipV=false;f.ang=0;
+  const base=f.fy-FL_PIVOT,ease=u=>u*u*(3-2*u),oy=f.py;
+  if(f.phase==='up'){
+    let acc=0,idx=FL_UP.length-1;
+    for(let i=0;i<FL_UP.length;i++){if(f.t<acc+FL_UP[i][1]){idx=i;break;}acc+=FL_UP[i][1];}
+    f.frame=FL_UP[idx][0];f.py=base;
+    if(f.frame>=3&&!f.flashed){f.flashed=true;f.flashes.push({x:f.px,y:f.py,t:0});}
+    f.aura=f.frame>=3?Math.min(1,f.aura+dt*2.5):f.frame===2?.25:0;
+    if(f.t>=FL_UP.reduce((a,b)=>a+b[1],0)){f.phase='rise';f.t=0;}
+  }else if(f.phase==='rise'){                                      // floats up
+    const u=Math.min(1,f.t/FL_RISE_T);f.frame=u<.35?6:14+Math.floor(f.t*7)%4;f.aura=1;
+    f.py=base+(f.hy-base)*ease(u);
+    if(u>=1){f.phase='hover';f.t=0;}
+  }else if(f.phase==='hover'){                                     // hangs there, bobbing gently
+    f.frame=14+Math.floor(f.t*7)%4;f.aura=1;f.py=f.hy+Math.sin(f.t*2.6)*4;
+    if(f.t>=FL_HOVER_T){f.phase='down';f.t=0;f.dy0=f.py;}
+  }else if(f.phase==='down'){                                      // comes back down where he was
+    const u=Math.min(1,f.t/FL_DOWN_T);f.frame=18;f.aura=1;
+    f.py=f.dy0+(base-f.dy0)*ease(u);
+    if(u>=1){f.phase='land';f.t=0;}
+  }else if(f.phase==='land'){
+    let acc=0,idx=FL_LAND.length-1;
+    for(let i=0;i<FL_LAND.length;i++){if(f.t<acc+FL_LAND[i][1]){idx=i;break;}acc+=FL_LAND[i][1];}
+    f.frame=FL_LAND[idx][0];f.py=base;
+    if(f.frame>=21&&!f.flashedDown){f.flashedDown=true;f.flashes.push({x:f.px,y:f.py,t:0,small:true});}
+    f.aura=f.frame>=21?Math.max(0,f.aura-dt*3):1;
+    if(f.t>=FL_LAND.reduce((a,b)=>a+b[1],0)){endFlight(false);return;}
+  }
+  f.vx=0;f.vy=(f.py-oy)/Math.max(dt,1e-3);
+  drawFlight(dt);
+}
+function drawFlight(dt){
+  const f=flight;
+  // the sprite: a 200x200 canvas centred on his body, the cell drawn at half size with his body centre on the pivot
+  flCv.style.transform='translate3d('+(f.px-100).toFixed(1)+'px,'+(f.py-100).toFixed(1)+'px,0)';
+  const c=flCtx;c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,400,400);
+  c.translate(200,200);c.rotate(f.ang);if(f.flipV)c.scale(1,-1);if(f.flipH)c.scale(-1,1);
+  const fr=f.frame;c.drawImage(flImg,(fr%6)*240,Math.floor(fr/6)*280,240,280,-120,-168,240,280);
+  // the aura, flames, sparks and flashes, behind him
+  const b=bmCtx;b.setTransform(1,0,0,1,0,0);b.clearRect(0,0,beamCv.width,beamCv.height);b.setTransform(beamDpr,0,0,beamDpr,0,0);
+  b.globalCompositeOperation='lighter';
+  const t=pwClock,a=f.aura;
+  if(a>0.01){
+    // a tall oval of light about as big as the power-up sheet's painted glow: well past his shoulders, head and feet
+    const r=70*(1+.05*Math.sin(t*19));
+    b.save();b.translate(f.px,f.py);b.scale(1,1.28);
+    const g=b.createRadialGradient(0,0,0,0,0,r);
+    g.addColorStop(0,'rgba(255,236,170,'+(.55*a)+')');g.addColorStop(.45,'rgba(255,208,100,'+(.34*a)+')');
+    g.addColorStop(.8,'rgba(255,186,60,'+(.12*a)+')');g.addColorStop(1,'rgba(255,170,40,0)');
+    b.fillStyle=g;b.beginPath();b.arc(0,0,r,0,Math.PI*2);b.fill();b.restore();
+    const sp=Math.hypot(f.vx,f.vy),moving=sp>60;
+    const back=moving?Math.atan2(-f.vy,-f.vx):-Math.PI/2;          // flames stream behind him in flight, rise when he hovers
+    for(let i=0;i<9;i++){
+      const an=back+(i-4)*(moving?.18:.32)+.16*Math.sin(t*13+i*1.9);
+      const len=(moving?110:104)*(.75+.25*Math.sin(t*17+i*2.3))*a,w=moving?16:20;
+      const dx=Math.cos(an),dy=Math.sin(an),nx=-dy,ny=dx;
+      const sx=f.px-dx*14,sy=f.py-dy*14;
+      const fg=b.createLinearGradient(sx,sy,sx+dx*len,sy+dy*len);
+      fg.addColorStop(0,'rgba(255,240,180,'+(.38*a)+')');fg.addColorStop(.5,'rgba(255,196,70,'+(.20*a)+')');fg.addColorStop(1,'rgba(255,170,40,0)');
+      b.fillStyle=fg;b.beginPath();b.moveTo(sx+nx*w,sy+ny*w);
+      b.quadraticCurveTo(sx+dx*len*.55+nx*w*.6,sy+dy*len*.55+ny*w*.6,sx+dx*len,sy+dy*len);
+      b.quadraticCurveTo(sx+dx*len*.55-nx*w*.6,sy+dy*len*.55-ny*w*.6,sx-nx*w,sy-ny*w);b.closePath();b.fill();
+    }
+    if(moving||Math.random()<.7)for(let i=0;i<(moving?3:2);i++)f.sparks.push({x:f.px+(Math.random()-.5)*(moving?30:110),y:f.py+(Math.random()-.5)*(moving?30:150),
+      vx:(moving?-f.vx*.15:0)+(Math.random()-.5)*40,vy:(moving?-f.vy*.15:-40)+(Math.random()-.5)*40,l:0,m:.45+Math.random()*.5,r:1.3+Math.random()*2,w:Math.random()<.3,blue:Math.random()<.3});
+  }
+  for(let i=f.sparks.length-1;i>=0;i--){
+    const p=f.sparks[i];p.l+=dt;if(p.l>=p.m){f.sparks.splice(i,1);continue;}
+    p.x+=p.vx*dt;p.y+=p.vy*dt;const k=1-p.l/p.m;
+    const sg=b.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*3);
+    sg.addColorStop(0,p.blue?'rgba(150,215,255,'+k+')':p.w?'rgba(255,255,255,'+k+')':'rgba(255,214,120,'+k+')');sg.addColorStop(1,p.blue?'rgba(120,200,255,0)':'rgba(255,190,70,0)');
+    b.fillStyle=sg;b.beginPath();b.arc(p.x,p.y,p.r*3,0,Math.PI*2);b.fill();
+  }
+  for(let i=f.flashes.length-1;i>=0;i--){                          // the gold flash as he transforms (and a small one as he powers down)
+    const q=f.flashes[i];q.t+=dt;const D=q.small?.45:.7;if(q.t>=D){f.flashes.splice(i,1);continue;}
+    const u=q.t/D,R=(q.small?60:120)*Math.pow(u,.6),al=(1-u)*(q.small?.5:.85);
+    const fg=b.createRadialGradient(q.x,q.y,0,q.x,q.y,R+30);
+    fg.addColorStop(0,'rgba(255,250,220,'+al+')');fg.addColorStop(.6,'rgba(255,205,90,'+al*.5+')');fg.addColorStop(1,'rgba(255,190,60,0)');
+    b.fillStyle=fg;b.beginPath();b.arc(q.x,q.y,R+30,0,Math.PI*2);b.fill();
+    b.strokeStyle='rgba(255,236,170,'+al+')';b.lineWidth=3;b.beginPath();b.arc(q.x,q.y,R,0,Math.PI*2);b.stroke();
+  }
+  b.globalCompositeOperation='source-over';
+}
+
 requestAnimationFrame(function powerLoop(now){
   const dt=pwLast?Math.min(.1,(now-pwLast)/1000):0;pwLast=now;
   if(!document.hidden){
     pwClock+=dt;
     if(power)stepPower(dt);
     else if(sleigh)stepSleigh(dt);
+    else if(flight)stepFlight(dt);
     else{
       if(powerQueue&&pwClock>powerQueueUntil)powerQueue=false;
       if(powerQueue&&powerOk()){powerQueue=false;startBig(powerQueueKind);}
@@ -1234,9 +1361,11 @@ requestAnimationFrame(function powerLoop(now){
 /* Shift + A + C + E: held together, or typed one after another within about two seconds. */
 const pwKeys=new Set();let pwSeq=[];
 const typing=t=>t&&(t.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
-function startBig(kind){if(kind==='sleigh')beginSleigh();else beginPower();}
-function pickBig(){const pool=window.ACE_XMAS?['power','sleigh']:['power'],c=pool.filter(k=>k!==lastBig),from=c.length?c:pool;lastBig=from[Math.floor(Math.random()*from.length)];return lastBig;}   // never the same one twice running
-function askPower(kind){if(power||sleigh||powerQueue)return;kind=kind||'power';if(powerOk())startBig(kind);else{powerQueue=true;powerQueueKind=kind;powerQueueUntil=pwClock+20;}}   // a deliberate trigger waits up to 20s for him to finish a climb or jump
+function startBig(kind){if(kind==='sleigh')beginSleigh();else if(kind==='flight')beginFlight();else beginPower();}
+function pickBig(){const pool=window.ACE_XMAS?['power','sleigh']:['power','flight'],c=pool.filter(k=>k!==lastBig),from=c.length?c:pool;lastBig=from[Math.floor(Math.random()*from.length)];return lastBig;}   // never the same one twice running
+/* The ace code (and the hold on the button): the beam or the flight, never the same one twice running. */
+function pickAce(){if(window.ACE_XMAS)return 'power';lastBig=lastBig==='power'?'flight':lastBig==='flight'?'power':(Math.random()<.5?'power':'flight');return lastBig;}
+function askPower(kind){if(power||sleigh||flight||powerQueue)return;kind=kind||'power';if(powerOk())startBig(kind);else{powerQueue=true;powerQueueKind=kind;powerQueueUntil=pwClock+20;}}   // a deliberate trigger waits up to 20s for him to finish a climb or jump
 addEventListener('keydown',e=>{
   if(typing(e.target)||e.repeat)return;
   pwKeys.add(e.code);
@@ -1246,12 +1375,12 @@ addEventListener('keydown',e=>{
   const now=performance.now();pwSeq=pwSeq.filter(s=>now-s.t<3000);pwSeq.push({ch,t:now});
   const typed=pwSeq.slice(-3).map(s=>s.ch).join('')==='ace';
   const held=pwKeys.has('KeyA')&&pwKeys.has('KeyC')&&pwKeys.has('KeyE');
-  if(typed||held){pwSeq=[];askPower('power');}
+  if(typed||held){pwSeq=[];askPower(pickAce());}
   else if(pwSeq.slice(-5).map(s=>s.ch).join('')==='santa'){pwSeq=[];askPower('sleigh');}      // Shift + S, A, N, T, A
 });
 addEventListener('keyup',e=>{pwKeys.delete(e.code);});
 addEventListener('blur',()=>{pwKeys.clear();pwSeq=[];});
-addEventListener('resize',()=>{if(power||sleigh)sizeBeam();});
+addEventListener('resize',()=>{if(power||sleigh||flight)sizeBeam();});
 /* Touch and mouse: hold the "Ask Little Ace" button for 2 seconds. A normal tap
    still opens the chat; a hold that sets it off swallows the click that follows
    the release so the chat does not open as well. Moving the finger or letting
@@ -1263,7 +1392,7 @@ launcher.style.cssText+=';-webkit-touch-callout:none;-webkit-user-select:none;us
 launcher.addEventListener('pointerdown',e=>{
   if(e.button>0)return;
   holdFired=false;holdX=e.clientX;holdY=e.clientY;holdCancel();
-  holdTimer=setTimeout(()=>{holdTimer=0;holdFired=true;if(navigator.vibrate)try{navigator.vibrate(40);}catch{}askPower();},POWER_HOLD_MS);
+  holdTimer=setTimeout(()=>{holdTimer=0;holdFired=true;if(navigator.vibrate)try{navigator.vibrate(40);}catch{}askPower(pickAce());},POWER_HOLD_MS);
 });
 launcher.addEventListener('pointermove',e=>{if(holdTimer&&Math.hypot(e.clientX-holdX,e.clientY-holdY)>POWER_HOLD_SLOP)holdCancel();});
 for(const ev of ['pointerup','pointercancel','pointerleave'])launcher.addEventListener(ev,holdCancel);
@@ -1286,7 +1415,8 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
     play('drag');renderSprite(facing);
   }
   else if(stationary){state.x=innerWidth-85;state.y=innerHeight-68;state.vx=0;state.vy=0;state.ground=null;play('idle');renderSprite(1);}
-  else if(sleigh){scroll=scrollY;facing=sleigh.facing;play(sleigh.clip);renderSprite(facing);}   // the sleigh sequence moves him (stepSleigh); this only draws
+  else if(sleigh){scroll=scrollY;facing=sleigh.facing;play(sleigh.clip);renderSprite(facing);}
+  else if(flight){scroll=scrollY;}   // flying: drawn by stepFlight on its own canvas, the page sprite is hidden   // the sleigh sequence moves him (stepSleigh); this only draws
   else{
    const dy=scrollY-scroll;scroll=scrollY;
    if(clock-lastSurfaceUpdate>.12||dy){scan();lastSurfaceUpdate=clock;}
@@ -1418,7 +1548,7 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
     ?-RUN_BOB*Math.abs(Math.sin((clock-clipStart)*Math.PI*2*CLIPS.run.fps/CLIPS.run.f.length))
     :0;
   pet.style.transform=`translate3d(${(state.x-SPRITE_W/2).toFixed(1)}px,${(state.y-FEET_Y/2+bob).toFixed(1)}px,0)`;
-  const shadowY=state.ground!==null?state.y:innerHeight-16;const distance=Math.max(0,shadowY-state.y);shadow.style.opacity=(stationary||(sleigh&&sleigh.hidden))?'0':String(Math.max(.08,.6-distance/450));shadow.style.transform=`translate3d(${state.x-26}px,${shadowY-3}px,0) scale(${Math.max(.35,1-distance/600)},1)`;
+  const shadowY=state.ground!==null?state.y:innerHeight-16;const distance=Math.max(0,shadowY-state.y);shadow.style.opacity=(stationary||flight||(sleigh&&sleigh.hidden))?'0':String(Math.max(.08,.6-distance/450));shadow.style.transform=`translate3d(${state.x-26}px,${shadowY-3}px,0) scale(${Math.max(.35,1-distance/600)},1)`;
  }else if(open&&ready){
   /* Chatting: parked beside the panel rather than roaming, and drawn from
      the big sheet rather than the atlas. He eases into place — a glide,
