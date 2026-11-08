@@ -65,7 +65,7 @@ addEventListener('pageshow',function(e){if(e.persisted&&!location.hash)location.
   setTimeout(function(){d.classList.remove('intro','intro-lock');},22000);
 }catch(e){}})();
 </script>
-<script src="gate.js?v=14"></script>
+<script src="gate.js?v=30"></script>
 </head>
 <body>
 <div class="hero-intro" aria-hidden="true"><i></i></div>
@@ -669,6 +669,7 @@ addEventListener('pageshow',function(e){if(e.persisted&&!location.hash)location.
 
     <div class="foot__base">
       <p>© <span data-year>2026</span> Ace Spaders. All rights reserved.</p>
+      <button type="button" class="foot__replay" data-gate-replay>See the gate again</button>
     </div>
   </div>
 </footer>

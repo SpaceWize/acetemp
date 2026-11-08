@@ -2239,9 +2239,14 @@ html.intro .hero__cue{opacity:0}
   font-size:var(--fs-label);letter-spacing:.14em;text-transform:uppercase;
   color:#8B857C;
 }
-.foot__base{display:flex;flex-wrap:wrap;justify-content:space-between;gap:var(--sp-2);
+.foot__base{display:flex;flex-wrap:wrap;justify-content:flex-start;align-items:baseline;gap:var(--sp-2) var(--sp-4);
   padding-top:var(--sp-3);border-top:1px solid var(--line-dark);
   font-size:.8125rem;color:#8B857C}
+.foot__replay{appearance:none;background:none;border:0;padding:0;margin:0;cursor:pointer;
+  font:inherit;font-size:.8125rem;color:#8B857C;text-decoration:underline;text-decoration-color:rgba(217,164,65,.45);text-underline-offset:.25em;
+  transition:color .2s ease,text-decoration-color .2s ease}
+.foot__replay:hover,.foot__replay:focus-visible{color:#D9A441;text-decoration-color:#D9A441}
+.foot__replay:focus-visible{outline:2px solid #D9A441;outline-offset:4px}
 
 /* ═══ CINEMATIC MODE ══════════════════════════════════════════
    Pinned hero only where it can be done well: real pointer,

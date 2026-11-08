@@ -165,7 +165,7 @@ function loadChatSheet(){
   if(chatAsked)return;
   chatAsked=true;
   chatImg.onload=()=>{chatReady=true;lastChatCell=-1;};
-  chatImg.src='assets/images/ace-chat-pose.webp';
+  chatImg.src=window.ACE_XMAS?'assets/images/ace-chat-pose-xmas.webp?v=1':'assets/images/ace-chat-pose.webp';
 }
 function renderChat(cell){
   if(!chatReady||cell===lastChatCell)return;
@@ -414,7 +414,7 @@ img.onload=()=>{
 img.onerror=()=>{pet.hidden=true;shadow.hidden=true;};
 /* WebP, not the PNG the build writes: 435KB against 1.8MB, with the alpha
    identical and colour within ~1.5/255 on average. Re-export after a rebuild. */
-img.src='assets/images/ace-atlas.webp?v=11';   // bump when the sheet changes: the page caches it
+img.src=window.ACE_ATLAS||'assets/images/ace-atlas.webp?v=11';   // bump when the sheet changes: the page caches it
 
 function play(name){if(clipName!==name){clipName=name;clipStart=clock;}}
 /* Where a clip has got to. A looping clip wraps; a one-shot holds its last
@@ -535,6 +535,7 @@ function findPerches(){
 }
 
 const perches=findPerches();
+window.AcePerches=perches;   // read-only: xmas.js lays snow on these ledges and hangs icicles off the boxes
 /* A button is a ledge like any other, but it is also the one thing on the
    page worth drawing attention to — see the pointing behaviour below. */
 const BUTTONISH='.btn,button,.copy,.tier__cta,.circle__link';
@@ -1036,14 +1037,14 @@ function choose(busy){
    canvas that sits over him while his normal sprite is hidden. The beam is
    not in the artwork: it is drawn here so it can reach whatever edge of the
    page is in front of him, whatever the width.
-   Triggers: Shift + A + C + E (held together or typed in order), or on its
+   Triggers: Shift + A + C + E (held together or typed in order), or on the shared timer (one big moment per POWER_EVERY seconds of roaming), or on its
    own every POWER_EVERY seconds of visible time, but only when he is
    standing about with nothing else going on. Never while the chat is open,
    the gate is up, he is being carried, or the visitor prefers reduced motion. */
-const POWER_SHEET='assets/images/ace-power.webp?v=1',POWER_EVERY=1200,POWER_SLOW=1.25;
+const POWER_SHEET=window.ACE_XMAS?'assets/images/ace-power-xmas.webp?v=1':'assets/images/ace-power.webp?v=1',POWER_EVERY=150,POWER_SLOW=1.25;   // POWER_EVERY: after this much normal roaming, one big moment (power-up, or the sleigh at Christmas)
 const POWER_CW=264,POWER_CH=300,POWER_COLS=6;
 const POWER_MS=[150,120,100,120,100,90,90,90,90,90,80,100,100,100,60,60,60,60,60,60,70,80,100,150];
-const POWER_HANDS={"15": [176, 181], "16": [186, 178], "17": [185, 178], "18": [180, 179], "19": [188, 176], "20": [187, 176], "21": [177, 109]};     // fingertips per beam frame (frame number -> x,y in the cell), side facing right
+const POWER_HANDS=window.ACE_XMAS?{"15": [182, 183], "16": [188, 178], "17": [186, 177], "18": [181, 178], "19": [188, 175], "20": [187, 175], "21": [178, 194]}:{"15": [176, 181], "16": [186, 178], "17": [185, 178], "18": [180, 179], "19": [188, 176], "20": [187, 176], "21": [177, 109]};     // fingertips per beam frame (frame number -> x,y in the cell), side facing right
 const POWER_TOTAL=POWER_MS.reduce((a,b)=>a+b,0)*POWER_SLOW/1000;
 const pwCv=document.createElement('canvas');pwCv.width=POWER_CW;pwCv.height=POWER_CH;pwCv.className='ace-power';pwCv.setAttribute('aria-hidden','true');
 const beamCv=document.createElement('canvas');beamCv.className='ace-beam';beamCv.setAttribute('aria-hidden','true');
@@ -1052,16 +1053,16 @@ pwCv.style.cssText='position:fixed;left:0;top:0;width:'+POWER_CW/2+'px;height:'+
 beamCv.style.cssText='position:fixed;left:0;top:0;width:100vw;height:100vh;pointer-events:none;display:none;z-index:'+(pwZ==='auto'?'60':pwZ);
 document.body.append(beamCv,pwCv);
 const pwCtx=pwCv.getContext('2d'),bmCtx=beamCv.getContext('2d');
-let power=null,pwImg=null,pwReady=false,pwClock=0,pwLast=0,nextAuto=POWER_EVERY,powerQueue=false,powerQueueUntil=0,beamDpr=1;
+let power=null,pwImg=null,pwReady=false,pwClock=0,pwLast=0,nextAuto=POWER_EVERY,powerQueue=false,powerQueueKind='power',powerQueueUntil=0,beamDpr=1,lastBig='';
 function powerOk(){
   const h=document.documentElement;
   return ready&&!open&&!dragging&&!parked&&!motionPaused&&!calm.matches&&state.ground!==null&&!climb&&!pendingJump&&!visit
     &&!h.classList.contains('gate-locked')&&!h.classList.contains('intro')&&clock>=waveUntil&&!holdingPoint();
 }
-function sizeBeam(){beamDpr=Math.min(2,window.devicePixelRatio||1);beamCv.width=Math.round(innerWidth*beamDpr);beamCv.height=Math.round(innerHeight*beamDpr);}
+function sizeBeam(){beamDpr=Math.min(2,window.devicePixelRatio||1);beamCv.style.width=innerWidth+'px';beamCv.style.height=innerHeight+'px';beamCv.width=Math.round(innerWidth*beamDpr);beamCv.height=Math.round(innerHeight*beamDpr);}
 function beginPower(){
   if(!pwImg){pwImg=new Image();pwImg.onload=()=>{pwReady=true;};pwImg.src=POWER_SHEET;}
-  if(!pwReady){powerQueue=true;powerQueueUntil=pwClock+10;return;}
+  if(!pwReady){powerQueue=true;powerQueueKind='power';powerQueueUntil=pwClock+10;return;}
   power={t:0,dir:state.x>innerWidth/2?-1:1};
   waveUntil=clock+POWER_TOTAL+.3;nextDecision=Math.max(nextDecision,clock+POWER_TOTAL+1.2);runGoal=null;
   pet.style.visibility='hidden';pwCv.style.display='block';beamCv.style.display='block';sizeBeam();
@@ -1139,15 +1140,93 @@ function stepPower(dt){
     drawBeam(idx+frac,power.dir,ox,oy,power.t);
   }
 }
+/* ── SANTA'S SLEIGH ───────────────────────────────────────────
+   The second of the big moments (see POWER-UP above; they share one scheduler). He runs off the
+   page on the left, a few moments later flies across the top of the page in a sleigh pulled by two
+   mechanical reindeer, waving, in an arc that ends off the right edge, and a few moments after
+   that runs back in from the right edge. Six frames from their own sheet
+   (assets/images/ace-sleigh.webp, 2x3 cells of 562x250, loaded the first time it plays).
+   While it runs he is moved from here, not by the roaming code: tick() just draws whatever clip
+   and facing this asks for. Triggers: Shift + S, A, N, T, A typed in order, or the shared timer
+   (Christmas only). Same guards as the power-up; if the chat opens or he is picked up it ends at once. */
+const SLEIGH_SHEET='assets/images/ace-sleigh.webp?v=1',SL_CW=562,SL_CH=250,SL_FPS=9,SL_RUN=1.15;
+const slCv=document.createElement('canvas');slCv.width=SL_CW;slCv.height=SL_CH;slCv.setAttribute('aria-hidden','true');
+slCv.style.cssText='position:fixed;left:0;top:0;pointer-events:none;display:none;will-change:transform;z-index:120';
+document.body.append(slCv);
+const slCtx=slCv.getContext('2d');
+let sleigh=null,slImg=null,slReady=false;
+function beginSleigh(){
+  if(!slImg){slImg=new Image();slImg.onload=()=>{slReady=true;};slImg.src=SLEIGH_SHEET;}
+  if(!slReady){powerQueue=true;powerQueueKind='sleigh';powerQueueUntil=pwClock+10;return;}
+  sleigh={phase:'out',t:0,wait:0,hidden:false,clip:'run',facing:-1,y0:state.y,drop:state.ground==='floor'?0:1,goal:0,fi:-1,sparks:[],tint:0};
+  state.ground='floor';state.vx=state.vy=0;runGoal=null;pendingJump=null;climb=null;
+  nextDecision=clock+99;waveUntil=0;
+}
+function endSleigh(abort){
+  sleigh=null;slCv.style.display='none';beamCv.style.display='none';beamCv.style.zIndex=pwZ==='auto'?'60':pwZ;
+  bmCtx.setTransform(1,0,0,1,0,0);bmCtx.clearRect(0,0,beamCv.width,beamCv.height);
+  pet.style.visibility='';
+  state.ground='floor';state.vx=state.vy=0;state.y=innerHeight-16;state.x=clampX(state.x);
+  runGoal=null;pendingJump=null;nextDecision=clock+1.2;
+  if(!abort)waveUntil=clock+1.3;
+  nextAuto=pwClock+POWER_EVERY;
+}
+function stepSleigh(dt){
+  const h=document.documentElement;
+  if(open||dragging||h.classList.contains('gate-locked')){endSleigh(true);return;}
+  const s=sleigh,fl=innerHeight-16;s.t+=dt;
+  if(s.phase==='out'){
+    s.facing=-1;
+    if(s.drop&&s.t<.5){state.y=s.y0+(fl-s.y0)*(s.t/.5);s.clip='fall';}
+    else{state.y=fl;s.clip='run';state.x-=RUN_SPEED*SL_RUN*dt;}
+    if(state.x<-SPRITE_W/2-10){s.phase='gap1';s.t=0;s.hidden=true;pet.style.visibility='hidden';s.wait=1.4+Math.random()*.9;}
+  }else if(s.phase==='gap1'){
+    if(s.t>=s.wait){s.phase='fly';s.t=0;slCv.style.display='block';sizeBeam();beamCv.style.zIndex='119';beamCv.style.display='block';}
+  }else if(s.phase==='fly'){
+    const W=Math.max(300,Math.min(575,innerWidth*.475)),Hh=W*SL_CH/SL_CW;
+    const dur=(innerWidth+2*W)/(innerWidth<700?320:400),u=Math.min(1,s.t/dur);
+    const top=Math.max(10,innerHeight*.06),base=Math.min(innerHeight*.36,top+innerHeight*.30);
+    const X=u=>-W+(innerWidth+2*W)*u,Y=u=>base-(base-top)*(1-Math.pow(2*u-1,2));
+    const x=X(u),y=Y(u),ang=Math.atan2(Y(Math.min(1,u+.02))-Y(Math.max(0,u-.02)),X(Math.min(1,u+.02))-X(Math.max(0,u-.02)))*.7;
+    slCv.style.width=W+'px';slCv.style.height=Hh+'px';slCv.style.transformOrigin='50% 60%';
+    slCv.style.transform='translate3d('+x.toFixed(1)+'px,'+y.toFixed(1)+'px,0) rotate('+ang.toFixed(3)+'rad)';
+    const fi=Math.floor(s.t*SL_FPS)%6;
+    if(fi!==s.fi){s.fi=fi;slCtx.clearRect(0,0,SL_CW,SL_CH);slCtx.drawImage(slImg,(fi%2)*SL_CW,Math.floor(fi/2)*SL_CH,SL_CW,SL_CH,0,0,SL_CW,SL_CH);}
+    // a trail of gold sparkles drifting off the runners and hooves
+    const c=bmCtx;c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,beamCv.width,beamCv.height);c.setTransform(beamDpr,0,0,beamDpr,0,0);
+    if(u<1)for(let i=0;i<3;i++)s.sparks.push({x:x+W*(.05+Math.random()*.85),y:y+Hh*(.5+Math.random()*.45),vx:-(25+Math.random()*60),vy:8+Math.random()*40,l:0,m:.6+Math.random()*.7,r:1.4+Math.random()*2.4,w:Math.random()<.35});
+    c.globalCompositeOperation='lighter';
+    for(let i=s.sparks.length-1;i>=0;i--){
+      const p=s.sparks[i];p.l+=dt;if(p.l>=p.m){s.sparks.splice(i,1);continue;}
+      p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=60*dt;
+      const k=1-p.l/p.m,g=c.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*3);
+      g.addColorStop(0,p.w?'rgba(255,255,255,'+k+')':'rgba(255,214,120,'+k+')');g.addColorStop(1,'rgba(255,190,70,0)');
+      c.fillStyle=g;c.beginPath();c.arc(p.x,p.y,p.r*3,0,Math.PI*2);c.fill();
+    }
+    c.globalCompositeOperation='source-over';
+    if(u>=1&&!s.sparks.length){s.phase='gap2';s.t=0;slCv.style.display='none';beamCv.style.display='none';s.wait=1.2+Math.random()*.9;}
+  }else if(s.phase==='gap2'){
+    if(s.t>=s.wait){
+      s.phase='in';s.t=0;state.x=innerWidth+SPRITE_W/2+10;state.y=fl;s.facing=-1;s.clip='run';
+      s.goal=Math.max(EDGE+60,innerWidth-(160+Math.random()*260));
+      pet.style.visibility='';s.hidden=false;
+    }
+  }else if(s.phase==='in'){
+    s.facing=-1;s.clip='run';state.y=fl;state.x-=RUN_SPEED*SL_RUN*dt;
+    if(state.x<=s.goal)endSleigh(false);
+  }
+}
+
 requestAnimationFrame(function powerLoop(now){
   const dt=pwLast?Math.min(.1,(now-pwLast)/1000):0;pwLast=now;
   if(!document.hidden){
     pwClock+=dt;
     if(power)stepPower(dt);
+    else if(sleigh)stepSleigh(dt);
     else{
       if(powerQueue&&pwClock>powerQueueUntil)powerQueue=false;
-      if(powerQueue&&powerOk()){powerQueue=false;beginPower();}
-      else if(pwClock>=nextAuto){if(powerOk())beginPower();else nextAuto=pwClock+4;}
+      if(powerQueue&&powerOk()){powerQueue=false;startBig(powerQueueKind);}
+      else if(pwClock>=nextAuto){if(powerOk())startBig(pickBig());else nextAuto=pwClock+4;}
     }
   }
   requestAnimationFrame(powerLoop);
@@ -1155,26 +1234,29 @@ requestAnimationFrame(function powerLoop(now){
 /* Shift + A + C + E: held together, or typed one after another within about two seconds. */
 const pwKeys=new Set();let pwSeq=[];
 const typing=t=>t&&(t.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
-function askPower(){if(power||powerQueue)return;if(powerOk())beginPower();else{powerQueue=true;powerQueueUntil=pwClock+8;}}
+function startBig(kind){if(kind==='sleigh')beginSleigh();else beginPower();}
+function pickBig(){const pool=window.ACE_XMAS?['power','sleigh']:['power'],c=pool.filter(k=>k!==lastBig),from=c.length?c:pool;lastBig=from[Math.floor(Math.random()*from.length)];return lastBig;}   // never the same one twice running
+function askPower(kind){if(power||sleigh||powerQueue)return;kind=kind||'power';if(powerOk())startBig(kind);else{powerQueue=true;powerQueueKind=kind;powerQueueUntil=pwClock+20;}}   // a deliberate trigger waits up to 20s for him to finish a climb or jump
 addEventListener('keydown',e=>{
   if(typing(e.target)||e.repeat)return;
   pwKeys.add(e.code);
   if(!e.shiftKey)return;
-  const ch=e.code==='KeyA'?'a':e.code==='KeyC'?'c':e.code==='KeyE'?'e':'';
+  const ch={KeyA:'a',KeyC:'c',KeyE:'e',KeyS:'s',KeyN:'n',KeyT:'t'}[e.code]||'';
   if(!ch){pwSeq=[];return;}
-  const now=performance.now();pwSeq=pwSeq.filter(s=>now-s.t<2000);pwSeq.push({ch,t:now});
+  const now=performance.now();pwSeq=pwSeq.filter(s=>now-s.t<3000);pwSeq.push({ch,t:now});
   const typed=pwSeq.slice(-3).map(s=>s.ch).join('')==='ace';
   const held=pwKeys.has('KeyA')&&pwKeys.has('KeyC')&&pwKeys.has('KeyE');
-  if(typed||held){pwSeq=[];askPower();}
+  if(typed||held){pwSeq=[];askPower('power');}
+  else if(pwSeq.slice(-5).map(s=>s.ch).join('')==='santa'){pwSeq=[];askPower('sleigh');}      // Shift + S, A, N, T, A
 });
 addEventListener('keyup',e=>{pwKeys.delete(e.code);});
 addEventListener('blur',()=>{pwKeys.clear();pwSeq=[];});
-addEventListener('resize',()=>{if(power)sizeBeam();});
-/* Touch and mouse: hold the "Ask Little Ace" button for 3 seconds. A normal tap
+addEventListener('resize',()=>{if(power||sleigh)sizeBeam();});
+/* Touch and mouse: hold the "Ask Little Ace" button for 2 seconds. A normal tap
    still opens the chat; a hold that sets it off swallows the click that follows
    the release so the chat does not open as well. Moving the finger or letting
    go early cancels it. */
-const POWER_HOLD_MS=3000,POWER_HOLD_SLOP=12;
+const POWER_HOLD_MS=2000,POWER_HOLD_SLOP=12;
 let holdTimer=0,holdX=0,holdY=0,holdFired=false;
 const holdCancel=()=>{clearTimeout(holdTimer);holdTimer=0;};
 launcher.style.cssText+=';-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:manipulation';
@@ -1204,6 +1286,7 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
     play('drag');renderSprite(facing);
   }
   else if(stationary){state.x=innerWidth-85;state.y=innerHeight-68;state.vx=0;state.vy=0;state.ground=null;play('idle');renderSprite(1);}
+  else if(sleigh){scroll=scrollY;facing=sleigh.facing;play(sleigh.clip);renderSprite(facing);}   // the sleigh sequence moves him (stepSleigh); this only draws
   else{
    const dy=scrollY-scroll;scroll=scrollY;
    if(clock-lastSurfaceUpdate>.12||dy){scan();lastSurfaceUpdate=clock;}
@@ -1335,7 +1418,7 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
     ?-RUN_BOB*Math.abs(Math.sin((clock-clipStart)*Math.PI*2*CLIPS.run.fps/CLIPS.run.f.length))
     :0;
   pet.style.transform=`translate3d(${(state.x-SPRITE_W/2).toFixed(1)}px,${(state.y-FEET_Y/2+bob).toFixed(1)}px,0)`;
-  const shadowY=state.ground!==null?state.y:innerHeight-16;const distance=Math.max(0,shadowY-state.y);shadow.style.opacity=stationary?'0':String(Math.max(.08,.6-distance/450));shadow.style.transform=`translate3d(${state.x-26}px,${shadowY-3}px,0) scale(${Math.max(.35,1-distance/600)},1)`;
+  const shadowY=state.ground!==null?state.y:innerHeight-16;const distance=Math.max(0,shadowY-state.y);shadow.style.opacity=(stationary||(sleigh&&sleigh.hidden))?'0':String(Math.max(.08,.6-distance/450));shadow.style.transform=`translate3d(${state.x-26}px,${shadowY-3}px,0) scale(${Math.max(.35,1-distance/600)},1)`;
  }else if(open&&ready){
   /* Chatting: parked beside the panel rather than roaming, and drawn from
      the big sheet rather than the atlas. He eases into place — a glide,

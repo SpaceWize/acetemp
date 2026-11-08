@@ -1,90 +1,103 @@
-/* ACE SPADERS — the 2027 waitlist gate.
+/* CHRISTMAS SWITCH. true = Santa hat on every animation (assets/images/ace-atlas-xmas.webp, which is the
+   normal sheet with the hat frames in the same cells; climb included; the chat pose has its own sheet, ace-chat-pose-xmas.webp).
+   Set to false to go back. When true it also loads xmas.js (snowfall and a snowbank). Read by gate-scene (below) and by companion.js through window.ACE_ATLAS. */
+window.ACE_XMAS=true;
+window.ACE_ATLAS='assets/images/'+(window.ACE_XMAS?'ace-atlas-xmas.webp?v=2':'ace-atlas.webp?v=11');
+if(window.ACE_XMAS){const s=document.createElement('script');s.src='xmas.js?v=9';s.defer=true;document.head.append(s);}   // snow + snowbank
+/* ACE SPADERS — the 2027 waitlist gate.                              (rebuilt 2026-11-07)
 
-   Every page loads this in <head>. A visitor who has not yet joined sees
-   nothing of the site until they give an email address; once they have, the
-   gate never shows again (on that browser).
+   Every page loads this in <head>. Three things it does:
+   1. THE GATE. A visitor who has not joined sees the page (on the home page, the intro) through pearly gates
+      standing open; the gates swing shut (gate-scene.js, three.js) and the waitlist box appears on them. Joining
+      swings them open again. No WebGL, or the scene not ready in 4s: a plain dark gate with the same box.
+   2. THE ENTRANCE. Someone already on the list comes in through the gates once per visit: shut, the headline on
+      them, then they swing open. The footer's "See the gate again" plays this again on demand.
+   3. THE BOX ON EVENT PAGES. A [data-waitlist] button opens the same box over the page.
 
-   It also serves the event pages: a button with data-waitlist opens the same
-   box over the page, for anyone, joined or not.
+   WHAT WAS WRONG WITH THE OLD ONE, AND THE RULES THIS ONE KEEPS
+   - The box could sit on screen but refuse typing (it stayed "inert" until an animation finished), and a join
+     could be saved yet still report "That did not go through" if anything in the opening animation failed.
+   - So: the animation is decoration only. The box is usable the moment it is visible, and it is visible within
+     a fixed time whatever the 3D scene does. Every animated step has a timeout. Nothing after a confirmed save
+     can turn it into an error.
+   - Nobody can be trapped: after a failed send the box shows what went wrong (a short code), an email address
+     to write to, and "Continue to the site" for this visit.
+   - The visitor's clock is never trusted (the sheet's script does not use it either).
+   - Support: add ?gate=reset to any address to make this browser forget it has joined, ?gate=show to see the
+     entrance again.
 
-   HOW IT WORKS
-   - The look: the page (and the home page's intro) shows first, untouchable, with the gates standing open out of
-     sight at the screen edges. Then pearly golden gates swing shut over it, Little Ace runs behind them, and the
-     card appears (gate-scene.js, three.js). Joining swings them open and the headline shines for a moment
-     (main.js heroShine). No WebGL or a blocked CDN within 4s: the plain gate, which covers the page at once.
-   - It runs in the head, so scrolling and clicking are locked before the page can be used.
-   - The email is POSTed to a Google Apps Script web app that appends a row to
-     the waitlist sheet, and the gate only opens once that app confirms the save (see tools/waitlist-apps-script.gs for the script and
-     the three-minute setup). Paste that web app's URL into WAITLIST_URL below.
-   - "Already joined" is remembered in localStorage, with a cookie as a backup
-     for browsers that block storage, so it holds across every page.
-
-   NOT SET UP YET (WAITLIST_URL is empty)
-   - Nothing is saved anywhere, so nobody is let through for good: the gate
-     opens for the rest of the browser session only, and a note goes to the
-     console. That keeps the page testable without ever losing a real signup
-     into the void.
-
-   A NOTE ON WHAT THIS IS: it is a front-door prompt, not a lock. The site's
-   files are still public to anyone who views source, and a wall over every
-   page can make search engines treat the site as an ad-style interstitial. */
+   The sheet's side is tools/waitlist-apps-script.gs. It accepts this page's sends and the old page's. */
 (function () {
   'use strict';
 
-  var WAITLIST_URL = 'https://script.google.com/macros/s/AKfycbwRub8l8LauagWedq_6iBhvU0G50PWcpYg02KWfncxomim-FAhTo7C16CDK4s1EbYY6/exec';                 // <-- the Apps Script web app URL (ends in /exec)
-  var KEY = 'ace-waitlist-v1';           // bump to ask everyone again (a new list, a new year)
+  /* ── settings ───────────────────────────────────────────────── */
+  var WAITLIST_URL = 'https://script.google.com/macros/s/AKfycbwRub8l8LauagWedq_6iBhvU0G50PWcpYg02KWfncxomim-FAhTo7C16CDK4s1EbYY6/exec';
+  var CONTACT = 'info@acespaders.com';
+  var KEY = 'ace-waitlist-v1';            // bump (and COOKIE) to ask everyone again: a new list, a new year
   var COOKIE = 'ace_waitlist_v1';
-
-  /* BOT DEFENCES (the sheet's script, tools/waitlist-apps-script.gs, enforces the same rules, because a bot
-     can post straight at the URL and never touch this page):
-       1. a hidden field a person never sees and a bot fills in
-       2. at least one real (trusted) keystroke/tap/click before it can be sent
-       3. not instant: the send waits until a person-sized moment has passed since the prompt appeared
-       4. an automation flag (navigator.webdriver) means bot
-       5. proof of work: the browser finds a number that makes SHA-256("email|shownAt|n") start with POW_BITS zero
-          bits, about a second of work for a person and a real cost for something firing thousands of times. The
-          sheet checks it again, and refuses a proof it has already seen.
-     A bot caught by 1-4 is shown the same "success" a person would be: it learns nothing and nothing is sent. */
-  var POW_BITS = 16;                     // must match the sheet's script
-  var MIN_MS = 1500;                     // fastest plausible human fill-in
-
-  function joined() {
-    try { if (localStorage.getItem(KEY)) return true; } catch (e) {}
-    try { if (sessionStorage.getItem(KEY + '-session')) return true; } catch (e) {}
-    return document.cookie.indexOf(COOKIE + '=1') !== -1;
-  }
-  function remember(permanent) {
-    if (!permanent) { try { sessionStorage.setItem(KEY + '-session', '1'); } catch (e) {} return; }
-    try { localStorage.setItem(KEY, String(Date.now())); } catch (e) {}
-    try { document.cookie = COOKIE + '=1; max-age=' + 60 * 60 * 24 * 365 * 2 + '; path=/; SameSite=Lax'; } catch (e) {}
-  }
-
-  /* The entrance: someone already on the list still comes in through the gates, once per visit (the first page
-     they land on in a browser session): the gates stand shut with the box, the box fades, and they swing open
-     out of sight. Not for reduced motion, and not where session storage is blocked (it would replay on every page). */
-  var ENTERED = 'ace-entered-v1';
-  function enteredThisVisit() { try { return !!sessionStorage.getItem(ENTERED); } catch (e) { return true; } }
-  function markEntered() { try { sessionStorage.setItem(ENTERED, '1'); } catch (e) {} }
+  var ENTERED = 'ace-entered-v1';         // this visit has been through the gates
+  var SCENE_URL = './gate-scene.js?v=7';
+  var ATLAS = window.ACE_ATLAS || 'assets/images/ace-atlas.webp?v=11';
+  var POW_BITS = 16;                      // proof of work; the sheet accepts 14 and up
+  var POW_BUDGET_MS = 6000;               // a browser slower than this sends without a proof (the sheet still takes it)
+  var MIN_MS = 1500;                      // the send waits until the box has been up this long (people are not instant)
+  var SEND_TIMEOUT_MS = 20000;
+  var SCENE_WAIT_MS = 4000;               // the 3D gates must be running by then, or the plain gate is used
+  var CLOSE_BY_MS = 11000;                 // the gates start to close by then at the latest (the home page waits for its intro)
+  var CARD_BY_MS = 4500;                  // ...and the box is on them by this long after they start to close
+  var OPEN_MAX_MS = 2600;                 // the opening swing is cut off after this
 
   var root = document.documentElement;
   var REDUCED = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
-  var locked = !joined();                // not on the list yet (on this browser): the gate
-  var entry = !locked && !REDUCED && !enteredThisVisit();
-  if (locked) root.classList.add('gate-locked');
-  if (entry) { root.classList.add('gate-locked', 'gate-entry'); markEntered(); }   // main.js holds the home intro for it
+  var T0 = Date.now();
 
-  /* The pearly gates (gate-scene.js, three.js from a CDN). Fetched now, while the page is still parsing, so
-     the gates are usually ready by the time the body is. Anything that goes wrong just means the plain gate. */
+  /* ── memory: "already on the list" in localStorage, with a cookie as a backup ── */
+  function tryGet(s, k) { try { return window[s].getItem(k); } catch (e) { return null; } }
+  function trySet(s, k, v) { try { window[s].setItem(k, v); return true; } catch (e) { return false; } }
+  function tryDel(s, k) { try { window[s].removeItem(k); } catch (e) {} }
+  function joined() { return !!tryGet('localStorage', KEY) || !!tryGet('sessionStorage', KEY + '-session') || document.cookie.indexOf(COOKIE + '=1') !== -1; }
+  function remember() {
+    trySet('localStorage', KEY, String(Date.now()));
+    try { document.cookie = COOKIE + '=1; max-age=' + 60 * 60 * 24 * 365 * 2 + '; path=/; SameSite=Lax'; } catch (e) {}
+  }
+  function rememberForVisit() { trySet('sessionStorage', KEY + '-session', '1'); }
+  function forget() {
+    tryDel('localStorage', KEY); tryDel('sessionStorage', KEY + '-session'); tryDel('sessionStorage', ENTERED);
+    try { document.cookie = COOKIE + '=; max-age=0; path=/; SameSite=Lax'; } catch (e) {}
+  }
+  function markEntered() { trySet('sessionStorage', ENTERED, '1'); }
+  function enteredThisVisit() { return !!tryGet('sessionStorage', ENTERED) || !trySet('sessionStorage', 'ace-probe', '1'); }   // storage blocked: count as entered, or it would replay on every page
+
+  var q = location.search || '';
+  if (/[?&]gate=reset\b/.test(q)) forget();
+  var forceShow = /[?&]gate=show\b/.test(q);
+
+  var locked = !joined();
+  var entry = !locked && !REDUCED && (forceShow || !enteredThisVisit());
+  if (locked || entry) root.classList.add('gate-locked');
+  if (entry) { root.classList.add('gate-entry'); markEntered(); }     // main.js holds the home intro until the gates open
+
+  /* ── the 3D scene, fetched early (only for those who will see it) ── */
   var sceneMod = null;
-  if (locked || entry) try {
-    var pc = document.createElement('link'); pc.rel = 'preconnect'; pc.href = 'https://cdn.jsdelivr.net'; pc.crossOrigin = '';
-    (document.head || root).appendChild(pc);
-    sceneMod = import('./gate-scene.js?v=7');
+  function loadScene() {
+    if (sceneMod) return sceneMod;
+    try {
+      var pc = document.createElement('link'); pc.rel = 'preconnect'; pc.href = 'https://cdn.jsdelivr.net'; pc.crossOrigin = '';
+      (document.head || root).appendChild(pc);
+      sceneMod = import(SCENE_URL);
+    } catch (e) { sceneMod = Promise.reject(e); }
     sceneMod.catch(function () {});
-  } catch (e) { sceneMod = null; }
+    return sceneMod;
+  }
+  if (locked || entry) loadScene();
+  function withTimeout(p, ms) {
+    return new Promise(function (res, rej) {
+      var t = setTimeout(function () { rej(new Error('timeout')); }, ms);
+      p.then(function (v) { clearTimeout(t); res(v); }, function (e) { clearTimeout(t); rej(e); });
+    });
+  }
 
-  /* Styles go in first, from the head, so the lock is in force before the
-     body exists. Everything in the page is hidden except the gate itself. */
+  /* ── styles (in the head, so the lock holds before the body exists) ── */
   var css = document.createElement('style');
   css.textContent =
     'html.gate-locked,html.gate-locked body{overflow:hidden!important}' +
@@ -155,11 +168,24 @@
     '.ace-gate.gate--entry form,.ace-gate.gate--entry .gate__ask{display:none}' +
     '.ace-gate.gate--entry:not(.gate--scene) .gate__card{visibility:hidden}' +
     '.ace-gate.gate--leaving .gate__card{opacity:0!important;transform:scale(.97)!important;transition:opacity .25s ease,transform .25s ease!important}' +
-    '@media (prefers-reduced-motion:no-preference){.ace-gate{transition:opacity .35s ease}.ace-gate.gate--out{opacity:0}}';
+    '@media (prefers-reduced-motion:no-preference){.ace-gate{transition:opacity .35s ease}.ace-gate.gate--out{opacity:0}}' +
+    // added in the rebuild: the help line under a failed send
+    '.ace-gate .gate__help{margin:0;font-size:.88rem;line-height:1.5;color:var(--on-dark-mute,#A29C93);text-wrap:balance}' +
+    '.ace-gate .gate__help[hidden]{display:none}' +
+    '.ace-gate .gate__help a{color:var(--gold,#D9A441)}' +
+    '.ace-gate .gate__skip{appearance:none;background:none;border:0;padding:0;margin:0 0 0 .3em;font:inherit;color:var(--gold,#D9A441);' +
+      'text-decoration:underline;text-underline-offset:.2em;cursor:pointer}' +
+    '.ace-gate.gate--modal .gate__skip{display:none}' +
+    // "Been here before?": very small, bottom right, only once the box is up
+    '.ace-gate .gate__been{position:absolute;z-index:2;right:max(.7rem,env(safe-area-inset-right));bottom:max(.6rem,env(safe-area-inset-bottom));' +
+      'appearance:none;background:none;border:0;padding:.35rem .4rem;margin:0;font:400 .68rem/1 "Instrument Sans",system-ui,sans-serif;letter-spacing:.02em;' +
+      'color:rgba(162,156,147,.75);cursor:pointer;opacity:0;pointer-events:none;transition:opacity .4s ease,color .2s ease;' +
+      '-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}' +
+    '.ace-gate.gate--ready .gate__been{opacity:1;pointer-events:auto}' +
+    '.ace-gate .gate__been:hover{color:var(--gold,#D9A441);text-decoration:underline;text-underline-offset:.2em}';
   (document.head || root).appendChild(css);
 
-  /* The box: the gate's (id ace-gate) and, on pages with a [data-waitlist] button, the same box opened over the
-     page (id ace-waitlist, with a close button). */
+  /* ── the box ── */
   function build(id, modal) {
     var g = document.createElement('div');
     g.id = id;
@@ -183,275 +209,301 @@
           '</div>' +
           '<div class="gate__hp" aria-hidden="true"><label>Leave this empty<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>' +
           '<p class="gate__msg" id="' + id + '-msg" role="status" aria-live="polite"></p>' +
+          '<p class="gate__help" hidden>Still not working? Email <a href="mailto:' + CONTACT + '?subject=Waitlist%202027">' + CONTACT + '</a> and you will be added by hand.' +
+            '<button type="button" class="gate__skip">Continue to the site</button></p>' +
         '</form>' +
       '</div>';
     return g;
   }
 
-  var gate, inertObserver, scene = null;
-
-  function lockOthers(keep) {
+  /* ── the rest of the page is out of reach while a box is up ── */
+  var guard = null;
+  function holdPage(keep) {
     var kids = document.body.children;
     for (var i = 0; i < kids.length; i++) if (kids[i] !== keep) kids[i].setAttribute('inert', '');
+    if (guard) guard.disconnect();
+    if ('MutationObserver' in window) {
+      guard = new MutationObserver(function (list) {               // Little Ace and friends add themselves later
+        list.forEach(function (m) { [].forEach.call(m.addedNodes, function (n) { if (n.nodeType === 1 && n !== keep) n.setAttribute('inert', ''); }); });
+      });
+      guard.observe(document.body, { childList: true });
+    }
   }
-  /* Open up: the box fades, then the gates swing all the way open, out past the screen edges, and are gone.
-     ('ace:gate-open' tells main.js: on the home page the headline shines after a join, or, on an entrance, the
-     intro it was holding back plays.) */
-  function unlock() {
-    if (inertObserver) inertObserver.disconnect();
+  function releasePage() {
+    if (guard) { guard.disconnect(); guard = null; }
     var kids = document.body.children;
     for (var i = 0; i < kids.length; i++) kids[i].removeAttribute('inert');
-    var isEntry = gate.classList.contains('gate--entry');
-    markEntered();                                   // just joined: the rest of this visit needs no entrance
-    var done = function () {
-      root.classList.remove('gate-locked', 'gate-closing', 'gate-entry');
-      if (scene) { try { scene.dispose(); } catch (e) {} scene = null; }
-      if (gate && gate.parentNode) gate.parentNode.removeChild(gate);
-      try { document.dispatchEvent(new CustomEvent('ace:gate-open', { detail: { entry: isEntry } })); } catch (e) {}
-    };
-    if (REDUCED) { done(); return; }
-    if (scene) {
-      gate.classList.add('gate--leaving');
-      setTimeout(function () { scene.open().then(done); }, 380);
-    } else { gate.classList.add('gate--out'); setTimeout(done, 400); }
   }
-
-  // Little Ace and friends add themselves to <body> after load: keep them out of reach while the gate is up.
-  function guardAdded() {
-    if (!('MutationObserver' in window)) return;
-    inertObserver = new MutationObserver(function (list) {
-      list.forEach(function (m) {
-        [].forEach.call(m.addedNodes, function (n) { if (n.nodeType === 1 && n !== gate) n.setAttribute('inert', ''); });
-      });
-    });
-    inertObserver.observe(document.body, { childList: true });
-  }
-
-  /* The entrance (see ENTERED above): the gates drawn shut with the headline on them, a beat, then unlock(). Until
-     the gates are drawn the gate's own dark ground covers the page; no gates within 4s and it simply fades away. */
-  function initEntry() {
-    gate = build('ace-gate');
-    gate.classList.add('gate--entry');
-    document.body.appendChild(gate);
-    lockOthers(gate);
-    guardAdded();
-    var card = gate.querySelector('.gate__card');
-    var host = document.createElement('div'); host.className = 'gate__scene'; gate.insertBefore(host, card);
-    var settled = false;
-    var fallback = setTimeout(function () { if (!scene) { settled = true; unlock(); } }, 4000);
-    sceneMod.then(function (m) {
-      if (settled) return;
-      scene = m.start(host, { reduced: false, closed: true, atlasUrl: 'assets/images/ace-atlas.webp?v=11' });
-      clearTimeout(fallback);
-      // two frames: the gates are on screen before the dark ground gives way to them
-      requestAnimationFrame(function () { requestAnimationFrame(function () {
-        gate.classList.add('gate--scene');
-        setTimeout(function () { gate.classList.add('gate--ready'); }, 250);
-        setTimeout(unlock, 1900);
-      }); });
-    }).catch(function () { clearTimeout(fallback); if (!settled) { settled = true; scene = null; unlock(); } });
-  }
-
-  function proofOfWork(email, shownAt) {
-    if (!(window.crypto && crypto.subtle && window.TextEncoder)) return Promise.resolve(null);
-    var enc = new TextEncoder(), base = email + '|' + shownAt + '|', n = 0, BATCH = 512;
-    function ok(b) { return b[0] === 0 && b[1] === 0; }            // POW_BITS = 16
-    function step() {
-      var jobs = [];
-      for (var i = 0; i < BATCH; i++) jobs.push(crypto.subtle.digest('SHA-256', enc.encode(base + (n + i))));
-      return Promise.all(jobs).then(function (res) {
-        for (var i = 0; i < res.length; i++) if (ok(new Uint8Array(res[i]))) return n + i;
-        n += BATCH;
-        return new Promise(function (r) { setTimeout(r, 0); }).then(step);   // let the page breathe between batches
-      });
-    }
-    return step();
-  }
-
-  function init() {
-    gate = build('ace-gate');
-    document.body.appendChild(gate);
-    lockOthers(gate);
-    var card = gate.querySelector('.gate__card');
-    var shown = false;
-    function reveal() {
-      if (shown) return; shown = true;
-      gate.classList.add('gate--ready');
-      setTimeout(function () { gate.classList.add('gate--settled'); }, 750);   // after the pop-in, hover takes the site's easing
-      card.removeAttribute('inert');
-      setTimeout(function () { try { gate.querySelector('input[type=email]').focus({ preventScroll: true }); } catch (e) {} }, 120);
-    }
-    function plain() { gate.classList.remove('gate--scene'); reveal(); }
-    if (sceneMod) {
-      gate.classList.add('gate--scene');
-      card.setAttribute('inert', '');
-      var host = document.createElement('div'); host.className = 'gate__scene'; gate.insertBefore(host, card);
-      // No scene within 4s (blocked or slow CDN, no WebGL): the plain gate, which covers the page at once.
-      var fallback = setTimeout(function () { if (!scene) plain(); }, 4000);
-      sceneMod.then(function (m) {
-        if (shown) return;
-        scene = m.start(host, { reduced: REDUCED, atlasUrl: 'assets/images/ace-atlas.webp?v=11' });
-        clearTimeout(fallback);
-        // The page shows through until the gates close. On the home page that is the moment Little Ace lands back
-        // on his button after the intro (main.js sets data-intro-done); anywhere else, after a moment. 25s at most.
-        var asked = Date.now(), HOLD = 0;                 // close the instant the signal comes
-        var home = !!document.querySelector('[data-hero]');
-        var doneAt = 0, cued = false, poll = 0;
-        function cue(w) {
-          if (cued) return;
-          cued = true; clearTimeout(poll);
-          root.classList.add('gate-closing');              // the page's Little Ace fades as the gates swing in
-          scene.close();
-          // ...and the one behind the gates carries on from that spot: if still in the air he finishes the fall, lands, then runs
-          if (w) scene.handoff(w.x, w.h, w.airborne ? w.y : null, w.vy, w.vx);
-          setTimeout(reveal, 7000);                        // the card arrives even if the swing stalls
-        }
-        function whenReady() {
-          if (cued) return;
-          var now = Date.now();
-          if (!doneAt && (!home || root.hasAttribute('data-intro-done'))) doneAt = now;
-          if (REDUCED || (doneAt && now - doneAt >= (home ? HOLD : 1200)) || now - asked > 25000) {
-            // on the home page the hand-off still starts from wherever he is (normally just landed on his button)
-            var A = home && window.AceCompanion;
-            cue(A && A.where && !REDUCED ? A.where() : null);
-            return;
-          }
-          poll = setTimeout(whenReady, 200);
-        }
-        // The hand-off: on his jump back down from ASSET, once he is falling, the page one fades and the gate one
-        // takes over mid-fall, lands on the line it runs on, then runs. His landing on the button (above) is the
-        // backstop if the drop is missed.
-        // checked on a steady 16ms timer rather than on redraws, which a busy or throttled tab can space out
-        var jumpWatch = 0;
-        function watchJump() {
-          if (cued) { clearInterval(jumpWatch); return; }
-          var A = window.AceCompanion;
-          if (A && A.where) {
-            var w = A.where();
-            // falling and either near that line or well into the drop (his button can sit above the line, so he
-            // may never reach it on the page; the gate one then finishes the fall down to it)
-            if (w.returning && w.airborne && w.vy > 0 && (w.y >= scene.floorY() - w.h * 0.6 || w.vy > 260)) { clearInterval(jumpWatch); cue(w); }
-          }
-        }
-        if (home && !REDUCED) jumpWatch = setInterval(watchJump, 16);
-        document.addEventListener('ace:intro-done', whenReady);   // react on the very frame he lands
-        whenReady();
-        return scene.closed.then(function () { setTimeout(reveal, REDUCED ? 0 : 260); });
-      }).catch(function () { clearTimeout(fallback); if (host.parentNode) host.parentNode.removeChild(host); scene = null; if (!shown) plain(); });
-    } else {
-      reveal();
-    }
-    guardAdded();
-
-    wire(gate, unlock);
-  }
-
-  /* The form inside a box: checks, bot defences, proof of work, the send, and the keyboard kept inside the
-     dialog. saved() runs once the sheet confirms the address (or a bot has been shown its fake success).
-     Returns shown(), which restarts the clock for a box that has just been opened. */
-  function wire(box, saved) {
-    var shownAt = Date.now(), human = false;
-    ['keydown', 'pointerdown', 'touchstart', 'click'].forEach(function (t) {
-      box.addEventListener(t, function (e) { if (e.isTrusted) human = true; }, true);
-    });
-    var form = box.querySelector('form');
-    var input = form.elements.email;
-    var hp = form.elements.website;
-    var msg = box.querySelector('.gate__msg');
-    var btn = form.querySelector('button[type=submit]');
-    var busy = false;
-
-    function say(t) {
-      msg.textContent = t || '';
-      input.setAttribute('aria-invalid', t ? 'true' : 'false');
-    }
-    input.addEventListener('input', function () { if (msg.textContent) say(''); });
-
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
-      if (busy) return;
-      var email = (input.value || '').trim();
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
-        say('Use a full email address, like name@company.com.');
-        input.focus();
-        return;
-      }
-      // a person never fills the hidden field; a bot usually does. Look like success, send nothing.
-      var bot = !!hp.value || !human || navigator.webdriver === true;
-      if (bot) { remember(true); saved(); return; }
-
-      if (!WAITLIST_URL) {
-        if (window.console) console.warn('[gate] WAITLIST_URL is empty: the email was NOT saved anywhere. Opening for this browser session only.');
-        remember(false);
-        saved();
-        return;
-      }
-
-      busy = true; btn.disabled = true; btn.textContent = 'Sending…'; say('');
-      function fail() {
-        busy = false; btn.disabled = false; btn.textContent = 'Join the waitlist';
-        say('That did not go through. Please try again in a moment.');
-      }
-      // a person who fills the field and taps in under a second (autofill) simply waits out the rest of MIN_MS
-      var pause = new Promise(function (r) { setTimeout(r, Math.max(0, MIN_MS - (Date.now() - shownAt))); });
-      Promise.all([proofOfWork(email.toLowerCase(), shownAt), pause]).then(function (all) {
-        var nonce = all[0];
-        var body = JSON.stringify({
-          email: email,
-          page: location.pathname.split('/').pop() || 'index.html',
-          referrer: document.referrer || '',
-          shown: shownAt,
-          sent: Date.now(),
-          nonce: nonce,
-          hp: hp.value || ''
-        });
-        // text/plain keeps this a "simple" request (no preflight), and Apps Script answers it with CORS headers, so
-        // the reply can be READ. The visitor is let in only when the sheet itself says it saved the address; a 403,
-        // an outage or a bad deployment shows the error instead of quietly losing the email.
-        return fetch(WAITLIST_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: body })
-          .then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); })
-          .then(function (j) {
-            if (!j || j.ok !== true) throw new Error('not saved');
-            busy = false;
-            remember(true); saved();
-          });
-      }).catch(fail);
-    });
-
-    // keep the keyboard inside the dialog
+  function trapTab(box) {
     box.addEventListener('keydown', function (e) {
       if (e.key !== 'Tab') return;
-      var f = box.querySelectorAll('input:not([tabindex="-1"]),button:not([disabled])');
+      var f = [].filter.call(box.querySelectorAll('input:not([tabindex="-1"]),button:not([disabled]):not([tabindex="-1"]),a[href]'), function (el) { return el.offsetParent !== null; });
       if (!f.length) return;
       var first = f[0], lastEl = f[f.length - 1];
       if (e.shiftKey && document.activeElement === first) { e.preventDefault(); lastEl.focus(); }
       else if (!e.shiftKey && document.activeElement === lastEl) { e.preventDefault(); first.focus(); }
     });
+  }
 
+  /* ── sending ── */
+  function proofOfWork(email, salt) {
+    if (!(window.crypto && crypto.subtle && window.TextEncoder)) return Promise.resolve(null);
+    var enc = new TextEncoder(), base = email + '|' + salt + '|', n = 0, BATCH = 256, until = Date.now() + POW_BUDGET_MS;
+    function ok(b) { return b[0] === 0 && b[1] === 0; }            // 16 zero bits
+    function step() {
+      if (Date.now() > until) return null;                         // too slow: send without one
+      var jobs = [];
+      for (var i = 0; i < BATCH; i++) jobs.push(crypto.subtle.digest('SHA-256', enc.encode(base + (n + i))));
+      return Promise.all(jobs).then(function (res) {
+        for (var i = 0; i < res.length; i++) if (ok(new Uint8Array(res[i]))) return n + i;
+        n += BATCH;
+        return new Promise(function (r) { setTimeout(r, 0); }).then(step);
+      });
+    }
+    return Promise.resolve().then(step).catch(function () { return null; });
+  }
+  /* Resolves {ok:true} once the sheet confirms (or, when a reply cannot be read at all, once a blind resend has
+     gone out), else {ok:false, code}. Never rejects. */
+  function send(payload) {
+    var body = JSON.stringify(payload);
+    var ctl = window.AbortController ? new AbortController() : null;
+    var timer = setTimeout(function () { if (ctl) ctl.abort(); }, SEND_TIMEOUT_MS);
+    function blind() {
+      return fetch(WAITLIST_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: body })
+        .then(function () { return { ok: true, blind: true }; }, function () { return { ok: false, code: 'network' }; });
+    }
+    return fetch(WAITLIST_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: body, signal: ctl ? ctl.signal : undefined })
+      .then(function (r) {
+        if (!r.ok) return { ok: false, code: 'http ' + r.status };
+        return r.json().then(function (j) {
+          return j && j.ok === true ? { ok: true } : { ok: false, code: String((j && j.error) || 'refused').slice(0, 24) };
+        }, function () { return { ok: false, code: 'reply' }; });
+      }, function (err) {
+        if (err && err.name === 'AbortError') return { ok: false, code: 'timeout' };
+        return blind();                                  // blocked or unreadable reply: it may well have arrived; send once more, blind
+      })
+      .then(function (res) { clearTimeout(timer); return res; });
+  }
+
+  /* The form inside a box. opts.onSaved() runs once the address is safe (or a bot has been given its fake
+     success); opts.onSkip() for "Continue to the site". Returns { shown() } to restart its stopwatch. */
+  function wire(box, opts) {
+    var form = box.querySelector('form');
+    var input = form.elements.email, hp = form.elements.website;
+    var msg = box.querySelector('.gate__msg'), help = box.querySelector('.gate__help');
+    var btn = form.querySelector('button[type=submit]');
+    var shownAt = Date.now(), human = false, busy = false;
+    ['keydown', 'pointerdown', 'touchstart', 'click', 'input'].forEach(function (t) {
+      box.addEventListener(t, function (e) { if (e.isTrusted) human = true; }, true);
+    });
+    function say(t, withHelp) {
+      msg.textContent = t || '';
+      input.setAttribute('aria-invalid', t ? 'true' : 'false');
+      help.hidden = !withHelp;
+    }
+    function idle() { busy = false; btn.disabled = false; btn.textContent = 'Join the waitlist'; }
+    input.addEventListener('input', function () { if (msg.textContent && !busy) say('', !help.hidden); });
+    box.querySelector('.gate__skip').addEventListener('click', function () { if (opts.onSkip) opts.onSkip(); });
+    function succeed() {
+      busy = false;
+      try { opts.onSaved(); } catch (e) { hardOpen(); }        // nothing after a save may turn into an error
+    }
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (busy) return;
+      var email = (input.value || '').trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { say('Use a full email address, like name@company.com.'); input.focus(); return; }
+      // a person never fills the hidden field and always touches the page first; a bot gets the same success, nothing is sent
+      if (hp.value || !human || navigator.webdriver === true) { succeed(); return; }
+      busy = true; btn.disabled = true; btn.textContent = 'Sending…'; say('');
+      var salt = String(shownAt);                       // the moment the box appeared: the same salt the old sheet script expects
+      var wait = new Promise(function (r) { setTimeout(r, Math.max(0, MIN_MS - (Date.now() - shownAt))); });
+      Promise.all([proofOfWork(email.toLowerCase(), salt), wait]).then(function (all) {
+        return send({
+          email: email, salt: salt, nonce: all[0], elapsed: Date.now() - shownAt,
+          shown: shownAt, sent: Date.now(),             // for the sheet script still deployed until it is updated (it checks these)
+          page: location.pathname.split('/').pop() || 'index.html', referrer: document.referrer || '',
+          ua: (navigator.userAgent || '').slice(0, 160), hp: ''
+        });
+      }).then(function (res) {
+        if (res.ok) { succeed(); return; }
+        idle();
+        say(res.code === 'bad email' ? 'Use a full email address, like name@company.com.'
+          : res.code === 'busy' ? 'Lots of people are joining right now. Please try again in a minute. (busy)'
+          : 'That did not go through. Please try again in a moment. (' + res.code + ')', res.code !== 'bad email');
+      }, function () { idle(); say('That did not go through. Please try again in a moment. (error)', true); });
+    });
+    trapTab(box);
     return {
-      shown: function () {
-        shownAt = Date.now(); busy = false;
-        btn.disabled = false; btn.textContent = 'Join the waitlist'; say('');
-      }
+      shown: function () { shownAt = Date.now(); idle(); say(''); },
+      focus: function () { try { input.focus({ preventScroll: true }); } catch (e) {} }
     };
   }
 
-  /* The event pages: a [data-waitlist] button opens the same box over the page. Built now, with the gate, so that
-     main.js (deferred) dresses it like the gate's: steel heading, molten line, the gold edge light. */
-  var modal = null, modalApi = null, opener = null, closeTimer = 0;
+  /* ── opening up: the box fades, the gates swing open, everything is handed back. Cannot hang. ── */
+  var gate = null, scene = null, opening = false;
+  function openUp(detail) {
+    if (opening || !gate) return;
+    opening = true;
+    releasePage();
+    markEntered();
+    var g = gate, sc = scene, finished = false;
+    function done() {
+      if (finished) return; finished = true;
+      root.classList.remove('gate-locked', 'gate-closing', 'gate-entry');
+      if (sc) { try { sc.dispose(); } catch (e) {} }
+      if (g.parentNode) g.parentNode.removeChild(g);
+      if (gate === g) { gate = null; scene = null; }
+      opening = false;
+      try { document.dispatchEvent(new CustomEvent('ace:gate-open', { detail: detail || { entry: false } })); } catch (e) {}
+    }
+    if (REDUCED || !sc) { g.classList.add('gate--out'); setTimeout(done, REDUCED ? 0 : 400); return; }
+    g.classList.add('gate--leaving');
+    setTimeout(function () {
+      try { Promise.resolve(sc.open()).then(done, done); } catch (e) { done(); }
+    }, 380);
+    setTimeout(done, 380 + OPEN_MAX_MS);
+  }
+  function hardOpen() {                                  // last resort: take everything down now
+    releasePage();
+    root.classList.remove('gate-locked', 'gate-closing', 'gate-entry');
+    if (scene) { try { scene.dispose(); } catch (e) {} }
+    if (gate && gate.parentNode) gate.parentNode.removeChild(gate);
+    gate = null; scene = null; opening = false;
+  }
+
+  /* ── 1. the gate, for someone not on the list ── */
+  function initGate() {
+    gate = build('ace-gate');
+    document.body.appendChild(gate);
+    holdPage(gate);
+    var card = gate.querySelector('.gate__card');
+    var form = wire(gate, {
+      onSaved: function () { remember(); openUp({ entry: false }); },
+      onSkip: function () { rememberForVisit(); openUp({ entry: false }); }
+    });
+    beenHere();
+    var shown = false;
+    function showCard() {
+      if (shown || !gate) return; shown = true;
+      gate.classList.add('gate--ready');
+      setTimeout(function () { if (gate) gate.classList.add('gate--settled'); }, 750);
+      form.shown();
+      setTimeout(form.focus, 120);
+    }
+    function plain() { if (!gate) return; gate.classList.remove('gate--scene'); showCard(); }
+    if (!sceneMod) { plain(); return; }
+
+    gate.classList.add('gate--scene');                  // see-through until the gates close
+    var host = document.createElement('div'); host.className = 'gate__scene'; gate.insertBefore(host, card);
+    // the backstop: the box is on screen and usable by then, whatever the scene is doing
+    setTimeout(function () { if (!shown) { if (!scene) plain(); else showCard(); } }, CLOSE_BY_MS + CARD_BY_MS);
+
+    withTimeout(sceneMod, SCENE_WAIT_MS).then(function (m) {
+      if (shown || !gate) return;
+      try { scene = m.start(host, { reduced: REDUCED, atlasUrl: ATLAS }); } catch (e) { scene = null; plain(); return; }
+      var home = !!document.querySelector('[data-hero]');
+      var cued = false, poll = 0, jump = 0;
+      function cue(w) {
+        if (cued || !gate) return; cued = true;
+        clearTimeout(poll); clearInterval(jump);
+        root.classList.add('gate-closing');              // the page's Little Ace fades as the gates swing in
+        try {
+          scene.close();
+          if (w) scene.handoff(w.x, w.h, w.airborne ? w.y : null, w.vy, w.vx);   // the one behind the gates carries on from that spot
+        } catch (e) {}
+        setTimeout(showCard, CARD_BY_MS);
+        try { withTimeout(scene.closed, CARD_BY_MS).then(function () { setTimeout(showCard, REDUCED ? 0 : 260); }, function () {}); } catch (e) {}
+      }
+      function where() { var A = window.AceCompanion; try { return A && A.where && !REDUCED ? A.where() : null; } catch (e) { return null; } }
+      // close when the home intro has finished (Little Ace back on his button), elsewhere after a moment; never later than CLOSE_BY_MS
+      var shutAt = 0;
+      function check() {
+        if (cued) return;
+        var now = Date.now();
+        if (!shutAt && (!home || root.hasAttribute('data-intro-done'))) shutAt = now + (home ? 0 : 1200);
+        if (REDUCED || (shutAt && now >= shutAt) || now - T0 > CLOSE_BY_MS) { cue(home ? where() : null); return; }
+        poll = setTimeout(check, 150);
+      }
+      // the hand-off: on his jump back down from ASSET, once he is falling, the gate's Little Ace takes over mid-fall
+      if (home && !REDUCED) jump = setInterval(function () {
+        var w = where();
+        if (w && w.returning && w.airborne && w.vy > 0) { var f = 0; try { f = scene.floorY(); } catch (e) {} if (w.y >= f - w.h * 0.6 || w.vy > 260) cue(w); }
+      }, 16);
+      document.addEventListener('ace:intro-done', check);
+      check();
+    }, function () { plain(); });
+  }
+
+  /* "Been here before?": in without an email, for someone who has joined on another device or browser. A real
+     mouse click or finger tap only: not reachable with Tab, a key press on it is ignored, and so is any click a
+     script makes (untrusted, or with no real press on the button just before it). */
+  function beenHere() {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'gate__been';
+    b.textContent = 'Been here before?';
+    b.tabIndex = -1;
+    b.setAttribute('aria-hidden', 'true');
+    var pressedAt = 0;
+    b.addEventListener('pointerdown', function (e) {
+      pressedAt = e.isTrusted && /^(mouse|touch|pen)$/.test(e.pointerType || '') ? Date.now() : 0;
+    });
+    b.addEventListener('keydown', function (e) { e.preventDefault(); });          // Enter / Space do nothing
+    b.addEventListener('click', function (e) {
+      e.preventDefault();
+      var real = e.isTrusted && e.detail >= 1 && pressedAt && Date.now() - pressedAt < 2000 && navigator.webdriver !== true;
+      pressedAt = 0;
+      if (!real || !gate) return;
+      remember();                                        // they said they are on the list: do not ask again here
+      openUp({ entry: false });
+    });
+    gate.appendChild(b);
+  }
+
+  /* ── 2. the entrance (on the list: once per visit, or on request) ── */
+  function initEntry(replay) {
+    if (gate) return;
+    gate = build('ace-gate');
+    gate.classList.add('gate--entry');
+    document.body.appendChild(gate);
+    holdPage(gate);
+    if (replay) root.classList.add('gate-locked');
+    var detail = { entry: !replay };                     // a replay is not an entrance: the home headline shines after it
+    var card = gate.querySelector('.gate__card');
+    if (REDUCED) { gate.classList.add('gate--ready'); setTimeout(function () { openUp(detail); }, 1400); return; }
+    var host = document.createElement('div'); host.className = 'gate__scene'; gate.insertBefore(host, card);
+    var settled = false;
+    function giveUp() { if (settled) return; settled = true; scene = null; openUp(detail); }
+    withTimeout(loadScene(), replay ? 6000 : SCENE_WAIT_MS).then(function (m) {
+      if (settled || !gate) return;
+      try { scene = m.start(host, { reduced: false, closed: true, atlasUrl: ATLAS }); } catch (e) { giveUp(); return; }
+      settled = true;
+      requestAnimationFrame(function () { requestAnimationFrame(function () {
+        if (!gate) return;
+        gate.classList.add('gate--scene');
+        setTimeout(function () { if (gate) gate.classList.add('gate--ready'); }, 250);
+        setTimeout(function () { openUp(detail); }, 1900);
+      }); });
+    }, giveUp);
+  }
+
+  /* ── 3. the box over an event page ── */
+  var modal = null, modalForm = null, opener = null, closeTimer = 0;
   function setupModal() {
     if (modal || !document.querySelector('[data-waitlist]')) return;
     modal = build('ace-waitlist', true);
     modal.hidden = true;
     document.body.appendChild(modal);
-    modalApi = wire(modal, function () {
-      var btn = modal.querySelector('button[type=submit]');
-      btn.disabled = true; btn.textContent = 'You’re on the list';
-      closeTimer = setTimeout(closeModal, 1600);
+    modalForm = wire(modal, {
+      onSaved: function () {
+        remember();
+        var btn = modal.querySelector('button[type=submit]');
+        btn.disabled = true; btn.textContent = 'You’re on the list';
+        closeTimer = setTimeout(closeModal, 1600);
+      }
     });
-    modal.addEventListener('click', function (e) {
-      if (e.target === modal || (e.target.closest && e.target.closest('.gate__close'))) closeModal();
-    });
+    modal.addEventListener('click', function (e) { if (e.target === modal || (e.target.closest && e.target.closest('.gate__close'))) closeModal(); });
     modal.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
     document.addEventListener('click', function (e) {
       var t = e.target.closest && e.target.closest('[data-waitlist]');
@@ -463,31 +515,47 @@
   function openModal(from) {
     clearTimeout(closeTimer);
     opener = from || null;
-    modalApi.shown();
     modal.querySelector('form').reset();
+    modalForm.shown();
     modal.hidden = false;
     root.classList.add('waitlist-open');
-    lockOthers(modal);
-    modal.removeAttribute('inert');
+    holdPage(modal);
     requestAnimationFrame(function () { requestAnimationFrame(function () { modal.classList.add('gate--ready'); }); });
     setTimeout(function () { modal.classList.add('gate--settled'); }, 750);
-    setTimeout(function () { try { modal.querySelector('input[type=email]').focus({ preventScroll: true }); } catch (e) {} }, 120);
+    setTimeout(modalForm.focus, 120);
   }
   function closeModal() {
     if (!modal || modal.hidden) return;
     clearTimeout(closeTimer);
     modal.classList.remove('gate--ready', 'gate--settled');
     root.classList.remove('waitlist-open');
-    var kids = document.body.children;
-    for (var i = 0; i < kids.length; i++) kids[i].removeAttribute('inert');
+    releasePage();
     setTimeout(function () { modal.hidden = true; }, REDUCED ? 0 : 320);
     if (opener && opener.focus) opener.focus({ preventScroll: true });
   }
 
-  /* Built as soon as the body has been parsed, before main.js runs (it is deferred), so that main.js dresses the
-     card like the rest of the site: steel headings, the molten gold line and the gold edge light on the box. */
+  /* ── the footer's "See the gate again" ── */
+  function setupReplay() {
+    document.addEventListener('click', function (e) {
+      var b = e.target.closest && e.target.closest('[data-gate-replay]');
+      if (!b) return;
+      e.preventDefault();
+      if (gate || root.classList.contains('gate-locked')) return;
+      initEntry(true);
+    });
+  }
+
+  /* ── start, as soon as the body exists (before main.js, which dresses the box like the rest of the site) ── */
   var started = false;
-  function go() { if (started || !document.body) return; started = true; if (locked) init(); else if (entry) initEntry(); setupModal(); }
+  function go() {
+    if (started || !document.body) return;
+    started = true;
+    try {
+      if (locked) initGate();
+      else if (entry) initEntry(false);
+    } catch (e) { hardOpen(); }                          // a broken gate must never leave the page locked
+    try { setupModal(); setupReplay(); } catch (e) {}
+  }
   if (document.readyState !== 'loading') go();
   else document.addEventListener('readystatechange', function rs() {
     if (document.readyState === 'loading') return;
