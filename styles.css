@@ -2211,6 +2211,8 @@ html.intro .hero__cue{opacity:0}
   color:var(--gold);margin-bottom:var(--sp-2);
 }
 .foot__nav li,.foot__nav+div li{margin-bottom:.5rem}
+/* a list of names with no links (the Representation list) set in the same size and colour as the links */
+.foot__nav--text li{font-size:var(--fs-sm);color:var(--on-dark-mute);line-height:1.5}
 .foot__grid a{font-size:var(--fs-sm);color:var(--on-dark-mute);
   overflow-wrap:break-word;
   transition:color var(--t-fast) var(--ease)}
