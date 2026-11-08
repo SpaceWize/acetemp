@@ -1170,6 +1170,23 @@ addEventListener('keydown',e=>{
 addEventListener('keyup',e=>{pwKeys.delete(e.code);});
 addEventListener('blur',()=>{pwKeys.clear();pwSeq=[];});
 addEventListener('resize',()=>{if(power)sizeBeam();});
+/* Touch and mouse: hold the "Ask Little Ace" button for 3 seconds. A normal tap
+   still opens the chat; a hold that sets it off swallows the click that follows
+   the release so the chat does not open as well. Moving the finger or letting
+   go early cancels it. */
+const POWER_HOLD_MS=3000,POWER_HOLD_SLOP=12;
+let holdTimer=0,holdX=0,holdY=0,holdFired=false;
+const holdCancel=()=>{clearTimeout(holdTimer);holdTimer=0;};
+launcher.style.cssText+=';-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:manipulation';
+launcher.addEventListener('pointerdown',e=>{
+  if(e.button>0)return;
+  holdFired=false;holdX=e.clientX;holdY=e.clientY;holdCancel();
+  holdTimer=setTimeout(()=>{holdTimer=0;holdFired=true;if(navigator.vibrate)try{navigator.vibrate(40);}catch{}askPower();},POWER_HOLD_MS);
+});
+launcher.addEventListener('pointermove',e=>{if(holdTimer&&Math.hypot(e.clientX-holdX,e.clientY-holdY)>POWER_HOLD_SLOP)holdCancel();});
+for(const ev of ['pointerup','pointercancel','pointerleave'])launcher.addEventListener(ev,holdCancel);
+launcher.addEventListener('contextmenu',e=>e.preventDefault());
+launcher.addEventListener('click',e=>{if(holdFired){holdFired=false;e.stopImmediatePropagation();e.preventDefault();}},true);
 
 function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=ts;if(document.hidden){requestAnimationFrame(tick);return;}clock+=dt;
  if(visit&&clock>visit.until){if(visit.phase!=='back'&&visit.onLeave)visit.onLeave();endVisit(false);}
