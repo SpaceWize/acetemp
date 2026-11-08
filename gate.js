@@ -3,7 +3,7 @@
    Set to false to go back. When true it also loads xmas.js (snowfall and a snowbank). Read by gate-scene (below) and by companion.js through window.ACE_ATLAS. */
 window.ACE_XMAS=(function(){try{return localStorage.getItem('ace-xmas')==='on';}catch(e){return false;}})();   // the chat's Christmas switch (off unless a visitor turns it on)
 window.ACE_ATLAS='assets/images/'+(window.ACE_XMAS?'ace-atlas-xmas.webp?v=2':'ace-atlas.webp?v=11');
-if(window.ACE_XMAS){const s=document.createElement('script');s.src='xmas.js?v=9';s.defer=true;document.head.append(s);}   // snow + snowbank
+if(window.ACE_XMAS){const s=document.createElement('script');s.src='xmas.js?v=10';s.defer=true;document.head.append(s);}   // snow + snowbank
 /* ACE SPADERS — the 2027 waitlist gate.                              (rebuilt 2026-11-07)
 
    Every page loads this in <head>. Three things it does:
@@ -36,7 +36,7 @@ if(window.ACE_XMAS){const s=document.createElement('script');s.src='xmas.js?v=9'
   var KEY = 'ace-waitlist-v1';            // bump (and COOKIE) to ask everyone again: a new list, a new year
   var COOKIE = 'ace_waitlist_v1';
   var ENTERED = 'ace-entered-v1';         // this visit has been through the gates
-  var SCENE_URL = './gate-scene.js?v=7';
+  var SCENE_URL = './gate-scene.js?v=8';
   var ATLAS = window.ACE_ATLAS || 'assets/images/ace-atlas.webp?v=11';
   var POW_BITS = 16;                      // proof of work; the sheet accepts 14 and up
   var POW_BUDGET_MS = 6000;               // a browser slower than this sends without a proof (the sheet still takes it)
@@ -66,7 +66,12 @@ if(window.ACE_XMAS){const s=document.createElement('script');s.src='xmas.js?v=9'
     try { document.cookie = COOKIE + '=; max-age=0; path=/; SameSite=Lax'; } catch (e) {}
   }
   function markEntered() { trySet('sessionStorage', ENTERED, '1'); }
-  function enteredThisVisit() { return !!tryGet('sessionStorage', ENTERED) || !trySet('sessionStorage', 'ace-probe', '1'); }   // storage blocked: count as entered, or it would replay on every page
+  function enteredThisVisit() {
+    if (tryGet('sessionStorage', ENTERED)) return true;
+    if (!trySet('sessionStorage', 'ace-probe', '1')) return true;   // storage blocked: count as entered, or it would replay on every page
+    tryDel('sessionStorage', 'ace-probe');                          // the probe only tests that storage works; it is not kept
+    return false;
+  }
 
   var q = location.search || '';
   if (/[?&]gate=reset\b/.test(q)) forget();
@@ -268,9 +273,9 @@ if(window.ACE_XMAS){const s=document.createElement('script');s.src='xmas.js?v=9'
     var body = JSON.stringify(payload);
     var ctl = window.AbortController ? new AbortController() : null;
     var timer = setTimeout(function () { if (ctl) ctl.abort(); }, SEND_TIMEOUT_MS);
-    function blind() {
-      return fetch(WAITLIST_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: body })
-        .then(function () { return { ok: true, blind: true }; }, function () { return { ok: false, code: 'network' }; });
+    function blind() {                                   // shares the first send's abort, so the whole send is bounded by SEND_TIMEOUT_MS
+      return fetch(WAITLIST_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: body, signal: ctl ? ctl.signal : undefined })
+        .then(function () { return { ok: true, blind: true }; }, function (err) { return { ok: false, code: err && err.name === 'AbortError' ? 'timeout' : 'network' }; });
     }
     return fetch(WAITLIST_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: body, signal: ctl ? ctl.signal : undefined })
       .then(function (r) {
@@ -342,19 +347,27 @@ if(window.ACE_XMAS){const s=document.createElement('script');s.src='xmas.js?v=9'
 
   /* ── opening up: the box fades, the gates swing open, everything is handed back. Cannot hang. ── */
   var gate = null, scene = null, opening = false;
+  // initGate's watchers for the moment to close (a 150ms poll and, on the home page, the 16ms hand-off check).
+  // Module-level so that opening the gate early (a join or "Been here before?" before they close) stops them too.
+  var closePoll = 0, handoffWatch = 0;
+  function stopWatching() { clearTimeout(closePoll); clearInterval(handoffWatch); closePoll = 0; handoffWatch = 0; }
+  function takeDown(g, sc) {                             // the teardown shared by openUp() and hardOpen()
+    root.classList.remove('gate-locked', 'gate-closing', 'gate-entry');
+    if (sc) { try { sc.dispose(); } catch (e) {} }
+    if (g && g.parentNode) g.parentNode.removeChild(g);
+    if (gate === g) { gate = null; scene = null; }
+    opening = false;
+  }
   function openUp(detail) {
     if (opening || !gate) return;
     opening = true;
+    stopWatching();
     releasePage();
     markEntered();
     var g = gate, sc = scene, finished = false;
     function done() {
       if (finished) return; finished = true;
-      root.classList.remove('gate-locked', 'gate-closing', 'gate-entry');
-      if (sc) { try { sc.dispose(); } catch (e) {} }
-      if (g.parentNode) g.parentNode.removeChild(g);
-      if (gate === g) { gate = null; scene = null; }
-      opening = false;
+      takeDown(g, sc);
       try { document.dispatchEvent(new CustomEvent('ace:gate-open', { detail: detail || { entry: false } })); } catch (e) {}
     }
     if (REDUCED || !sc) { g.classList.add('gate--out'); setTimeout(done, REDUCED ? 0 : 400); return; }
@@ -365,11 +378,9 @@ if(window.ACE_XMAS){const s=document.createElement('script');s.src='xmas.js?v=9'
     setTimeout(done, 380 + OPEN_MAX_MS);
   }
   function hardOpen() {                                  // last resort: take everything down now
+    stopWatching();
     releasePage();
-    root.classList.remove('gate-locked', 'gate-closing', 'gate-entry');
-    if (scene) { try { scene.dispose(); } catch (e) {} }
-    if (gate && gate.parentNode) gate.parentNode.removeChild(gate);
-    gate = null; scene = null; opening = false;
+    takeDown(gate, scene);
   }
 
   /* ── 1. the gate, for someone not on the list ── */
@@ -403,10 +414,12 @@ if(window.ACE_XMAS){const s=document.createElement('script');s.src='xmas.js?v=9'
       if (shown || !gate) return;
       try { scene = m.start(host, { reduced: REDUCED, atlasUrl: ATLAS }); } catch (e) { scene = null; plain(); return; }
       var home = !!document.querySelector('[data-hero]');
-      var cued = false, poll = 0, jump = 0;
+      var cued = false;
       function cue(w) {
-        if (cued || !gate) return; cued = true;
-        clearTimeout(poll); clearInterval(jump);
+        if (cued) return;
+        if (!gate) { stopWatching(); return; }
+        cued = true;
+        stopWatching();
         root.classList.add('gate-closing');              // the page's Little Ace fades as the gates swing in
         try {
           scene.close();
@@ -423,10 +436,10 @@ if(window.ACE_XMAS){const s=document.createElement('script');s.src='xmas.js?v=9'
         var now = Date.now();
         if (!shutAt && (!home || root.hasAttribute('data-intro-done'))) shutAt = now + (home ? 0 : 1200);
         if (REDUCED || (shutAt && now >= shutAt) || now - T0 > CLOSE_BY_MS) { cue(home ? where() : null); return; }
-        poll = setTimeout(check, 150);
+        closePoll = setTimeout(check, 150);
       }
       // the hand-off: on his jump back down from ASSET, once he is falling, the gate's Little Ace takes over mid-fall
-      if (home && !REDUCED) jump = setInterval(function () {
+      if (home && !REDUCED) handoffWatch = setInterval(function () {
         var w = where();
         if (w && w.returning && w.airborne && w.vy > 0) { var f = 0; try { f = scene.floorY(); } catch (e) {} if (w.y >= f - w.h * 0.6 || w.vy > 260) cue(w); }
       }, 16);

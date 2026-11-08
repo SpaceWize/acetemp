@@ -1,11 +1,10 @@
 /* ═══════════════════════════════════════════════════════════════
    ACE SPADERS — behaviour
-   Four motion systems, then chrome. Nothing decorative.
+   Three motion systems, then chrome. Nothing decorative.
      1. heroChoreography()  pinned, scroll-position-driven hero
         heroSpotlight()     the hero's cursor-trailing light, part of the same idea
      2. flagshipReveal()    ordered stagger on the core four
-     3. proofCounters()     one count-up, once
-     4. (CSS) hover lift on secondary services
+     3. (CSS) hover lift on secondary services
    ═══════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
@@ -14,9 +13,6 @@
   var clamp = function (v, a, b) { return v < a ? a : v > b ? b : v; };
   var seg = function (p, a, b) { return clamp((p - a) / (b - a), 0, 1); };
   var easeOut = function (t) { return 1 - Math.pow(1 - t, 3); };
-  var easeInOut = function (t) {
-    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-  };
 
   /* ── FLASHLIGHT SWITCH ─────────────────────────────────────────
      Turns the page-wide spade light (pageSpade() below) off and on. Only
@@ -60,12 +56,6 @@
     var bound = false;
     var rafId = 0;
 
-    function setBeat(n, t) {
-      var e = easeOut(t);
-      stage.style.setProperty('--o' + n, e.toFixed(3));
-      stage.style.setProperty('--y' + n, ((1 - e) * 46).toFixed(2) + 'px');
-    }
-
     function frame() {
       ticking = false;
       rafId = 0;
@@ -107,8 +97,7 @@
       if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
       ticking = false;
       // hand every custom property back to its settled CSS default
-      ['--o2', '--o3', '--o4', '--y2', '--y3', '--y4',
-        '--scrim', '--cue', '--cy'].forEach(function (k) { stage.style.removeProperty(k); });
+      ['--scrim', '--cue', '--cy'].forEach(function (k) { stage.style.removeProperty(k); });
     }
 
     function sync() {
@@ -270,61 +259,6 @@
     io.observe(list);
   }
 
-  /* ── 3. PROOF COUNTERS ─────────────────────────────────────────
-     Fires once. Reduced motion gets the number, not the animation. */
-  function proofCounters() {
-    var strip = document.querySelector('[data-proof]');
-    if (!strip) return;
-    var nodes = [].slice.call(strip.querySelectorAll('[data-count]'));
-    if (!nodes.length) return;
-
-    var settle = function () {
-      nodes.forEach(function (n) {
-        n.textContent = Number(n.getAttribute('data-count')).toLocaleString();
-      });
-    };
-
-    if (reduce.matches || !('IntersectionObserver' in window)) { settle(); return; }
-
-    var run = function () {
-      var dur = 1600, t0 = null;
-      var targets = nodes.map(function (n) { return Number(n.getAttribute('data-count')) || 0; });
-      (function step(ts) {
-        if (t0 === null) t0 = ts;
-        var t = clamp((ts - t0) / dur, 0, 1);
-        var e = easeOut(t);
-        nodes.forEach(function (n, i) {
-          n.textContent = Math.round(targets[i] * e).toLocaleString();
-        });
-        if (t < 1) requestAnimationFrame(step); else settle();
-      })(performance.now());
-    };
-
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (e) {
-        if (!e.isIntersecting) return;
-        io.disconnect();
-        run();
-      });
-    }, { threshold: 0.4 });
-    io.observe(strip);
-  }
-
-  /* ── HEADER: solid once you leave the hero ─────────────────── */
-  function header() {
-    var head = document.querySelector('[data-head]');
-    if (!head) return;
-    var ticking = false;
-    function check() {
-      ticking = false;
-      head.classList.toggle('is-stuck', window.scrollY > 24);
-    }
-    window.addEventListener('scroll', function () {
-      if (!ticking) { ticking = true; requestAnimationFrame(check); }
-    }, { passive: true });
-    check();
-  }
-
   /* ── NAV: mark the section you're reading ──────────────────── */
   function navState() {
     var links = [].slice.call(document.querySelectorAll('[data-nav] a'));
@@ -361,7 +295,8 @@
       btn.setAttribute('aria-expanded', String(state));
       panel.hidden = !state;
       document.body.style.overflow = state ? 'hidden' : '';
-      btn.querySelector('.sr-only').textContent = state ? 'Close menu' : 'Open menu';
+      var sr = btn.querySelector('.sr-only');
+      if (sr) sr.textContent = state ? 'Close menu' : 'Open menu';
       if (state) { var f = panel.querySelector('a'); if (f) f.focus(); }
     }
 
@@ -425,7 +360,8 @@
     }
     function validate(input) {
       var v = (input.value || '').trim();
-      var label = (fieldOf(input).querySelector('label').textContent || 'This field').trim();
+      var f = fieldOf(input), lab = f && f.querySelector('label');
+      var label = ((lab && lab.textContent) || 'This field').trim();
       if (input.required && !v) {
         setError(input, input.getAttribute('data-msg') || label + ' is required.');
         return false;
@@ -466,7 +402,8 @@
       }
       f.addEventListener('blur', function () { validate(f); });
       f.addEventListener('input', function () {
-        if (fieldOf(f).classList.contains('is-bad')) validate(f);
+        var box = fieldOf(f);
+        if (box && box.classList.contains('is-bad')) validate(f);
       });
     });
 
@@ -486,7 +423,7 @@
         if (!good) { ok = false; if (!first) first = f; }
       });
       if (!ok) {
-        status.textContent = 'Fix the highlighted fields and send again.';
+        if (status) status.textContent = 'Fix the highlighted fields and send again.';
         if (first) first.focus();
         return;
       }
@@ -570,8 +507,8 @@
         + 'If none of these open, email ' + TO + ' directly.';
       pick.appendChild(note);
 
-      form.querySelector('.form__foot').appendChild(pick);
-      status.textContent = form.getAttribute('data-ready') || 'Your application is ready.';
+      (form.querySelector('.form__foot') || form).appendChild(pick);
+      if (status) status.textContent = form.getAttribute('data-ready') || 'Your application is ready.';
       // move focus so a keyboard or screen-reader user lands on the choices
       row.firstChild.focus();
     }
@@ -614,7 +551,7 @@
        so the spades only show faintly through them; copy sitting straight
        on the page ground had none, and full-strength gold behind it made
        it hard to read. Each such text block now carries a borderless,
-       feathered backdrop of that same 70% fill (.lit-text in styles.css),
+       feathered backdrop of that same 70% fill (a shape on .aop-veil, below),
        hidden until the spade reaches the outermost faded pixels of it.
 
        The backdrops are not painted on the text elements themselves. Two
@@ -1227,8 +1164,6 @@
     heroVideoSmall();
     pageSpade();
     flagshipReveal();
-    proofCounters();
-    header();
     navState();
     mobileMenu();
     applicationForm();
@@ -1538,7 +1473,7 @@
      around each box as it passes. Reduced motion gets that same fixed
      source and nothing more. */
   var LIT = '.btn,.tier,.quote,.tiers,.quotes,.form,.cta__copy,.cta__shot,' +
-            '.tiernotes,.alsotile,.plaque,.portrait,.circle__band,' +
+            '.tiernotes,.alsotile,.portrait,.circle__band,' +
             '.brand__mark,.four__node,.burger,.toast,.lit';
   var LIGHT_REACH = 700;     // px from a box at which its edge is dimmest
 

@@ -20,11 +20,11 @@
 /* Scoped away from .ace-chat-pose, which is sized in JS from the panel and
    has its own display rules — a bare `.ace-companion canvas` outranks a
    lone class selector and was overriding both. */
-.ace-companion>canvas:not(.ace-chat-pose){display:block;width:120px;height:140px;pointer-events:none}
-/* Bottom-anchored by default, so any scale-up grows him from his own feet
-   rather than sliding them out from under him — what standing taller
-   should look like. */
-.ace-companion>canvas:not(.ace-chat-pose){transform-origin:50% 100%;transition:transform .12s ease-out}
+/* Bottom-anchored by default (transform-origin), so any scale-up grows him
+   from his own feet rather than sliding them out from under him — what
+   standing taller should look like. */
+.ace-companion>canvas:not(.ace-chat-pose){display:block;width:120px;height:140px;pointer-events:none;
+  transform-origin:50% 100%;transition:transform .12s ease-out}
 /* Picked up, he reads as slightly closer to you. Anchored at the hood
    instead, which is where your hand is. */
 .ace-companion.is-dragging>canvas:not(.ace-chat-pose){transform-origin:50% 18%;transform:scale(1.15)}
@@ -116,10 +116,8 @@ body:has(.ace-companion.is-dragging) .hero__plate{opacity:0}
 .ace-launcher .ace-spade{width:24px;height:24px;display:block}
 .ace-launcher:hover{border-color:var(--gold,#D9A441);box-shadow:0 6px 30px rgba(0,0,0,.7),0 0 22px rgba(217,164,65,.27)}
 /* [hidden] and .ace-launcher{display:flex} tie in specificity, so without
-   this the launcher was never actually hidden by companion.js setting the
-   attribute — it only ever LOOKED hidden because the chat panel used to
-   sit in the exact same corner and cover it. Moving the panel to
-   center-right (above) uncovers it, so this can no longer go unfixed. */
+   this the launcher would not actually be hidden by companion.js setting
+   the attribute. */
 .ace-launcher[hidden]{display:none}
 
 .ace-chat{
@@ -252,7 +250,6 @@ body:has(.ace-companion.is-dragging) .hero__plate{opacity:0}
 .ace-xmas.is-off{color:var(--on-dark-mute,#A29C93);border-color:rgba(217,164,65,.25)}
 .ace-xmas:hover{border-color:var(--gold,#D9A441)}
 .ace-xmas:focus-visible{outline:2px solid var(--gold-hi,#EEBE63);outline-offset:2px}
-.ace-park{margin-left:auto}
 /* The switches: small squares like the flashlight beside them. Lit gold when on, muted when off. */
 .ace-type,.ace-depth{
   width:26px;height:26px;padding:0;display:grid;place-items:center;cursor:pointer;
@@ -269,7 +266,7 @@ body:has(.ace-companion.is-dragging) .hero__plate{opacity:0}
   text-shadow:0 1px 0 #8A5E22,0 2px 0 #5E3D17}
 .ace-depth.is-off{text-shadow:none}
 .ace-park{
-  border:0;padding:3px 0;background:none;color:var(--gold-hi,#EEBE63);
+  margin-left:auto;border:0;padding:3px 0;background:none;color:var(--gold-hi,#EEBE63);
   font:400 .75rem var(--f-body,"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif);cursor:pointer;
   text-decoration:underline;text-underline-offset:3px;
 }

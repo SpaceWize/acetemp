@@ -6,8 +6,10 @@
    hairline rules between blocks — and treats those as platforms; every
    frame it re-measures the ones on screen, so he climbs the real layout
    and rides it as the page scrolls. physics.js does the ballistics,
-   knowledge.js answers the questions. Everything runs locally — the
-   chat never makes a network request.
+   knowledge.js answers the questions, in the browser: no answer is
+   fetched from a server. Each exchange is then logged anonymously
+   (fire-and-forget) to a Google Apps Script sheet at LOG_URL — see
+   CHAT LOG below.
 
    Depends on window.AceKnowledge and window.AcePhysics; if either script
    failed to load, this one does nothing rather than half-building a
@@ -104,7 +106,7 @@ let nextChatPose=0,chatCloseTimer=null;
    art's native size, on its own canvas, fetched only when someone actually
    opens the chat. Geometry is printed by tools/build_atlas.py. */
 const CHAT_CELL_W=704,CHAT_CELL_H=1456,CHAT_FIGURE_H=1400,CHAT_FIGURE_W=613;
-const CHAT_FOOT_PAD=16;  // px of cell under his shoes, from CHAT_FEET_Y
+const CHAT_FOOT_PAD=16;  // px of cell under his shoes
 /* Daylight between his SILHOUETTE and the panel, not between the canvas
    and the panel — the cell carries empty space either side of him, so
    measuring the canvas edge would quietly understate the gap by that much
@@ -160,7 +162,7 @@ let chatReady=false,chatAsked=false,lastChatCell=-1,chatGestureStart=-1;
    cell, and none of that survives being three times the size on a
    different sheet. Seeded from his roam position on open and handed back
    on close, so the glide starts and ends where he actually is. */
-let chatX=0,chatY=0;
+let chatX=0,chatY=0,chatW='',chatH='';   // chatW/chatH: the canvas size last written, so an unchanged size is not rewritten every frame
 function loadChatSheet(){
   if(chatAsked)return;
   chatAsked=true;
@@ -256,9 +258,8 @@ function showTyping(){typingEl=document.createElement('div');typingEl.className=
  typingEl.innerHTML='<span class="speaker">LITTLE ACE</span><p><i></i><i></i><i></i></p>';log.append(typingEl);log.scrollTop=log.scrollHeight;}
 /* ── CHAT LOG ──────────────────────────────────────────────────
    Each exchange is sent to a Google Sheet (tools/little-ace-log.gs) so the
-   answers can be improved from what people actually ask. Off while LOG_URL
-   is empty. Anonymous: the chat ID is random per page load, and emails and
-   phone numbers are replaced before anything leaves the browser. The send
+   answers can be improved from what people actually ask. Anonymous: the
+   chat ID is random per page load, and emails and phone numbers are replaced before anything leaves the browser. The send
    is fire-and-forget text/plain with no-cors — the only kind of request an
    Apps Script web app takes from another site without a preflight — so a
    failure never touches the chat.
@@ -268,7 +269,6 @@ function showTyping(){typingEl=document.createElement('div');typingEl.className=
    question — often a rephrase after a miss, sometimes just a follow-up). */
 const LOG_URL='https://script.google.com/macros/s/AKfycbxr8aKMcIdB2LnibmgYvAwZpkmd7J_bCwomDTcYox6ZZE6hzLoQPVk8CI1Ez89iDLXAmQ/exec';
 const LOG_VERSION='2026-09-27';
-if(!LOG_URL){const f=panel.querySelector('.ace-chat-foot span');if(f)f.textContent='Published-site answers · stays in your browser';}
 const chatId=Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);
 let turn=0,lastQ='';
 const scrubPII=t=>t.replace(/[^\s@]+@[^\s@]+\.[^\s@]+/g,'[email]').replace(/(\+?\d[\d ().-]{7,}\d)/g,'[phone]');
@@ -280,7 +280,6 @@ const says=(text,list)=>list.some(l=>text.includes(l));
 const words=t=>new Set(t.toLowerCase().replace(/[^a-z0-9$ ]/g,' ').split(/\s+/).filter(w=>w.length>2));
 function similar(a,b){const A=words(a),B=words(b);if(!A.size||!B.size)return false;let n=0;for(const w of A)if(B.has(w))n++;return n/(A.size+B.size-n)>=.6;}
 function logTurn(q,a,source){
- if(!LOG_URL)return;
  const flags=[];
  if(a.id==='NONSENSE')flags.push('fallback');
  if(says(a.text,INTERIM))flags.push('noinfo');
@@ -423,10 +422,6 @@ function clipFrame(){
   const n=Math.floor((clock-clipStart)*c.fps);
   return c.f[c.loop?n%c.f.length:Math.min(n,c.f.length-1)];
 }
-function clipDone(){
-  const c=CLIPS[clipName]||CLIPS.idle;
-  return !c.loop&&(clock-clipStart)>=c.f.length/c.fps;
-}
 /* The idle's glance: the only frames in it that turn his head, and the art
    turns it to screen-right. On the right half of the page that is the
    scrollbar, so there they are mirrored to look back across the page. The
@@ -524,8 +519,15 @@ function findPerches(){
   out.sort((a,b)=>a.y-b.y);
   const kept=[];
   for(const p of out){
-    const dupe=kept.some(k=>Math.abs(k.y-p.y)<PERCH_MIN_GAP&&
-      Math.min(k.right,p.right)-Math.max(k.left,p.left)>Math.min(k.right-k.left,p.right-p.left)*.8);
+    /* kept is in y order and nothing in it is below p, so only its tail can be
+       within PERCH_MIN_GAP: walk back from the end and stop at the first ledge
+       that is already too far above. */
+    let dupe=false;
+    for(let i=kept.length-1;i>=0;i--){
+      const k=kept[i];
+      if(p.y-k.y>=PERCH_MIN_GAP)break;
+      if(Math.min(k.right,p.right)-Math.max(k.left,p.left)>Math.min(k.right-k.left,p.right-p.left)*.8){dupe=true;break;}
+    }
     if(!dupe)kept.push(p);
   }
   return kept;
@@ -710,32 +712,21 @@ const DRAG_SLOP=6;                  // px of travel before a press is a drag
 /* Which drag frame to show. The body trails the hand: a hand moving RIGHT
    leaves him swung to the left of the hood, moving LEFT swings him right. The
    speed picks how far (DRAG_STEPS, px/s), and held still he hangs straight
-   and now and then pulls a face. Indices are into CLIPS.drag.f. */
+   (frame 6, the happy blink). Indices are into CLIPS.drag.f. */
 const DRAG_STEPS=[70,170,340,620];    // px/s between: straight, a little, some, well, fully
 const DRAG_LEFT=[6,3,1,2,0];          // straight → fully left (hand moving right)
 const DRAG_RIGHT=[6,7,9,10];          // straight → well right (hand moving left); fully = 11-12 alternated
-const DRAG_FACES=[];                  // none: held still he always shows frame 7 (the happy blink)
-let dragSwingV=0,dragStill=0,dragFace=-1,dragFaceUntil=0,dragNextFace=0;
+let dragSwingV=0;
 function dragPoseNow(dt){
   dragSwingV+=(dragVX-dragSwingV)*Math.min(1,dt*12);     // eased, so the frame does not flicker
   const v=dragSwingV,a=Math.abs(v);
   const step=a<DRAG_STEPS[0]?0:a<DRAG_STEPS[1]?1:a<DRAG_STEPS[2]?2:a<DRAG_STEPS[3]?3:4;
-  if(step===0){
-    dragStill+=dt;
-    if(DRAG_FACES.length&&dragFace<0&&dragStill>1.2&&clock>=dragNextFace){
-      dragFace=DRAG_FACES[Math.floor(Math.random()*DRAG_FACES.length)];
-      dragFaceUntil=clock+.7+Math.random()*.6;
-      dragNextFace=clock+2.5+Math.random()*3;
-    }
-    if(dragFace>=0){if(clock<dragFaceUntil)return dragFace;dragFace=-1;}
-    return 6;
-  }
-  dragStill=0;dragFace=-1;
+  if(step===0)return 6;
   if(v>0)return DRAG_LEFT[step];
   return step<4?DRAG_RIGHT[step]:11+Math.floor(clock*6)%2;
 }
 let dragging=false,dragPointer=null,dragOffX=0,dragOffY=0,
-    dragSpeed=0,dragLastT=0,dragDownX=0,dragDownY=0,suppressClick=false;
+    dragLastT=0,dragDownX=0,dragDownY=0,suppressClick=false;
 /* The hand's velocity, kept as a vector so letting go can throw him. Below
    THROW_MIN px/s a release is a drop; above it the vector is carried into
    him, capped at THROW_MAX so a hard flick bounces rather than teleports. */
@@ -757,7 +748,7 @@ addEventListener('pointermove',e=>{
     pet.classList.add('is-dragging');
     climb=null;runGoal=null;pendingJump=null;pointUntil=0;
     state.vx=0;state.vy=0;state.ground=null;state.bouncy=false;dragVX=dragVY=0;
-    dragPose=6;dragSwingV=0;dragStill=0;dragFace=-1;dragNextFace=clock+1.5;
+    dragPose=6;dragSwingV=0;
   }
   const nx=clampX(e.clientX+dragOffX),dx=nx-state.x;
   const ny=Math.max(-10,Math.min(innerHeight+40,e.clientY+dragOffY)),dy=ny-state.y;
@@ -766,7 +757,6 @@ addEventListener('pointermove',e=>{
      delta reads as a different speed on a 120Hz trackpad than on a 60Hz
      mouse. */
   const dtms=Math.max(6,e.timeStamp-dragLastT);dragLastT=e.timeStamp;
-  dragSpeed=dragSpeed*.7+(Math.abs(dx)/(dtms/1000))*.3;
   dragVX=dragVX*.6+(dx/(dtms/1000))*.4;
   dragVY=dragVY*.6+(dy/(dtms/1000))*.4;
   if(Math.abs(dx)>1.5)facing=dx>0?1:-1;
@@ -778,7 +768,7 @@ function endDrag(e){
   if(e.pointerId!==dragPointer)return;
   dragPointer=null;
   if(!dragging)return;
-  dragging=false;dragSpeed=0;
+  dragging=false;
   pet.classList.remove('is-dragging');
   try{pet.releasePointerCapture(e.pointerId);}catch{}
   /* A flick throws him and he bounces (physics.js, s.bouncy); a slow
@@ -1237,8 +1227,8 @@ function beginFlight(){
   if(!flImg){flImg=new Image();flImg.onload=()=>{flReady=true;};flImg.src=FLIGHT_SHEET;}
   if(!flReady){powerQueue=true;powerQueueKind='flight';powerQueueUntil=pwClock+10;return;}
   const top=Math.max(90,state.y-FL_PIVOT-FL_RISE);                     // not up into the header
-  flight={phase:'up',t:0,fx:state.x,fy:state.y,g0:state.ground,px:state.x,py:state.y-FL_PIVOT,hy:top,vx:0,vy:0,
-          frame:0,ang:0,flipH:false,flipV:false,aura:0,sparks:[],flashes:[]};
+  flight={phase:'up',t:0,fx:state.x,fy:state.y,g0:state.ground,px:state.x,py:state.y-FL_PIVOT,hy:top,vy:0,
+          frame:0,aura:0,sparks:[],flashes:[]};
   runGoal=null;pendingJump=null;climb=null;waveUntil=0;nextDecision=clock+99;state.vx=state.vy=0;
   pet.style.visibility='hidden';flCv.style.display='block';sizeBeam();beamCv.style.display='block';
 }
@@ -1256,7 +1246,7 @@ function endFlight(abort){
 function stepFlight(dt){
   const h=document.documentElement;
   if(open||dragging||h.classList.contains('gate-locked')){endFlight(true);return;}
-  const f=flight;f.t+=dt;f.flipH=false;f.flipV=false;f.ang=0;
+  const f=flight;f.t+=dt;
   const base=f.fy-FL_PIVOT,ease=u=>u*u*(3-2*u),oy=f.py;
   if(f.phase==='up'){
     let acc=0,idx=FL_UP.length-1;
@@ -1284,7 +1274,7 @@ function stepFlight(dt){
     f.aura=f.frame>=21?Math.max(0,f.aura-dt*3):1;
     if(f.t>=FL_LAND.reduce((a,b)=>a+b[1],0)){endFlight(false);return;}
   }
-  f.vx=0;f.vy=(f.py-oy)/Math.max(dt,1e-3);
+  f.vy=(f.py-oy)/Math.max(dt,1e-3);              // he only moves up and down, so there is no x velocity
   drawFlight(dt);
 }
 function drawFlight(dt){
@@ -1292,7 +1282,7 @@ function drawFlight(dt){
   // the sprite: a 200x200 canvas centred on his body, the cell drawn at half size with his body centre on the pivot
   flCv.style.transform='translate3d('+(f.px-100).toFixed(1)+'px,'+(f.py-100).toFixed(1)+'px,0)';
   const c=flCtx;c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,400,400);
-  c.translate(200,200);c.rotate(f.ang);if(f.flipV)c.scale(1,-1);if(f.flipH)c.scale(-1,1);
+  c.translate(200,200);
   const fr=f.frame;c.drawImage(flImg,(fr%6)*240,Math.floor(fr/6)*280,240,280,-120,-168,240,280);
   // the aura, flames, sparks and flashes, behind him
   const b=bmCtx;b.setTransform(1,0,0,1,0,0);b.clearRect(0,0,beamCv.width,beamCv.height);b.setTransform(beamDpr,0,0,beamDpr,0,0);
@@ -1306,8 +1296,8 @@ function drawFlight(dt){
     g.addColorStop(0,'rgba(255,236,170,'+(.55*a)+')');g.addColorStop(.45,'rgba(255,208,100,'+(.34*a)+')');
     g.addColorStop(.8,'rgba(255,186,60,'+(.12*a)+')');g.addColorStop(1,'rgba(255,170,40,0)');
     b.fillStyle=g;b.beginPath();b.arc(0,0,r,0,Math.PI*2);b.fill();b.restore();
-    const sp=Math.hypot(f.vx,f.vy),moving=sp>60;
-    const back=moving?Math.atan2(-f.vy,-f.vx):-Math.PI/2;          // flames stream behind him in flight, rise when he hovers
+    const moving=Math.abs(f.vy)>60;
+    const back=moving?Math.atan2(-f.vy,0):-Math.PI/2;          // flames stream behind him in flight, rise when he hovers
     for(let i=0;i<9;i++){
       const an=back+(i-4)*(moving?.18:.32)+.16*Math.sin(t*13+i*1.9);
       const len=(moving?110:104)*(.75+.25*Math.sin(t*17+i*2.3))*a,w=moving?16:20;
@@ -1320,7 +1310,7 @@ function drawFlight(dt){
       b.quadraticCurveTo(sx+dx*len*.55-nx*w*.6,sy+dy*len*.55-ny*w*.6,sx-nx*w,sy-ny*w);b.closePath();b.fill();
     }
     if(moving||Math.random()<.7)for(let i=0;i<(moving?3:2);i++)f.sparks.push({x:f.px+(Math.random()-.5)*(moving?30:110),y:f.py+(Math.random()-.5)*(moving?30:150),
-      vx:(moving?-f.vx*.15:0)+(Math.random()-.5)*40,vy:(moving?-f.vy*.15:-40)+(Math.random()-.5)*40,l:0,m:.45+Math.random()*.5,r:1.3+Math.random()*2,w:Math.random()<.3,blue:Math.random()<.3});
+      vx:(Math.random()-.5)*40,vy:(moving?-f.vy*.15:-40)+(Math.random()-.5)*40,l:0,m:.45+Math.random()*.5,r:1.3+Math.random()*2,w:Math.random()<.3,blue:Math.random()<.3});
   }
   for(let i=f.sparks.length-1;i>=0;i--){
     const p=f.sparks[i];p.l+=dt;if(p.l>=p.m){f.sparks.splice(i,1);continue;}
@@ -1406,14 +1396,13 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
      simply stops firing when the hand stops: without the decay he would
      hang at a full swing for as long as you held still. */
   if(dragging){
-    dragSpeed*=Math.pow(.002,dt);   // ~half a second from a hard yank to still
     const decay=Math.pow(.0005,dt);dragVX*=decay;dragVY*=decay;  // a hand that stops, then lets go, drops him
     dragPose=dragPoseNow(dt);
     play('drag');renderSprite(facing);
   }
   else if(stationary){state.x=innerWidth-85;state.y=innerHeight-68;state.vx=0;state.vy=0;state.ground=null;play('idle');renderSprite(1);}
-  else if(sleigh){scroll=scrollY;facing=sleigh.facing;play(sleigh.clip);renderSprite(facing);}
-  else if(flight){scroll=scrollY;}   // flying: drawn by stepFlight on its own canvas, the page sprite is hidden   // the sleigh sequence moves him (stepSleigh); this only draws
+  else if(sleigh){scroll=scrollY;facing=sleigh.facing;play(sleigh.clip);renderSprite(facing);}   // the sleigh sequence moves him (stepSleigh); this only draws
+  else if(flight){scroll=scrollY;}   // flying: drawn by stepFlight on its own canvas, the page sprite is hidden
   else{
    const dy=scrollY-scroll;scroll=scrollY;
    if(clock-lastSurfaceUpdate>.12||dy){scan();lastSurfaceUpdate=clock;}
@@ -1556,8 +1545,9 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
      of wall clock. */
   const t=chatLayout();
   if(t){
-    chatCanvas.style.width=t.w.toFixed(1)+'px';
-    chatCanvas.style.height=t.h.toFixed(1)+'px';
+    const cw=t.w.toFixed(1)+'px',ch=t.h.toFixed(1)+'px';
+    if(cw!==chatW){chatCanvas.style.width=chatW=cw;}
+    if(ch!==chatH){chatCanvas.style.height=chatH=ch;}
     chatX+=(t.x-chatX)*Math.min(1,dt*CHAT_EASE);
     chatY+=(t.y-chatY)*Math.min(1,dt*CHAT_EASE);
     if(clock>=nextChatPose){

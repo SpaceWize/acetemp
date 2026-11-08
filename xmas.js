@@ -343,22 +343,16 @@
     }
   }
 
-  function textRect(it) {
-    const rs = it.rg.getClientRects();
-    for (const q of rs) if (q.width > 20 && q.height > 8) return { left: q.left, top: q.top + q.height * 0.08, width: q.width, height: q.height, bottom: q.bottom };
-    return null;
-  }
-
   function ledgeFrame(now) {
     requestAnimationFrame(ledgeFrame);
     if (document.hidden) return;
     lc.clearRect(0, 0, LW, LH); tick++;
     const a = amt(), capH = Math.max(1.5, CAP_H * a), vs = 0.1 + 0.9 * a;
-    if (canGlint && ptr.on && flashOn()) { ptr.sx += (ptr.x - ptr.sx) * 0.18; ptr.sy += (ptr.y - ptr.sy) * 0.18; }
     const gl = canGlint && ptr.on && flashOn();
+    if (gl) { ptr.sx += (ptr.x - ptr.sx) * 0.18; ptr.sy += (ptr.y - ptr.sy) * 0.18; }
     if (tick % 30 === 0 && (Math.round((2 + 40 * a) * (innerWidth < 600 ? 0.8 : 1)) + ':' + innerWidth) !== bankKey) drawBanks();
     for (let i = 0; i < items.length; i++) {
-      const it = items[i], r = it.text ? textRect(it) : it.el.getBoundingClientRect();
+      const it = items[i], r = it.el.getBoundingClientRect();
       if (!r || r.width < 1 || r.height < 1 || r.bottom < -40 || r.top > LH + 10) continue;
       if ((i + tick) % 6 === 0) it.op = effOpacity(it.el);
       if (it.op < 0.05) continue;

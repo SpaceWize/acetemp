@@ -22,7 +22,6 @@ const OUT = 2.3;              // rad: how far they swing when they open for good
 const OUT_SWING = 1.7;        // s: that swing
 const SWING = 2.6;            // s from open to the moment the halves meet: slow and heavy
 const SETTLE = 0.9;           // s of rebound after they meet
-const DELAY = 0;              // s before the swing starts (the gates stand out of sight, so there is nothing to wait for)
 const CAM_Z = 14, FOV = 38;
 
 // Sprite sheet: 8 columns x 9 rows of 240x280 cells; the run cycle is cells 13-20 at 11fps (as in companion.js).
@@ -161,8 +160,7 @@ export function start(host, opts = {}) {
   const ace = new THREE.Group();
   back.add(ace);
   let aceTex = null, aceMat = null, aceShadow = null;
-  const aceReady = new Promise((resolve) => {
-    if (!opts.atlasUrl) return resolve(false);
+  if (opts.atlasUrl) {
     new THREE.TextureLoader().load(opts.atlasUrl, (t) => {
       t.colorSpace = THREE.SRGBColorSpace;
       t.repeat.set(1 / COLS, 1 / ROWS);
@@ -180,9 +178,8 @@ export function start(host, opts = {}) {
       ace.add(sh);
       aceShadow = sh;
       disposables.push(t, m.geometry, aceMat, sh.geometry, sh.material);
-      resolve(true);
-    }, undefined, () => resolve(false));
-  });
+    }, undefined, () => {});                                  // no atlas, or it fails to load: the gates simply run without him
+  }
   function setCell(i) {
     if (!aceTex) return;
     const c = i % COLS, r = Math.floor(i / COLS);
@@ -340,7 +337,7 @@ export function start(host, opts = {}) {
 
     if (mode === 'waiting') return;                            // gates edge-on at the screen edges: nothing to draw
     if (mode === 'closing') {
-      const tt = t - closeStart - DELAY;
+      const tt = t - closeStart;
       pose(closeAngle(tt));
       setVeil(Math.max(0, Math.min(1, tt / (SWING * 0.85))));
       if (tt >= SWING && hitAt < 0) { hitAt = t; }
@@ -436,7 +433,6 @@ export function start(host, opts = {}) {
 
   return {
     closed,
-    aceReady,
     /* The floor he runs on, as a y in the host's px: where the page's Little Ace is handed over. */
     floorY() {
       const visAce = 2 * (CAM_Z - ACE_Z) * Math.tan(THREE.MathUtils.degToRad(FOV / 2));
@@ -474,6 +470,7 @@ export function start(host, opts = {}) {
     dispose() {
       alive = false;
       cancelAnimationFrame(raf);
+      clearTimeout(resizeTimer);                              // a resize just before the gate is taken down must not rebuild a disposed scene
       window.removeEventListener('resize', onResize);
       window.removeEventListener('pointermove', onPointer);
       window.removeEventListener('pointerdown', onPointer);
