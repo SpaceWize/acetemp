@@ -650,9 +650,6 @@ main:where(.page)>section .btn--ghost:hover{
   padding:.5rem 0;border-bottom:0;color:var(--on-dark-mute);
 }
 .mnav .mnav__sub a:hover{color:var(--gold)}
-/* Activities sits inside the Mastermind menu; its three event pages are set in a step to read as part of it */
-.nav__sub a.nav__sub-in{padding-left:1.9rem}
-.mnav .mnav__sub a.mnav__in{padding-left:1rem}
 
 /* ═══ NAV — BURNING STEEL ═════════════════════════════════════
    The header's type, chosen on liquid-light-test.html (version G).
