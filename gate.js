@@ -1,7 +1,7 @@
 /* CHRISTMAS SWITCH. true = Santa hat on every animation (assets/images/ace-atlas-xmas.webp, which is the
    normal sheet with the hat frames in the same cells; climb included; the chat pose has its own sheet, ace-chat-pose-xmas.webp).
    Set to false to go back. When true it also loads xmas.js (snowfall and a snowbank). Read by gate-scene (below) and by companion.js through window.ACE_ATLAS. */
-window.ACE_XMAS=false;
+window.ACE_XMAS=(function(){try{return localStorage.getItem('ace-xmas')==='on';}catch(e){return false;}})();   // the chat's Christmas switch (off unless a visitor turns it on)
 window.ACE_ATLAS='assets/images/'+(window.ACE_XMAS?'ace-atlas-xmas.webp?v=2':'ace-atlas.webp?v=11');
 if(window.ACE_XMAS){const s=document.createElement('script');s.src='xmas.js?v=9';s.defer=true;document.head.append(s);}   // snow + snowbank
 /* ACE SPADERS — the 2027 waitlist gate.                              (rebuilt 2026-11-07)
