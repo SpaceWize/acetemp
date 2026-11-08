@@ -1028,6 +1028,149 @@ function choose(busy){
    rewinds the clock and strands every one of them in the future at once.
    That leaves him frozen mid-gesture with no decisions, alive but stuck,
    which is exactly the state he was found in. */
+/* ── POWER-UP ─────────────────────────────────────────────────
+   Once in a blue moon: he powers up in gold (hair gold, eyes blue), turns
+   side-on, charges and fires a blue beam across the page, then is back to
+   normal. Twenty-four frames from their own sheet (assets/images/ace-power.webp,
+   6x4 cells of 264x300, loaded only the first time it plays), drawn on a
+   canvas that sits over him while his normal sprite is hidden. The beam is
+   not in the artwork: it is drawn here so it can reach whatever edge of the
+   page is in front of him, whatever the width.
+   Triggers: Shift + A + C + E (held together or typed in order), or on its
+   own every POWER_EVERY seconds of visible time, but only when he is
+   standing about with nothing else going on. Never while the chat is open,
+   the gate is up, he is being carried, or the visitor prefers reduced motion. */
+const POWER_SHEET='assets/images/ace-power.webp?v=1',POWER_EVERY=1200,POWER_SLOW=1.25;
+const POWER_CW=264,POWER_CH=300,POWER_COLS=6;
+const POWER_MS=[150,120,100,120,100,90,90,90,90,90,80,100,100,100,60,60,60,60,60,60,70,80,100,150];
+const POWER_HANDS={"15": [176, 181], "16": [186, 178], "17": [185, 178], "18": [180, 179], "19": [188, 176], "20": [187, 176], "21": [177, 109]};     // fingertips per beam frame (frame number -> x,y in the cell), side facing right
+const POWER_TOTAL=POWER_MS.reduce((a,b)=>a+b,0)*POWER_SLOW/1000;
+const pwCv=document.createElement('canvas');pwCv.width=POWER_CW;pwCv.height=POWER_CH;pwCv.className='ace-power';pwCv.setAttribute('aria-hidden','true');
+const beamCv=document.createElement('canvas');beamCv.className='ace-beam';beamCv.setAttribute('aria-hidden','true');
+const pwZ=getComputedStyle(pet).zIndex;
+pwCv.style.cssText='position:fixed;left:0;top:0;width:'+POWER_CW/2+'px;height:'+POWER_CH/2+'px;pointer-events:none;display:none;will-change:transform;z-index:'+(pwZ==='auto'?'60':pwZ);
+beamCv.style.cssText='position:fixed;left:0;top:0;width:100vw;height:100vh;pointer-events:none;display:none;z-index:'+(pwZ==='auto'?'60':pwZ);
+document.body.append(beamCv,pwCv);
+const pwCtx=pwCv.getContext('2d'),bmCtx=beamCv.getContext('2d');
+let power=null,pwImg=null,pwReady=false,pwClock=0,pwLast=0,nextAuto=POWER_EVERY,powerQueue=false,powerQueueUntil=0,beamDpr=1;
+function powerOk(){
+  const h=document.documentElement;
+  return ready&&!open&&!dragging&&!parked&&!motionPaused&&!calm.matches&&state.ground!==null&&!climb&&!pendingJump&&!visit
+    &&!h.classList.contains('gate-locked')&&!h.classList.contains('intro')&&clock>=waveUntil&&!holdingPoint();
+}
+function sizeBeam(){beamDpr=Math.min(2,window.devicePixelRatio||1);beamCv.width=Math.round(innerWidth*beamDpr);beamCv.height=Math.round(innerHeight*beamDpr);}
+function beginPower(){
+  if(!pwImg){pwImg=new Image();pwImg.onload=()=>{pwReady=true;};pwImg.src=POWER_SHEET;}
+  if(!pwReady){powerQueue=true;powerQueueUntil=pwClock+10;return;}
+  power={t:0,dir:state.x>innerWidth/2?-1:1};
+  waveUntil=clock+POWER_TOTAL+.3;nextDecision=Math.max(nextDecision,clock+POWER_TOTAL+1.2);runGoal=null;
+  pet.style.visibility='hidden';pwCv.style.display='block';beamCv.style.display='block';sizeBeam();
+}
+function endPower(){
+  power=null;pwCv.style.display='none';beamCv.style.display='none';bmCtx.clearRect(0,0,beamCv.width,beamCv.height);
+  pet.style.visibility='';nextAuto=pwClock+POWER_EVERY;waveUntil=Math.min(waveUntil,clock+.1);
+}
+/* Beam strength by (fractional) frame position p: length and thickness as a share of the maximum. */
+const BEAM_KEYS=[[14,0,0],[15,.30,.55],[16,.70,.85],[17,1,1],[18,1,.92],[19,1,.85],[20,1,.30],[20.6,1,0]];
+function beamAt(p){
+  if(p<BEAM_KEYS[0][0]||p>=BEAM_KEYS[BEAM_KEYS.length-1][0])return null;
+  for(let i=1;i<BEAM_KEYS.length;i++){
+    const a=BEAM_KEYS[i-1],b=BEAM_KEYS[i];
+    if(p<=b[0]){const u=(p-a[0])/(b[0]-a[0]);return{l:a[1]+(b[1]-a[1])*u,w:a[2]+(b[2]-a[2])*u};}
+  }
+  return null;
+}
+function drawBeam(p,dir,ox,oy,t){
+  const c=bmCtx;c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,beamCv.width,beamCv.height);c.setTransform(beamDpr,0,0,beamDpr,0,0);
+  if(p<14||p>=21)return;
+  c.globalCompositeOperation='lighter';
+  const flash=Math.max(0,1-(p-14)/3);
+  // shock ring at the hands as it fires
+  if(p<17){const rr=(p-14)*38,a=Math.max(0,1-(p-14)/3)*.7;c.strokeStyle='rgba(170,225,255,'+a+')';c.lineWidth=3;c.beginPath();c.ellipse(ox,oy,rr*.8,rr*1.2,0,0,Math.PI*2);c.stroke();}
+  const k=beamAt(p);
+  const maxLen=(dir>0?innerWidth-ox:ox)+80;
+  if(k&&k.w>0){
+    const W=54*k.w,len=maxLen*k.l,step=8,top=[],bot=[];
+    for(let s=0;s<=len;s+=step){
+      const h=(W/2)*(0.5+0.5*Math.min(1,s/70))*(1+0.07*Math.sin(s*0.09-t*38)+0.03*Math.sin(s*0.23+t*61));
+      const x=ox+dir*s;top.push([x,oy-h]);bot.push([x,oy+h]);
+    }
+    const pass=(scale,col,blur)=>{
+      c.save();c.shadowColor='rgba(63,182,255,.9)';c.shadowBlur=blur;c.fillStyle=col;
+      c.beginPath();c.moveTo(top[0][0],oy+(top[0][1]-oy)*scale);
+      for(const q of top)c.lineTo(q[0],oy+(q[1]-oy)*scale);
+      for(let i=bot.length-1;i>=0;i--)c.lineTo(bot[i][0],oy+(bot[i][1]-oy)*scale);
+      c.closePath();c.fill();c.restore();
+    };
+    const g=c.createLinearGradient(ox,0,ox+dir*Math.max(len,1),0);
+    g.addColorStop(0,'rgba(120,205,255,1)');g.addColorStop(.7,'rgba(63,182,255,.95)');g.addColorStop(1,'rgba(63,182,255,.55)');
+    pass(1.9,'rgba(63,182,255,.22)',34);
+    pass(1.0,g,16);
+    pass(.46,'rgba(255,255,255,.96)',8);
+  }
+  // bright flare where it leaves his hands
+  const fr=22+54*(k?k.w:0)*.6+flash*26,rg=c.createRadialGradient(ox,oy,0,ox,oy,fr);
+  rg.addColorStop(0,'rgba(255,255,255,'+(0.55+0.4*flash)+')');rg.addColorStop(.35,'rgba(130,210,255,.55)');rg.addColorStop(1,'rgba(63,182,255,0)');
+  c.fillStyle=rg;c.beginPath();c.arc(ox,oy,fr,0,Math.PI*2);c.fill();
+  c.globalCompositeOperation='source-over';
+}
+function stepPower(dt){
+  const h=document.documentElement;
+  if(open||dragging||h.classList.contains('gate-locked')){endPower();return;}
+  power.t+=dt;
+  let acc=0,idx=POWER_MS.length-1,frac=1;
+  for(let i=0;i<POWER_MS.length;i++){
+    const d=POWER_MS[i]*POWER_SLOW/1000;
+    if(power.t<acc+d){idx=i;frac=(power.t-acc)/d;break;}
+    acc+=d;
+  }
+  if(power.t>=POWER_TOTAL){endPower();return;}
+  pwCv.style.transform='translate3d('+(state.x-POWER_CW/4).toFixed(1)+'px,'+(state.y-FEET_Y/2).toFixed(1)+'px,0)';
+  const flip=power.dir<0&&idx>=10&&idx<=20;      // frames 11-21 are the side-on ones, drawn facing right
+  pwCtx.clearRect(0,0,POWER_CW,POWER_CH);
+  const sx=(idx%POWER_COLS)*POWER_CW,sy=Math.floor(idx/POWER_COLS)*POWER_CH;
+  if(flip){pwCtx.save();pwCtx.translate(POWER_CW,0);pwCtx.scale(-1,1);pwCtx.drawImage(pwImg,sx,sy,POWER_CW,POWER_CH,0,0,POWER_CW,POWER_CH);pwCtx.restore();}
+  else pwCtx.drawImage(pwImg,sx,sy,POWER_CW,POWER_CH,0,0,POWER_CW,POWER_CH);
+  // the beam starts at frame 15 (index 14) from his fingertips
+  const hf=Math.min(Math.max(idx+1,15),20),hd=POWER_HANDS[String(hf)];
+  if(hd){
+    const hx=(flip?POWER_CW-hd[0]:hd[0])-10*(flip?-1:1),hy=hd[1];
+    const ox=state.x-POWER_CW/4+hx/2,oy=state.y-FEET_Y/2+hy/2;
+    drawBeam(idx+frac,power.dir,ox,oy,power.t);
+  }
+}
+requestAnimationFrame(function powerLoop(now){
+  const dt=pwLast?Math.min(.1,(now-pwLast)/1000):0;pwLast=now;
+  if(!document.hidden){
+    pwClock+=dt;
+    if(power)stepPower(dt);
+    else{
+      if(powerQueue&&pwClock>powerQueueUntil)powerQueue=false;
+      if(powerQueue&&powerOk()){powerQueue=false;beginPower();}
+      else if(pwClock>=nextAuto){if(powerOk())beginPower();else nextAuto=pwClock+4;}
+    }
+  }
+  requestAnimationFrame(powerLoop);
+});
+/* Shift + A + C + E: held together, or typed one after another within about two seconds. */
+const pwKeys=new Set();let pwSeq=[];
+const typing=t=>t&&(t.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
+function askPower(){if(power||powerQueue)return;if(powerOk())beginPower();else{powerQueue=true;powerQueueUntil=pwClock+8;}}
+addEventListener('keydown',e=>{
+  if(typing(e.target)||e.repeat)return;
+  pwKeys.add(e.code);
+  if(!e.shiftKey)return;
+  const ch=e.code==='KeyA'?'a':e.code==='KeyC'?'c':e.code==='KeyE'?'e':'';
+  if(!ch){pwSeq=[];return;}
+  const now=performance.now();pwSeq=pwSeq.filter(s=>now-s.t<2000);pwSeq.push({ch,t:now});
+  const typed=pwSeq.slice(-3).map(s=>s.ch).join('')==='ace';
+  const held=pwKeys.has('KeyA')&&pwKeys.has('KeyC')&&pwKeys.has('KeyE');
+  if(typed||held){pwSeq=[];askPower();}
+});
+addEventListener('keyup',e=>{pwKeys.delete(e.code);});
+addEventListener('blur',()=>{pwKeys.clear();pwSeq=[];});
+addEventListener('resize',()=>{if(power)sizeBeam();});
+
 function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=ts;if(document.hidden){requestAnimationFrame(tick);return;}clock+=dt;
  if(visit&&clock>visit.until){if(visit.phase!=='back'&&visit.onLeave)visit.onLeave();endVisit(false);}
  if(!open&&ready){
