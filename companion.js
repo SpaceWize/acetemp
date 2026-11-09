@@ -333,8 +333,13 @@ let stuck=false;
    reaches zero he is stuck again. Standing on a ledge he does not sink. Big moments wait until he is down. */
 let floorLift=0;
 let nextShiver=0,shiverUntil=0;   // buried: every so often he stops waving and shivers for a few seconds
-const SNOW_TOP=60,SINK_PX_S=1.5;
-const snowLift=()=>SNOW_TOP*(innerWidth<600?.8:1)*Math.min(1,innerHeight/800)-16;   // same scaling as the drift in xmas.js
+const SNOW_TOP=60,SINK_PX_S=1.5;   // SNOW_TOP: the drift's top before it was raised; below this he is stuck on the bottom
+const snowTop=()=>window.AceSnow&&AceSnow.top?AceSnow.top():SNOW_TOP*(innerWidth<600?.8:1)*Math.min(1,innerHeight/800);   // top of the drift now (xmas.js)
+const snowLift=()=>snowTop()-16;
+/* Stuck: he is lowered into the drift until its top reaches the spade on his coat (SPADE_H px above his feet, at the
+   sprite's display scale). The floor follows the snow as it piles, and never sits higher than the usual 16px. */
+const SPADE_H=55;
+const stuckLift=()=>Math.min(0,snowTop()-SPADE_H-16);
 const floorY=()=>innerHeight-16-floorLift;
 const STUCK_KEY='ace-xmas-stuck';
 try{if(window.ACE_XMAS&&sessionStorage.getItem(STUCK_KEY)==='1')stuck=true;else sessionStorage.removeItem(STUCK_KEY);}catch(e){}
@@ -1454,7 +1459,7 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
   }
   else if(stationary){state.x=innerWidth-85;state.y=innerHeight-68;state.vx=0;state.vy=0;state.ground=null;play('idle');renderSprite(1);}
   else if(stuck){   // stuck in the snow: on the floor, not moving, one held frame
-    scroll=scrollY;floorLift=0;state.vx=state.vy=0;state.ground='floor';state.y=innerHeight-16;state.x=clampX(state.x);
+    scroll=scrollY;floorLift=stuckLift();state.vx=state.vy=0;state.ground='floor';state.y=floorY();state.x=clampX(state.x);
     runGoal=null;pendingJump=null;climb=null;nextDecision=clock+99;facing=1;
     if(!nextShiver)nextShiver=clock+5+Math.random()*7;
     if(clock>=nextShiver&&!shiverUntil){shiverUntil=clock+2.25+Math.random()*1.5;play('shiver');}   // three or four chattering loops
@@ -1465,7 +1470,7 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
   else if(flight){scroll=scrollY;}   // flying: drawn by stepFlight on its own canvas, the page sprite is hidden
   else{
    const dy=scrollY-scroll;scroll=scrollY;
-   if(floorLift>0&&state.ground==='floor'){floorLift=Math.max(0,floorLift-SINK_PX_S*dt);if(!floorLift)stuck=true;}   // on top of the snow he slowly sinks back in
+   if(floorLift>0&&state.ground==='floor'){const r=stuckLift();floorLift=Math.max(r,floorLift-SINK_PX_S*dt);if(floorLift<=r){floorLift=r;stuck=true;}}   // on top of the snow he slowly sinks back in
    if(clock-lastSurfaceUpdate>.12||dy){scan();lastSurfaceUpdate=clock;}
 
    /* ── CLIMBING ────────────────────────────────────────────────
@@ -1533,6 +1538,7 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
     }
     else if(clock>=nextDecision&&clock>=waveUntil&&!pendingJump&&runGoal===null&&!holdingPoint())decide();
    }else{const fell=state.vy;const hit=physics.step(state,dt,surfaces,innerWidth);
+     if(window.ACE_XMAS&&window.AceSnow&&AceSnow.splash&&fell>300&&((hit&&hit.id==='floor')||(!hit&&state.vy<0&&Math.abs(state.y-floorY())<2)))AceSnow.splash(state.x,state.y,fell);   // thrown into the snow: it fluffs and sprays
      /* Only a real drop is worth a landing. Stepping between two ledges on
         the same line arrives at ~130px/s against 500+ for any actual jump,
         and playing `land` for it put a stumble in the middle of a run. */

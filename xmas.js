@@ -128,8 +128,11 @@
      the face; about 70px started to cover his shoulders.) */
   const bankDims = (a) => {
     const k = (innerWidth < 600 ? 0.8 : 1) * Math.min(1, innerHeight / 800);   // a short window gets a smaller drift so it never buries the page's buttons
-    return { bb: (2 + 85 * a) * k, ba: (1 + 10 * a) * k, fb: (1 + 50 * a) * k, fa: (0.8 + 4 * a) * k };
+    return { bb: (2 + 94 * a) * k, ba: (1 + 10 * a) * k, fb: (1 + 58 * a) * k, fa: (0.8 + 4 * a) * k };
   };
+  /* Where the top of the front drift is now, in px above the bottom of the window (its base plus the lumps, about 10px
+     when full). companion.js uses it so Little Ace can be set on top of the snow and his stuck floor rises with it. */
+  window.AceSnow.top = () => bankDims(amt()).fb + 10 * ((innerWidth < 600 ? 0.8 : 1) * Math.min(1, innerHeight / 800));
   let bankMax = null;
   function placeBanks(a) {
     if (!bankMax) return;
@@ -213,6 +216,42 @@
     if (f.y > H + 8) { f.y = -8; f.x = Math.random() * W; }
     if (f.x > W + 8) f.x = -8; else if (f.x < -8) f.x = W + 8;
   }
+  /* When he is thrown and hits the snow, the drift kicks up a puff of fine snow dust (companion.js calls
+     AceSnow.splash with where he landed and how fast). It is many small soft specks and a few hazy clouds with no
+     hard edge: they fly a short way, slow down quickly, swell, hang a moment and fade, so it reads as dust, not snowballs. */
+  const dustCv = document.createElement('canvas');
+  dustCv.width = dustCv.height = 64;
+  { const c = dustCv.getContext('2d'), g = c.createRadialGradient(32, 32, 0, 32, 32, 32);
+    g.addColorStop(0, 'rgba(246,249,253,0.75)'); g.addColorStop(0.4, 'rgba(236,242,250,0.4)'); g.addColorStop(1, 'rgba(230,238,248,0)');
+    c.fillStyle = g; c.fillRect(0, 0, 64, 64); }
+  const puffs = [];
+  window.AceSnow.splash = (x, y, speed) => {
+    if (calm.matches || amt() < 0.12) return;
+    const k = Math.min(1, Math.max(0.3, (speed - 250) / 900)), n = Math.round(34 + 36 * k);
+    const sy = H - window.AceSnow.top() + 6;                           // up on the surface of the drift
+    for (let i = 0; i < n; i++) {
+      const a = -Math.PI / 2 + (Math.random() - 0.5) * 2.6, v = (60 + Math.random() * 240) * (0.5 + k);
+      puffs.push({ x: x + (Math.random() - 0.5) * 46, y: sy + (Math.random() - 0.5) * 8, vx: Math.cos(a) * v, vy: Math.sin(a) * v,
+        life: 0, max: 0.6 + Math.random() * 0.7, sz: 7 + Math.random() * 14, g: 0.8 + Math.random() * 1.4, al: 0.5 + Math.random() * 0.4 });
+    }
+    for (let i = 0; i < 5; i++) {                                      // a few big hazy clouds that billow where it landed
+      puffs.push({ x: x + (Math.random() - 0.5) * 60, y: sy - Math.random() * 10, vx: (Math.random() - 0.5) * 90, vy: -20 - Math.random() * 40,
+        life: 0, max: 0.9 + Math.random() * 0.5, sz: 34 + Math.random() * 26, g: 1.5 + Math.random() * 0.8, al: 0.45 });
+    }
+    if (puffs.length > 220) puffs.splice(0, puffs.length - 220);
+  };
+  function drawPuffs(dt) {
+    for (let i = puffs.length - 1; i >= 0; i--) {
+      const p = puffs[i];
+      p.life += dt;
+      if (p.life >= p.max) { puffs.splice(i, 1); continue; }
+      p.vx *= 1 - 2.6 * dt; p.vy = p.vy * (1 - 2.2 * dt) + 55 * dt;   // slows quickly and hangs, then settles slowly
+      p.x += p.vx * dt; p.y += p.vy * dt;
+      const t = p.life / p.max, z = p.sz * (1 + p.g * t);
+      fc.globalAlpha = p.al * (1 - t) * Math.min(1, p.life / 0.05);
+      fc.drawImage(dustCv, p.x - z / 2, p.y - z / 2, z, z);
+    }
+  }
   let hazeEl = null, hazeOn = false;
   let last = 0, tt = 0;
   function frame(now) {
@@ -249,6 +288,7 @@
       }
       if (bzk === 0 && nowMs - bz.start > BZ_TOTAL_MS) { bz.extra.length = 0; if (bz.rampDone) bz = null; }
     }
+    if (puffs.length) drawPuffs(dt);
     fc.globalAlpha = 1;
   }
 
