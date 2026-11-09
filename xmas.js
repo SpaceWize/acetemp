@@ -225,27 +225,35 @@
     g.addColorStop(0, 'rgba(246,249,253,0.75)'); g.addColorStop(0.4, 'rgba(236,242,250,0.4)'); g.addColorStop(1, 'rgba(230,238,248,0)');
     c.fillStyle = g; c.fillRect(0, 0, 64, 64); }
   const puffs = [];
-  window.AceSnow.splash = (x, y, speed) => {
+  /* kick(x, n, o): n specks of dust off the surface of the drift at x. o.v scales their speed, o.dir (-1/1) with o.push
+     blows them sideways (the beam's wind), o.spread is the fan of directions, o.w the width they start across, o.clouds
+     the number of big hazy clouds, o.drag how soon they stop gliding. */
+  window.AceSnow.kick = (x, n, o) => {
     if (calm.matches || amt() < 0.12) return;
-    const k = Math.min(1, Math.max(0.3, (speed - 250) / 900)), n = Math.round(34 + 36 * k);
-    const sy = H - window.AceSnow.top() + 6;                           // up on the surface of the drift
+    o = o || {};
+    const sy = H - window.AceSnow.top() + 6, w = o.w || 46, sp = o.spread || 2.6, v0 = o.v || 1, pd = (o.dir || 0) * (o.push || 0);
     for (let i = 0; i < n; i++) {
-      const a = -Math.PI / 2 + (Math.random() - 0.5) * 2.6, v = (60 + Math.random() * 240) * (0.5 + k);
-      puffs.push({ x: x + (Math.random() - 0.5) * 46, y: sy + (Math.random() - 0.5) * 8, vx: Math.cos(a) * v, vy: Math.sin(a) * v,
-        life: 0, max: 0.6 + Math.random() * 0.7, sz: 7 + Math.random() * 14, g: 0.8 + Math.random() * 1.4, al: 0.5 + Math.random() * 0.4 });
+      const a = -Math.PI / 2 + (Math.random() - 0.5) * sp, v = (60 + Math.random() * 240) * v0;
+      puffs.push({ x: x + (Math.random() - 0.5) * w, y: sy + (Math.random() - 0.5) * 8, vx: Math.cos(a) * v + pd * (0.3 + Math.random()),
+        vy: Math.sin(a) * v * (o.up || 1), dg: o.drag || 2.6, life: 0, max: 0.6 + Math.random() * 0.7, sz: 7 + Math.random() * 14,
+        g: 0.8 + Math.random() * 1.4, al: 0.5 + Math.random() * 0.4 });
     }
-    for (let i = 0; i < 5; i++) {                                      // a few big hazy clouds that billow where it landed
-      puffs.push({ x: x + (Math.random() - 0.5) * 60, y: sy - Math.random() * 10, vx: (Math.random() - 0.5) * 90, vy: -20 - Math.random() * 40,
-        life: 0, max: 0.9 + Math.random() * 0.5, sz: 34 + Math.random() * 26, g: 1.5 + Math.random() * 0.8, al: 0.45 });
+    for (let i = 0; i < (o.clouds || 0); i++) {                        // big hazy clouds that billow where it landed
+      puffs.push({ x: x + (Math.random() - 0.5) * (w + 14), y: sy - Math.random() * 10, vx: (Math.random() - 0.5) * 90 + pd * 0.5, vy: -20 - Math.random() * 40,
+        dg: o.drag || 2.6, life: 0, max: 0.9 + Math.random() * 0.5, sz: 34 + Math.random() * 26, g: 1.5 + Math.random() * 0.8, al: 0.45 });
     }
-    if (puffs.length > 220) puffs.splice(0, puffs.length - 220);
+    if (puffs.length > 650) puffs.splice(0, puffs.length - 650);
+  };
+  window.AceSnow.splash = (x, y, speed) => {
+    const k = Math.min(1, Math.max(0.3, (speed - 250) / 900));
+    window.AceSnow.kick(x, Math.round(34 + 36 * k), { v: 0.5 + k, clouds: 5 });
   };
   function drawPuffs(dt) {
     for (let i = puffs.length - 1; i >= 0; i--) {
       const p = puffs[i];
       p.life += dt;
       if (p.life >= p.max) { puffs.splice(i, 1); continue; }
-      p.vx *= 1 - 2.6 * dt; p.vy = p.vy * (1 - 2.2 * dt) + 55 * dt;   // slows quickly and hangs, then settles slowly
+      p.vx *= 1 - p.dg * dt; p.vy = p.vy * (1 - 2.2 * dt) + 55 * dt;   // slows quickly and hangs, then settles slowly
       p.x += p.vx * dt; p.y += p.vy * dt;
       const t = p.life / p.max, z = p.sz * (1 + p.g * t);
       fc.globalAlpha = p.al * (1 - t) * Math.min(1, p.life / 0.05);

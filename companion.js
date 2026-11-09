@@ -1151,6 +1151,19 @@ function drawBeam(p,dir,ox,oy,t){
   c.fillStyle=rg;c.beginPath();c.arc(ox,oy,fr,0,Math.PI*2);c.fill();
   c.globalCompositeOperation='source-over';
 }
+/* The beam blows the snow up. Along its length, at the drift, a steady spray of dust is blown the way it points; and behind
+   him (the side he is not firing to) a big plume rolls out, with a burst the moment it fires. The nearer the beam is to the
+   drift the more there is (from a ledge high up there is little). */
+function beamSnow(p,dir,ox,oy,dt){
+  if(!window.ACE_XMAS||!window.AceSnow||!AceSnow.kick)return;
+  const near=Math.max(0,Math.min(1,1-((innerHeight-AceSnow.top())-oy)/320));
+  if(near<=0)return;
+  if(!power.burst&&p>=15){power.burst=true;AceSnow.kick(state.x-dir*70,80,{dir:-dir,push:440,v:2,spread:2.9,w:170,clouds:11,drag:1.6});}
+  const k=beamAt(p);if(!k||k.w<=0)return;
+  const len=((dir>0?innerWidth-ox:ox)+80)*k.l;
+  for(let i=Math.ceil(dt*230*near*k.w);i>0;i--)AceSnow.kick(ox+dir*Math.random()*len,3,{dir,push:300,v:1.1,spread:1.9,w:60,clouds:Math.random()<.18?1:0,drag:1.3});
+  for(let i=Math.ceil(dt*270*near*k.w);i>0;i--)AceSnow.kick(state.x-dir*(20+Math.random()*170),3,{dir:-dir,push:340,v:1.5,spread:2.5,w:60,clouds:Math.random()<.2?1:0,drag:1.5});
+}
 function stepPower(dt){
   const h=document.documentElement;
   if(open||dragging||h.classList.contains('gate-locked')){endPower();return;}
@@ -1174,6 +1187,7 @@ function stepPower(dt){
     const hx=(flip?POWER_CW-hd[0]:hd[0])-10*(flip?-1:1),hy=hd[1];
     const ox=state.x-POWER_CW/4+hx/2,oy=state.y-FEET_Y/2+hy/2;
     drawBeam(idx+frac,power.dir,ox,oy,power.t);
+    beamSnow(idx+frac,power.dir,ox,oy,dt);
   }
 }
 /* ── SANTA'S SLEIGH ───────────────────────────────────────────
