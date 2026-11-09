@@ -1083,11 +1083,13 @@ beamCv.style.cssText='position:fixed;left:0;top:0;width:100vw;height:100vh;point
 document.body.append(beamCv,pwCv);
 const pwCtx=pwCv.getContext('2d'),bmCtx=beamCv.getContext('2d');
 let power=null,pwImg=null,pwReady=false,pwClock=0,pwLast=0,nextAuto=POWER_EVERY,powerQueue=false,powerQueueKind='power',powerQueueUntil=0,beamDpr=1,lastBig='';
-function powerOk(){
+/* Everything a big moment needs except the snow: the automatic timer also needs him out of it (powerOk). */
+function powerReady(){
   const h=document.documentElement;
-  return ready&&!open&&!dragging&&!stuck&&floorLift===0&&!parked&&!motionPaused&&!calm.matches&&state.ground!==null&&!climb&&!pendingJump&&!visit
+  return ready&&!open&&!dragging&&!parked&&!motionPaused&&!calm.matches&&state.ground!==null&&!climb&&!pendingJump&&!visit
     &&!h.classList.contains('gate-locked')&&!h.classList.contains('intro')&&clock>=waveUntil&&!holdingPoint();
 }
+function powerOk(){return powerReady()&&!stuck&&floorLift===0;}
 function sizeBeam(){beamDpr=Math.min(2,window.devicePixelRatio||1);beamCv.style.width=innerWidth+'px';beamCv.style.height=innerHeight+'px';beamCv.width=Math.round(innerWidth*beamDpr);beamCv.height=Math.round(innerHeight*beamDpr);}
 function beginPower(){
   if(!pwImg){pwImg=new Image();pwImg.onload=()=>{pwReady=true;};pwImg.src=POWER_SHEET;}
@@ -1381,7 +1383,7 @@ requestAnimationFrame(function powerLoop(now){
     else if(flight)stepFlight(dt);
     else{
       if(powerQueue&&pwClock>powerQueueUntil)powerQueue=false;
-      if(powerQueue&&powerOk()){powerQueue=false;startBig(powerQueueKind);}
+      if(powerQueue&&powerReady()){powerQueue=false;leaveSnow();startBig(powerQueueKind);}
       else if(pwClock>=nextAuto){if(powerOk())startBig(pickBig());else nextAuto=pwClock+4;}
     }
   }
@@ -1394,7 +1396,15 @@ function startBig(kind){if(kind==='sleigh')beginSleigh();else if(kind==='flight'
 function pickBig(){const pool=window.ACE_XMAS?['power','sleigh']:['power','flight'],c=pool.filter(k=>k!==lastBig),from=c.length?c:pool;lastBig=from[Math.floor(Math.random()*from.length)];return lastBig;}   // never the same one twice running
 /* The ace code (and the hold on the button): the beam or the flight, never the same one twice running. */
 function pickAce(){if(window.ACE_XMAS)return 'power';lastBig=lastBig==='power'?'flight':lastBig==='flight'?'power':(Math.random()<.5?'power':'flight');return lastBig;}
-function askPower(kind){if(power||sleigh||flight||powerQueue)return;kind=kind||'power';if(powerOk())startBig(kind);else{powerQueue=true;powerQueueKind=kind;powerQueueUntil=pwClock+20;}}   // a deliberate trigger waits up to 20s for him to finish a climb or jump
+/* A deliberate trigger (the codes, or holding the button) waits for powerReady(), not powerOk(): the snow is no reason
+   to refuse it. Stuck in the snow it pulls him out first, as a drag does, and the moment starts from the top of the drift.
+   Before, both the trigger and its queue waited on powerOk(), which the snow blocks, so the press was lost. */
+function leaveSnow(){if(stuck){stuck=false;nextShiver=shiverUntil=0;floorLift=snowLift();}}
+function askPower(kind){
+  if(power||sleigh||flight||powerQueue)return;kind=kind||'power';
+  if(powerReady()){leaveSnow();startBig(kind);}
+  else{powerQueue=true;powerQueueKind=kind;powerQueueUntil=pwClock+20;}
+}   // a deliberate trigger waits up to 20s for him to finish a climb or jump
 addEventListener('keydown',e=>{
   if(typing(e.target)||e.repeat)return;
   pwKeys.add(e.code);
