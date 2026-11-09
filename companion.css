@@ -186,6 +186,22 @@ body:has(.ace-companion.is-dragging) .hero__plate{opacity:0}
   font-size:.9375rem;line-height:1.55;overflow-wrap:anywhere;
   white-space:pre-line;   /* multi-part answers and event lists break onto lines */
 }
+/* The latest thing Little Ace said glows; everything he said before it sits back, dimmer and slightly greyed.
+   companion.js marks the latest with .is-latest (it skips the typing dots) and moves the mark on with every answer.
+   A hover or keyboard focus brings an older answer back to full strength so its links and buttons stay easy to read. */
+.ace-message.bot:not(.is-latest):not(.ace-typing){opacity:.55;filter:grayscale(.35);transition:opacity .35s,filter .35s}
+.ace-message.bot:not(.is-latest):not(.ace-typing):hover,.ace-message.bot:not(.is-latest):not(.ace-typing):focus-within{opacity:.9;filter:grayscale(.1)}
+.ace-message.bot.is-latest p{
+  border-color:var(--gold,#D9A441);
+  box-shadow:0 0 0 1px rgba(217,164,65,.5),0 0 14px rgba(217,164,65,.38),0 0 34px rgba(217,164,65,.16);
+}
+@keyframes aceGlow{
+  from{box-shadow:0 0 0 1px rgba(217,164,65,.4),0 0 10px rgba(217,164,65,.28),0 0 26px rgba(217,164,65,.12)}
+  to{box-shadow:0 0 0 1px rgba(238,190,99,.6),0 0 18px rgba(217,164,65,.46),0 0 42px rgba(217,164,65,.2)}
+}
+@media (prefers-reduced-motion:no-preference){
+  .ace-message.bot.is-latest p{animation:aceGlow 2.8s ease-in-out infinite alternate}
+}
 /* Typing indicator: three dots that pulse while a reply is "written". */
 .ace-typing p{display:inline-flex;gap:5px;padding:14px 16px}
 .ace-typing i{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.35;animation:aceTyping 1s infinite ease-in-out}
