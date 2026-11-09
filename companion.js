@@ -169,7 +169,7 @@ function loadChatSheet(){
   if(chatAsked)return;
   chatAsked=true;
   chatImg.onload=()=>{chatReady=true;lastChatCell=-1;};
-  chatImg.src=window.ACE_XMAS?'assets/images/ace-chat-pose-xmas.webp?v=2':'assets/images/ace-chat-pose.webp';
+  chatImg.src=window.ACE_XMAS?'assets/images/ace-chat-pose-xmas.webp?v=6':'assets/images/ace-chat-pose.webp';
 }
 function renderChat(cell){
   if(!chatReady||cell===lastChatCell)return;
@@ -341,6 +341,7 @@ const snowLift=()=>snowTop()-16;
 const SPADE_H=55;
 const stuckLift=()=>Math.min(0,snowTop()-SPADE_H-16);
 const floorY=()=>innerHeight-16-floorLift;
+let slip=null,slipRot=0,nextSlip=0,slipWant=false;   // see SLIPPING
 const STUCK_KEY='ace-xmas-stuck';
 try{if(window.ACE_XMAS&&sessionStorage.getItem(STUCK_KEY)==='1')stuck=true;else sessionStorage.removeItem(STUCK_KEY);}catch(e){}
 if(window.ACE_XMAS){
@@ -404,10 +405,16 @@ const CLIPS={
   /* Back-view climb strip: he faces the wall, so dir:0 — never mirrored. */
   climb :{f:[34,35,36,37,38,39,40,41],fps:11,loop:true, dir:0},
   /* He points DOWN at the button under his feet, so there is no left or
-     right to it — dir:0 keeps it from ever being mirrored. Eight frames at
-     6fps lean in, point, and straighten up again in 1.3s; the clip is a
+     right to it — dir:0 keeps it from ever being mirrored. Nine frames at
+     6.75fps lean in (cell 86 is the in-between from standing into the lean),
+     point, and straighten up again in 1.3s; the clip is a
      one-shot, so it then holds the plain stand it ends on. */
-  point :{f:[42,43,44,45,46,47,48,49],fps:6,  loop:false,dir:0},
+  point :{f:[42,86,43,44,45,46,47,48,49],fps:6.75,loop:false,dir:0},
+  /* Slipping off a button (Christmas only, see SLIPPING below): cells 80, 88, 81, 82 of the atlas are the wobble (standing with his
+     hands in his pockets, a first lean, arms out as his feet go, tipping back) and cell 87 is the last frame, him tipped right over, which is held and spun while he falls.
+     The art leans to screen-right, so dir:1: he is mirrored when he falls to the left. */
+  slip  :{f:[80,88,81,82],fps:7,loop:false,dir:1},
+  slipfall:{f:[87],fps:1,loop:true,dir:1},
   /* The other point: arm up, finger to the sky, for when he is standing on
      something (a tray, a card) with a button overhead. Six drawn frames,
      1 = the plain stand and 6 = arm fully up; played 1-6, held at the peak
@@ -450,7 +457,7 @@ img.onload=()=>{
 img.onerror=()=>{pet.hidden=true;shadow.hidden=true;};
 /* WebP, not the PNG the build writes: 435KB against 1.8MB, with the alpha
    identical and colour within ~1.5/255 on average. Re-export after a rebuild. */
-img.src=window.ACE_ATLAS||'assets/images/ace-atlas.webp?v=11';   // bump when the sheet changes: the page caches it
+img.src=window.ACE_ATLAS||'assets/images/ace-atlas.webp?v=13';   // bump when the sheet changes: the page caches it
 
 /* The buried "Ahh!" loop (Christmas only) has its own six-cell strip, loaded once; until it arrives he holds his idle frame. */
 let stuckImg=null,stuckReady=false;
@@ -796,6 +803,7 @@ addEventListener('pointermove',e=>{
     state.vx=0;state.vy=0;state.ground=null;state.bouncy=false;dragVX=dragVY=0;
     dragPose=6;dragSwingV=0;
     if(stuck){stuck=false;nextShiver=shiverUntil=0;floorLift=snowLift();}                  // pulled out of the snow: he will be set down on top of it
+    if(slip){slip=null;slipRot=0;}                                                          // grabbed mid-slip: the slip is over
   }
   const nx=clampX(e.clientX+dragOffX),dx=nx-state.x;
   const ny=Math.max(-10,Math.min(innerHeight+40,e.clientY+dragOffY)),dy=ny-state.y;
@@ -1424,17 +1432,55 @@ function askPower(kind){
   if(powerReady()){leaveSnow();startBig(kind);}
   else{powerQueue=true;powerQueueKind=kind;powerQueueUntil=pwClock+20;}
 }   // a deliberate trigger waits up to 20s for him to finish a climb or jump
+/* ── SLIPPING ──────────────────────────────────────────────────
+   Christmas only, once the snow is up, and only now and then: standing on a button he slips. Three frames of wobble (his
+   feet go, he tips back), then he falls backwards off the button with the fourth frame, tipped right over (it can be spun as he
+   falls: SLIP_SPIN is the degrees a second, 0 for now), and
+   lands in the drift, which fluffs up in a cloud of dust, and he is stuck (the same stuck as the blizzard's). Shift + S, L,
+   I, P makes it happen the next time he is on a button (and again at any time he is, if the snow is up). Grabbing him or
+   opening the chat ends it. */
+const SLIP_WOBBLE=.6,SLIP_SPIN=0,SLIP_FIRST=[70,90],SLIP_EVERY=[150,240];
+function standingOnButton(){const p=perches[Number(state.ground)];return state.ground==='launcher'||!!(p&&p.button);}
+function maybeSlip(){
+  if(!window.ACE_XMAS||slip||visit||!window.AceSnow||AceSnow.amount()<.4)return;
+  if(!nextSlip){nextSlip=clock+SLIP_FIRST[0]+Math.random()*(SLIP_FIRST[1]-SLIP_FIRST[0]);return;}
+  if(clock<nextSlip&&!slipWant)return;
+  if(state.ground===null||state.ground==='floor'||!standingOnButton()||pendingJump||climb||runGoal!==null||holdingPoint()||clock<waveUntil||clock<landingUntil||power||sleigh||flight||dragging){if(!slipWant)nextSlip=clock+6;return;}
+  slipWant=false;nextSlip=clock+SLIP_EVERY[0]+Math.random()*(SLIP_EVERY[1]-SLIP_EVERY[0]);
+  slip={phase:'wobble',t:0,dir:Math.random()<.5?-1:1};
+  runGoal=null;pendingJump=null;nextDecision=clock+99;facing=slip.dir;play('slip');
+}
+function stepSlip(dt){
+  slip.t+=dt;
+  if(slip.phase==='wobble'){
+    const cs=currentSurface();if(cs)state.y=cs.y;scroll=scrollY;state.vx=state.vy=0;facing=slip.dir;
+    play('slip');renderSprite(facing);
+    if(slip.t>=SLIP_WOBBLE){slip.phase='fall';slip.t=0;state.ground=null;state.bouncy=false;state.vy=-250;state.vx=slip.dir*165;}
+    return;
+  }
+  scroll=scrollY;facing=slip.dir;slipRot+=slip.dir*SLIP_SPIN*dt;
+  play('slipfall');renderSprite(facing);
+  const hit=physics.step(state,dt,[{id:'floor',left:0,right:innerWidth,y:floorY()}],innerWidth);
+  if(hit){                                                       // into the drift: it fluffs up and he is stuck
+    slip=null;slipRot=0;lastCell=-1;
+    state.x=clampX(state.x);state.ground='floor';state.vx=state.vy=0;
+    stuck=true;nextShiver=shiverUntil=0;floorLift=stuckLift();state.y=floorY();
+    try{sessionStorage.setItem(STUCK_KEY,'1');}catch(e){}
+    if(window.AceSnow&&AceSnow.splash){AceSnow.splash(state.x,state.y,1500);AceSnow.kick(state.x,150,{v:2,clouds:26,w:150,size:2.4,h:120,al:.85,drag:2,spread:3.1});}   // a big poof that hides the swap into the stuck pose
+  }
+}
 addEventListener('keydown',e=>{
   if(typing(e.target)||e.repeat)return;
   pwKeys.add(e.code);
   if(!e.shiftKey)return;
-  const ch={KeyA:'a',KeyC:'c',KeyE:'e',KeyS:'s',KeyN:'n',KeyT:'t'}[e.code]||'';
+  const ch={KeyA:'a',KeyC:'c',KeyE:'e',KeyS:'s',KeyN:'n',KeyT:'t',KeyL:'l',KeyI:'i',KeyP:'p'}[e.code]||'';
   if(!ch){pwSeq=[];return;}
   const now=performance.now();pwSeq=pwSeq.filter(s=>now-s.t<3000);pwSeq.push({ch,t:now});
   const typed=pwSeq.slice(-3).map(s=>s.ch).join('')==='ace';
   const held=pwKeys.has('KeyA')&&pwKeys.has('KeyC')&&pwKeys.has('KeyE');
   if(typed||held){pwSeq=[];askPower(pickAce());}
   else if(pwSeq.slice(-5).map(s=>s.ch).join('')==='santa'){pwSeq=[];askPower('sleigh');}      // Shift + S, A, N, T, A
+  else if(pwSeq.slice(-4).map(s=>s.ch).join('')==='slip'){pwSeq=[];slipWant=true;}            // Shift + S, L, I, P: slips the next time he is on a button
 });
 addEventListener('keyup',e=>{pwKeys.delete(e.code);});
 addEventListener('blur',()=>{pwKeys.clear();pwSeq=[];});
@@ -1480,12 +1526,14 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
     if(shiverUntil&&clock>=shiverUntil){shiverUntil=0;nextShiver=clock+6+Math.random()*9;}
     play(shiverUntil?'shiver':'stuck');renderSprite(facing);
   }
+  else if(slip){stepSlip(dt);}
   else if(sleigh){scroll=scrollY;facing=sleigh.facing;play(sleigh.clip);renderSprite(facing);}   // the sleigh sequence moves him (stepSleigh); this only draws
   else if(flight){scroll=scrollY;}   // flying: drawn by stepFlight on its own canvas, the page sprite is hidden
   else{
    const dy=scrollY-scroll;scroll=scrollY;
    if(floorLift>0&&state.ground==='floor'){const r=stuckLift();floorLift=Math.max(r,floorLift-SINK_PX_S*dt);if(floorLift<=r){floorLift=r;stuck=true;}}   // on top of the snow he slowly sinks back in
    if(clock-lastSurfaceUpdate>.12||dy){scan();lastSurfaceUpdate=clock;}
+   maybeSlip();
 
    /* ── CLIMBING ────────────────────────────────────────────────
       He walks to the left edge of the block first, then goes up its face.
@@ -1614,7 +1662,7 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
   const bob=clipName==='run'
     ?-RUN_BOB*Math.abs(Math.sin((clock-clipStart)*Math.PI*2*CLIPS.run.fps/CLIPS.run.f.length))
     :0;
-  pet.style.transform=`translate3d(${(state.x-SPRITE_W/2).toFixed(1)}px,${(state.y-FEET_Y/2+bob).toFixed(1)}px,0)`;
+  pet.style.transform=`translate3d(${(state.x-SPRITE_W/2).toFixed(1)}px,${(state.y-FEET_Y/2+bob).toFixed(1)}px,0)`+(slipRot?` rotate(${slipRot.toFixed(1)}deg)`:'');
   const shadowY=state.ground!==null?state.y:floorY();const distance=Math.max(0,shadowY-state.y);shadow.style.opacity=(stationary||stuck||flight||(sleigh&&sleigh.hidden))?'0':String(Math.max(.08,.6-distance/450));shadow.style.transform=`translate3d(${state.x-26}px,${shadowY-3}px,0) scale(${Math.max(.35,1-distance/600)},1)`;
  }else if(open&&ready){
   /* Chatting: parked beside the panel rather than roaming, and drawn from
@@ -1624,6 +1672,7 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
      runs on `clock`, which only advances while the page is visible, so the
      15s cap means 15s of the chat actually being looked at rather than 15s
      of wall clock. */
+  if(slip){slip=null;slipRot=0;}
   const t=chatLayout();
   if(t){
     const cw=t.w.toFixed(1)+'px',ch=t.h.toFixed(1)+'px';

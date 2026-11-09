@@ -126,19 +126,24 @@
      these bases). His feet are 16px above the bottom of the window and he is about 105px tall with his shoulders about
      64px up, so the drift comes to his shoulders and everything from there up shows. (Too-high tries: 110px hid him to
      the face; about 70px started to cover his shoulders.) */
+  /* On a phone the address bar slides away as you scroll, which fires 'resize' and changes innerHeight by 50-100px
+     over and over. Anything sized from innerHeight (the drift, the canvases) then jumped and was rebuilt mid-scroll.
+     So the snow sizes itself from SH, the viewport height at the last REAL change (a new width, or a height change of
+     200px or more: rotating, resizing a window); smaller height-only changes are ignored. */
+  let SW = innerWidth, SH = innerHeight;
   const bankDims = (a) => {
-    const k = (innerWidth < 600 ? 0.8 : 1) * Math.min(1, innerHeight / 800);   // a short window gets a smaller drift so it never buries the page's buttons
+    const k = (innerWidth < 600 ? 0.8 : 1) * Math.min(1, SH / 800);   // a short window gets a smaller drift so it never buries the page's buttons
     return { bb: (2 + 94 * a) * k, ba: (1 + 10 * a) * k, fb: (1 + 58 * a) * k, fa: (0.8 + 4 * a) * k };
   };
   /* Where the top of the front drift is now, in px above the bottom of the window (its base plus the lumps, about 10px
      when full). companion.js uses it so Little Ace can be set on top of the snow and his stuck floor rises with it. */
-  window.AceSnow.top = () => bankDims(amt()).fb + 10 * ((innerWidth < 600 ? 0.8 : 1) * Math.min(1, innerHeight / 800));
-  let bankMax = null;
+  window.AceSnow.top = () => bankDims(amt()).fb + 10 * ((innerWidth < 600 ? 0.8 : 1) * Math.min(1, SH / 800));
+  let bankMax = null, lastTb = '', lastTf = '';
   function placeBanks(a) {
     if (!bankMax) return;
-    const m = bankDims(a);
-    back.style.transform = 'translate3d(0,' + (bankMax.bb - m.bb).toFixed(2) + 'px,0)';
-    front.style.transform = 'translate3d(0,' + (bankMax.fb - m.fb).toFixed(2) + 'px,0)';
+    const m = bankDims(a), tb = 'translate3d(0,' + (bankMax.bb - m.bb).toFixed(1) + 'px,0)', tf = 'translate3d(0,' + (bankMax.fb - m.fb).toFixed(1) + 'px,0)';
+    if (tb !== lastTb) { back.style.transform = lastTb = tb; }
+    if (tf !== lastTf) { front.style.transform = lastTf = tf; }
   }
   function drawBanks() {
     const m = bankDims(1), bb = m.bb, ba = m.ba, fb = m.fb, fa = m.fa;
@@ -172,7 +177,7 @@
   });
   let flakes = [], W = 0, H = 0, dprF = 1;
   function sizeFall() {
-    dprF = Math.min(2, window.devicePixelRatio || 1);
+    dprF = Math.min(innerWidth < 700 ? 1.5 : 2, window.devicePixelRatio || 1);
     W = innerWidth; H = innerHeight;
     fall.style.width = W + 'px'; fall.style.height = H + 'px';
     fall.width = Math.round(W * dprF); fall.height = Math.round(H * dprF);
@@ -227,20 +232,21 @@
   const puffs = [];
   /* kick(x, n, o): n specks of dust off the surface of the drift at x. o.v scales their speed, o.dir (-1/1) with o.push
      blows them sideways (the beam's wind), o.spread is the fan of directions, o.w the width they start across, o.clouds
-     the number of big hazy clouds, o.drag how soon they stop gliding. */
+     the number of big hazy clouds, o.drag how soon they stop gliding, o.size scales every speck and cloud, o.h how far
+     up from the surface they start (so a poof can cover something standing in the drift), o.al the clouds' opacity. */
   window.AceSnow.kick = (x, n, o) => {
     if (calm.matches || amt() < 0.12) return;
     o = o || {};
     const sy = H - window.AceSnow.top() + 6, w = o.w || 46, sp = o.spread || 2.6, v0 = o.v || 1, pd = (o.dir || 0) * (o.push || 0);
     for (let i = 0; i < n; i++) {
       const a = -Math.PI / 2 + (Math.random() - 0.5) * sp, v = (60 + Math.random() * 240) * v0;
-      puffs.push({ x: x + (Math.random() - 0.5) * w, y: sy + (Math.random() - 0.5) * 8, vx: Math.cos(a) * v + pd * (0.3 + Math.random()),
-        vy: Math.sin(a) * v * (o.up || 1), dg: o.drag || 2.6, life: 0, max: 0.6 + Math.random() * 0.7, sz: 7 + Math.random() * 14,
+      puffs.push({ x: x + (Math.random() - 0.5) * w, y: sy - Math.random() * (o.h || 0) * 0.6 + (Math.random() - 0.5) * 8, vx: Math.cos(a) * v + pd * (0.3 + Math.random()),
+        vy: Math.sin(a) * v * (o.up || 1), dg: o.drag || 2.6, life: 0, max: 0.6 + Math.random() * 0.7, sz: (7 + Math.random() * 14) * (o.size || 1),
         g: 0.8 + Math.random() * 1.4, al: 0.5 + Math.random() * 0.4 });
     }
     for (let i = 0; i < (o.clouds || 0); i++) {                        // big hazy clouds that billow where it landed
-      puffs.push({ x: x + (Math.random() - 0.5) * (w + 14), y: sy - Math.random() * 10, vx: (Math.random() - 0.5) * 90 + pd * 0.5, vy: -20 - Math.random() * 40,
-        dg: o.drag || 2.6, life: 0, max: 0.9 + Math.random() * 0.5, sz: 34 + Math.random() * 26, g: 1.5 + Math.random() * 0.8, al: 0.45 });
+      puffs.push({ x: x + (Math.random() - 0.5) * (w + 14), y: sy - Math.random() * (o.h || 10), vx: (Math.random() - 0.5) * 90 + pd * 0.5, vy: -20 - Math.random() * 40,
+        dg: o.drag || 2.6, life: 0, max: 0.9 + Math.random() * 0.5, sz: (34 + Math.random() * 26) * (o.size || 1), g: 1.5 + Math.random() * 0.8, al: o.al || 0.45 });
     }
     if (puffs.length > 650) puffs.splice(0, puffs.length - 650);
   };
@@ -256,7 +262,7 @@
       p.vx *= 1 - p.dg * dt; p.vy = p.vy * (1 - 2.2 * dt) + 55 * dt;   // slows quickly and hangs, then settles slowly
       p.x += p.vx * dt; p.y += p.vy * dt;
       const t = p.life / p.max, z = p.sz * (1 + p.g * t);
-      fc.globalAlpha = p.al * (1 - t) * Math.min(1, p.life / 0.05);
+      fc.globalAlpha = p.al * (1 - t) * Math.min(1, p.life / 0.03);
       fc.drawImage(dustCv, p.x - z / 2, p.y - z / 2, z, z);
     }
   }
@@ -448,7 +454,7 @@
   }
 
   function sizeLedge() {
-    dprL = Math.min(2, window.devicePixelRatio || 1); LW = innerWidth; LH = innerHeight;
+    dprL = Math.min(innerWidth < 700 ? 1.5 : 2, window.devicePixelRatio || 1); LW = innerWidth; LH = innerHeight;
     ledgeCv.style.width = LW + 'px'; ledgeCv.style.height = LH + 'px';       // px, not vw: 100vw can be narrower than innerWidth and would shrink the drawing
     ledgeCv.width = Math.round(LW * dprL); ledgeCv.height = Math.round(LH * dprL);
     lc.setTransform(dprL, 0, 0, dprL, 0, 0);
@@ -542,7 +548,14 @@
     drawBanks(); sizeFall();
     startLedges(0);
     let rt = 0;
-    addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { drawBanks(); sizeFall(); if (items.length) { buildItems(); sizeLedge(); } }, 120); });
+    addEventListener('resize', () => {
+      clearTimeout(rt);
+      rt = setTimeout(() => {
+        const real = innerWidth !== SW || Math.abs(innerHeight - SH) >= 200;
+        if (real) { SW = innerWidth; SH = innerHeight; drawBanks(); sizeFall(); if (items.length) { buildItems(); sizeLedge(); } }
+        else if (innerHeight > H + 2) { sizeFall(); sizeLedge(); }      // the address bar slid away: the viewport grew, so the canvases grow with it (nothing is rebuilt)
+      }, 150);
+    });
     requestAnimationFrame(frame);
   }
   if (document.body) start(); else addEventListener('DOMContentLoaded', start);
