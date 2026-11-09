@@ -329,29 +329,64 @@ body:has(.ace-companion.is-dragging) .hero__plate{opacity:0}
 .ace-foot-btns{display:flex;align-items:center;gap:10px}
 
 /* ── THOUGHT BUBBLE ─────────────────────────────────────────────
-   Rises over his head every five minutes (THOUGHTS in companion.js) and
-   follows him while it is up. Dark ink and a gold edge like the rest of
-   the site's chrome; two small circles trail down toward his head so it
-   reads as a thought, not speech. The JS places it with transform, so the
-   pop-in uses the separate scale property and never fights it. */
+   Rises over his head (THOUGHTS in companion.js) and follows him while it is up. Cyberpunk: a cut-corner plate on near-black
+   with faint scanlines and a gold edge, now and then a red one. Every so often (.is-glitch, a burst of a third of a second
+   set from companion.js) the EDGE tears: the frame jumps and notches and two bars of signal stick out of the sides. The
+   words never move, they only get a brief red/blue fringe, so the line stays readable (technique: Glitchcore, stepped
+   offsets and clip-path, text-effects.colorion.co). The JS places it with transform, so the pop-in uses scale. */
 .ace-think{
-  position:fixed;left:0;top:0;z-index:84;max-width:240px;padding:10px 15px;
-  background:var(--ink-800,#121110);border:1px solid rgba(217,164,65,.55);border-radius:22px;
-  box-shadow:0 10px 30px rgba(0,0,0,.55),0 0 22px rgba(217,164,65,.12);
-  color:var(--on-dark,#F1EDE6);font:italic 400 13px/1.45 var(--f-body,"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif);
+  --edge:#D9A441;--edge-glow:rgba(217,164,65,.22);--plate:#0b0a0e;
+  position:fixed;left:0;top:0;z-index:84;isolation:isolate;max-width:255px;padding:11px 17px 12px;
+  color:#F4F0E8;font:500 12.5px/1.5 ui-monospace,"Cascadia Mono",Consolas,Menlo,monospace;letter-spacing:.01em;
+  filter:drop-shadow(0 8px 16px rgba(0,0,0,.6)) drop-shadow(0 0 7px var(--edge-glow));
   pointer-events:none;opacity:0;visibility:hidden;transform-origin:0 100%;
   transition:opacity .35s ease,visibility 0s linear .35s;
 }
+.ace-think.is-red{--edge:#FF2B3D;--edge-glow:rgba(255,43,61,.38);--plate:#14070b}
+/* the plate: ::before is the coloured edge, ::after the dark face 1px inside it, both with the corners cut */
+.ace-think::before,.ace-think::after{content:"";position:absolute;z-index:-1;
+  clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
+.ace-think::before{inset:0;background:var(--edge)}
+.ace-think::after{inset:1px;background:repeating-linear-gradient(0deg,rgba(255,255,255,.028) 0 1px,transparent 1px 3px),var(--plate)}
 .ace-think.is-left{transform-origin:100% 100%}
 .ace-think.is-on{opacity:1;visibility:visible;transition:opacity .35s ease}
 .ace-think p{margin:0}
-.ace-think__dot{position:absolute;display:block;border-radius:50%;
-  background:var(--ink-800,#121110);border:1px solid rgba(217,164,65,.55)}
-.ace-think__dot--a{width:10px;height:10px;left:10px;bottom:-14px}
-.ace-think__dot--b{width:6px;height:6px;left:-2px;bottom:-24px}
-.ace-think.is-left .ace-think__dot--a{left:auto;right:10px}
-.ace-think.is-left .ace-think__dot--b{left:auto;right:-2px}
+/* A line that links to a page: the whole bubble is the click target, and it takes the pointer only while it is one. */
+.ace-think.is-on.has-link{pointer-events:auto;cursor:pointer}
+.ace-think a{color:inherit;text-decoration:underline;text-decoration-color:var(--edge);text-underline-offset:3px}
+.ace-think a::after{content:"";position:absolute;inset:0}
+.ace-think.has-link:hover{--edge:#EEBE63}
+.ace-think.is-red.has-link:hover{--edge:#FF5A68}
+.ace-think a:hover{color:#fff}
+.ace-think a:focus-visible{outline:none}
+.ace-think.has-link:focus-within{outline:2px solid var(--edge);outline-offset:3px}
+/* the trail down to his head: two square pixels */
+.ace-think__dot{position:absolute;display:block;background:var(--edge)}
+.ace-think__dot--a{width:7px;height:7px;left:12px;bottom:-13px}
+.ace-think__dot--b{width:4px;height:4px;left:3px;bottom:-22px}
+.ace-think.is-left .ace-think__dot--a{left:auto;right:12px}
+.ace-think.is-left .ace-think__dot--b{left:auto;right:3px}
+/* the bars of torn signal, placed at random by the JS (--y, --w, --h) */
+.ace-think__tear{position:absolute;display:none;top:var(--y,30%);width:var(--w,44px);height:var(--h,3px);pointer-events:none}
+.ace-think__tear--a{left:-20px;background:#FF2B3D}
+.ace-think__tear--b{right:-20px;background:#57E6FF}
+.ace-think.is-glitch .ace-think__tear{display:block;animation:aceTear .34s steps(1) both}
+.ace-think.is-glitch::before{animation:aceEdge .34s steps(1) both}
+.ace-think.is-glitch p{text-shadow:-1px 0 rgba(255,43,61,.8),1px 0 rgba(87,230,255,.7);animation:aceFringe .34s steps(1) both}
+@keyframes aceEdge{
+  0%{transform:translate(-3px,1px);background:#FF2B3D;clip-path:polygon(12px 0,100% 0,100% 34%,97% 34%,97% 46%,100% 46%,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
+  30%{transform:translate(3px,-1px);background:#57E6FF;clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 66%,3% 66%,3% 52%,0 52%,0 12px)}
+  60%{transform:translate(-2px,0);background:#FF2B3D;clip-path:polygon(12px 0,60% 0,60% 4px,74% 4px,74% 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
+  85%,100%{transform:none}
+}
+@keyframes aceTear{0%{transform:translateX(0)}35%{transform:translateX(3px) scaleX(.7)}65%{transform:translateX(-3px) scaleX(1.1)}100%{opacity:0}}
+@keyframes aceFringe{85%,100%{text-shadow:none}}
 @keyframes aceThinkIn{from{scale:.82}to{scale:1}}
 @media (prefers-reduced-motion:no-preference){
   .ace-think.is-on{animation:aceThinkIn .5s cubic-bezier(.2,1.5,.4,1)}
+}
+@media (prefers-reduced-motion:reduce){
+  .ace-think.is-glitch::before,.ace-think.is-glitch p,.ace-think.is-glitch .ace-think__tear{animation:none}
+  .ace-think.is-glitch .ace-think__tear{display:none}
+  .ace-think.is-glitch p{text-shadow:none}
 }

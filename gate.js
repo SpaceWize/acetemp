@@ -2,7 +2,7 @@
    normal sheet with the hat frames in the same cells; climb included; the chat pose has its own sheet, ace-chat-pose-xmas.webp).
    Set to false to go back. When true it also loads xmas.js (snowfall and a snowbank). Read by gate-scene (below) and by companion.js through window.ACE_ATLAS. */
 window.ACE_XMAS=(function(){try{return localStorage.getItem('ace-xmas')==='on';}catch(e){return false;}})();   // the chat's Christmas switch (off unless a visitor turns it on)
-window.ACE_ATLAS='assets/images/'+(window.ACE_XMAS?'ace-atlas-xmas.webp?v=7':'ace-atlas.webp?v=13');
+window.ACE_ATLAS='assets/images/'+(window.ACE_XMAS?'ace-atlas-xmas.webp?v=8':'ace-atlas.webp?v=14');
 if(window.ACE_XMAS){const s=document.createElement('script');s.src='xmas.js?v=28';s.defer=true;document.head.append(s);}   // snow + snowbank
 /* ACE SPADERS — the 2027 waitlist gate.                              (rebuilt 2026-11-07)
 
@@ -37,7 +37,7 @@ if(window.ACE_XMAS){const s=document.createElement('script');s.src='xmas.js?v=28
   var COOKIE = 'ace_waitlist_v1';
   var ENTERED = 'ace-entered-v1';         // this visit has been through the gates
   var SCENE_URL = './gate-scene.js?v=8';
-  var ATLAS = window.ACE_ATLAS || 'assets/images/ace-atlas.webp?v=13';
+  var ATLAS = window.ACE_ATLAS || 'assets/images/ace-atlas.webp?v=14';
   var POW_BITS = 16;                      // proof of work; the sheet accepts 14 and up
   var POW_BUDGET_MS = 6000;               // a browser slower than this sends without a proof (the sheet still takes it)
   var MIN_MS = 1500;                      // the send waits until the box has been up this long (people are not instant)

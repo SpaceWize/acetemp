@@ -457,7 +457,7 @@ img.onload=()=>{
 img.onerror=()=>{pet.hidden=true;shadow.hidden=true;};
 /* WebP, not the PNG the build writes: 435KB against 1.8MB, with the alpha
    identical and colour within ~1.5/255 on average. Re-export after a rebuild. */
-img.src=window.ACE_ATLAS||'assets/images/ace-atlas.webp?v=13';   // bump when the sheet changes: the page caches it
+img.src=window.ACE_ATLAS||'assets/images/ace-atlas.webp?v=14';   // bump when the sheet changes: the page caches it
 
 /* The buried "Ahh!" loop (Christmas only) has its own six-cell strip, loaded once; until it arrives he holds his idle frame. */
 let stuckImg=null,stuckReady=false;
@@ -480,6 +480,10 @@ function clipFrame(){
    legs (LEGS_X in cell px, where every idle frame is aligned) rather than
    the cell centre, or he would hop ~5px sideways every glance. */
 const IDLE_LOOK=new Set([3,4,5]),LEGS_X=115;
+/* The spade on his jacket is on his right chest (screen-right), so a frame that is simply mirrored would put it on the wrong
+   side. The frames where it shows (the idle glances and the slip) have a ready-made mirrored copy in the atlas, in row 12,
+   with the spade rubbed out on the wrong side and put back on the right one: they are drawn as they are, not flipped. */
+const MIRROR_CELL={3:96,4:97,5:98,80:99,88:100,81:101,82:102,87:103};
 function renderSprite(facing){
   if(!ready)return;
   const cell=clipFrame();
@@ -487,13 +491,16 @@ function renderSprite(facing){
   const look=clipName==='idle'&&IDLE_LOOK.has(cell)&&state.x>innerWidth/2;
   const flip=(dir!==0&&facing!==dir)||look;
   const own=(clipName==='stuck'||clipName==='shiver')&&stuckReady;      // drawn from the stuck strip instead of the atlas
-  const key=own?100+cell:cell;
+  const mc=(!own&&(flip||look))?MIRROR_CELL[cell]:undefined;     // a ready-made mirrored copy, if there is one
+  const key=own?100+cell:(mc!==undefined?200+mc:cell);
   if(key===lastCell&&flip===lastFlip)return;   // nothing changed, skip the blit
   lastCell=key;lastFlip=flip;
-  const sx=own?cell*CELL_W:(cell%ATLAS_COLS)*CELL_W,sy=own?0:Math.floor(cell/ATLAS_COLS)*CELL_H;
+  const dc=mc!==undefined?mc:cell;
+  const sx=own?cell*CELL_W:(dc%ATLAS_COLS)*CELL_W,sy=own?0:Math.floor(dc/ATLAS_COLS)*CELL_H;
   ctx.clearRect(0,0,CELL_W,CELL_H);
   ctx.save();
-  if(look){ctx.translate(LEGS_X*2,0);ctx.scale(-1,1);}
+  if(mc!==undefined){}
+  else if(look){ctx.translate(LEGS_X*2,0);ctx.scale(-1,1);}
   else if(flip){ctx.translate(CELL_W,0);ctx.scale(-1,1);}
   ctx.drawImage(own?stuckImg:img,sx,sy,CELL_W,CELL_H,0,0,CELL_W,CELL_H);
   ctx.restore();
@@ -670,25 +677,54 @@ window.AceCompanion={
     return {x:state.x,y:state.y,h:SPRITE_H,airborne:state.ground===null,vy:state.vy,vx:state.vx,
             returning:!!(visit&&visit.phase==='back')};
   },
-  /* Show a thought bubble now (the next line from THOUGHTS, or the text given). For trying it out. */
-  think(text){think(text);}
+  /* Show a thought bubble now (the next line from THOUGHTS, or the text or {t,href} given). For trying it out. */
+  think(line){think(line);}
 };
 const state={x:Math.max(70,innerWidth-160),y:innerHeight-20,vx:0,vy:0,ground:'floor'};
 let cursorX=innerWidth/2;document.addEventListener('pointermove',e=>{cursorX=e.clientX;},{passive:true});
 
 /* ── THOUGHTS ──────────────────────────────────────────────────
-   Every five minutes of the page actually being looked at (thinkClock,
-   below, only counts while it is on screen), a thought bubble rises over his head
+   At a random moment 20 to 45 seconds after the last one went away (thinkGap; time only counts while the page is on
+   screen, see thinkClock below), a thought bubble rises over his head
    for a few seconds and follows him while it is up. THOUGHTS is the list
-   it works through, one line for now. It holds off while the chat is
+   it works through: a plain string is a joke, {t,href} is a line that links to a
+   page, {t,xmas:true} only shows at Christmas. It carries on through the list from page to page (ACE_THOUGHT_KEY), starting
+   somewhere random, and skips a link to the page you are already on. It holds off while the chat is
    open, while he is being dragged, while the waitlist gate is up and
    while the home intro plays, and tries again a few seconds later.
-   Decorative, so it is hidden from screen readers rather than
-   announced every five minutes. */
-const THOUGHTS=['I’m so cute and you know it.... but don’t call me that!'];
-const THINK_EVERY=300,THINK_FOR=7;
+   A joke is decorative, so it is hidden from screen readers. A link is a real link: while the pointer
+   or keyboard focus is on it the bubble stops following him and stays up, so it can be clicked. */
+const THOUGHTS=[
+  {t:'One problem. One meeting with Ace. That’s a Private Working Session.',href:'private-working-session.html'},
+  'Ace has meetings. I have buttons.',
+  {t:'Want Ace in your corner every month? Ask about Ongoing Private Advisory.',href:'advisory.html'},
+  {t:'Mastermind members get monthly meetings and, depending on the tier, direct time with Ace.',href:'mastermind-membership.html'},
+  'I’ve been running for hours and I’m still on this page.',
+  {t:'Airport run? Investor meeting? Ace can get you there on time, with discretion.',href:'premium-pickup-transport.html'},
+  {t:'Ace talks resilience, personal development and networking. Book him for your room.',href:'public-speaking.html'},
+  {t:'Who keeps shovelling snow onto this website?',xmas:true},
+  'Please stop throwing me. …Okay, one more.',
+  {t:'Two roads and no idea which one to take? A Private Working Session is $500 CAD.',href:'private-working-session.html'},
+  {t:'Got something that needs fixing? Start the Conversation with Ace.',href:'contact.html'},
+  'Is the cursor following me, or am I following the cursor?',
+  {t:'There’s a private, application-only group called the Invested Aces Mastermind. I’m told it’s worth a look.',href:'mastermind-membership.html'},
+  {t:'Personal or business? Ace doesn’t make you pick. Ongoing Private Advisory.',href:'advisory.html'},
+  {t:'These buttons are slippery. Nobody warned me.',xmas:true},
+  'I climb all of these buttons for free, you know.',
+  {t:'Need an arrival that carries some weight? Ace drives. Premium Pickup & Transport.',href:'premium-pickup-transport.html'},
+  {t:'Ever wonder who I’m named after? Meet Your ASSET.',href:'index.html#about'},
+  'Nobody ever asks what’s past the scrollbar.',
+  {t:'Need a speaker who won’t try to steal the show? Ace gives keynotes and talks.',href:'public-speaking.html'},
+  {t:'You can apply to the Invested Aces Mastermind right here.',href:'mastermind-application.html'},
+  {t:'The hat was not my idea.',xmas:true},
+  'I’m about a hundred pixels tall and I still do my own stunts.',
+  {t:'Need the unfiltered report on a team, a location or an opportunity? Ask about On-Site Assignments.',href:'contact.html'},
+  {t:'Imagine having Ace on call between meetings. That’s part of Ongoing Private Advisory.',href:'advisory.html'},
+  {t:'Not sure where to start? Everything starts with a 30-minute assessment call.',href:'contact.html'},
+].map(l=>typeof l==='string'?{t:l}:l).filter(l=>(!l.xmas||window.ACE_XMAS)&&(!l.href||l.href.split('#')[0]!==(location.pathname.split('/').pop()||'index.html')));
+const THINK_GAP_MIN=20,THINK_GAP_MAX=45,thinkGap=()=>THINK_GAP_MIN+Math.random()*(THINK_GAP_MAX-THINK_GAP_MIN),THINK_FOR=7,THINK_LINK_FOR=11,ACE_THOUGHT_KEY='ace-thought';
 const bubble=document.createElement('div');bubble.className='ace-think';bubble.setAttribute('aria-hidden','true');
-bubble.innerHTML='<p></p><i class="ace-think__dot ace-think__dot--a"></i><i class="ace-think__dot ace-think__dot--b"></i>';
+bubble.innerHTML='<p></p><i class="ace-think__dot ace-think__dot--a"></i><i class="ace-think__dot ace-think__dot--b"></i><i class="ace-think__tear ace-think__tear--a"></i><i class="ace-think__tear ace-think__tear--b"></i>';
 document.body.append(bubble);
 /* Its own clock, in real seconds the page is on screen. Little Ace's `clock` caps each frame's step, so on a
    slow or busy device it runs behind the wall clock and "every five minutes" would stretch. Time with the tab
@@ -696,12 +732,29 @@ document.body.append(bubble);
    most five seconds, so a sleeping laptop does not fast-forward it. */
 let thinkClock=0,thinkLast=0;
 document.addEventListener('visibilitychange',()=>{thinkLast=0;});
-let nextThought=THINK_EVERY,thinkUntil=-1,thoughtIx=0;
-function think(text){
-  bubble.querySelector('p').textContent=text||THOUGHTS[thoughtIx++%THOUGHTS.length];
-  thinkUntil=thinkClock+THINK_FOR;placeBubble();bubble.classList.add('is-on');
+let nextThought=thinkGap(),thinkUntil=-1;
+let thoughtIx=Math.floor(Math.random()*THOUGHTS.length);
+try{const n=parseInt(sessionStorage.getItem(ACE_THOUGHT_KEY),10);if(n>=0)thoughtIx=n;}catch(e){}
+function think(line){
+  if(typeof line==='string')line={t:line};
+  if(!line){line=THOUGHTS[thoughtIx++%THOUGHTS.length];try{sessionStorage.setItem(ACE_THOUGHT_KEY,String(thoughtIx%THOUGHTS.length));}catch(e){}}
+  const p=bubble.querySelector('p');p.textContent='';
+  if(line.href){const a=document.createElement('a');a.href=line.href;a.textContent=line.t;p.append(a);bubble.removeAttribute('aria-hidden');}
+  else{p.textContent=line.t;bubble.setAttribute('aria-hidden','true');}
+  bubble.classList.toggle('has-link',!!line.href);
+  bubble.classList.toggle('is-red',Math.random()<THINK_RED);bubble.classList.remove('is-glitch');
+  nextGlitch=thinkClock+.6+Math.random();
+  thinkUntil=thinkClock+(line.href?THINK_LINK_FOR:THINK_FOR);placeBubble();bubble.classList.add('is-on');
 }
-function quiet(){thinkUntil=-1;bubble.classList.remove('is-on');}
+/* Now and then the edge of the bubble tears for a third of a second (.is-glitch in companion.css): the bars land somewhere new each time. */
+const THINK_RED=.25,glitchRand=(a,b)=>a+Math.random()*(b-a);
+let nextGlitch=0,glitchOff=0;
+function glitchBubble(){
+  for(const t of bubble.querySelectorAll('.ace-think__tear')){t.style.setProperty('--y',glitchRand(10,82)+'%');t.style.setProperty('--w',glitchRand(20,32)+'px');t.style.setProperty('--h',glitchRand(2,5)+'px');}
+  bubble.classList.remove('is-glitch');void bubble.offsetWidth;bubble.classList.add('is-glitch');
+  clearTimeout(glitchOff);glitchOff=setTimeout(()=>bubble.classList.remove('is-glitch'),360);
+}
+function quiet(){thinkUntil=-1;bubble.classList.remove('is-on','has-link','is-glitch');bubble.setAttribute('aria-hidden','true');}
 /* Up and to his right, off the top of his cap; to his left where the right side has no room. */
 function placeBubble(){
   const w=bubble.offsetWidth,h=bubble.offsetHeight,head=state.y-FEET_Y/2;
@@ -717,7 +770,8 @@ requestAnimationFrame(function thinkLoop(now){
   thinkLast=now;
   const html=document.documentElement;
   const busy=!ready||open||dragging||html.classList.contains('gate-locked')||html.classList.contains('intro');
-  if(thinkUntil>=0){if(busy||thinkClock>=thinkUntil){quiet();nextThought=thinkClock+THINK_EVERY;}else placeBubble();}
+  const held=bubble.classList.contains('has-link')&&(bubble.matches(':hover')||bubble.contains(document.activeElement));   // being read or clicked: it stays up and stays put
+  if(thinkUntil>=0){if(busy||(thinkClock>=thinkUntil&&!held)){quiet();nextThought=thinkClock+thinkGap();}else{if(!held)placeBubble();if(thinkClock>=nextGlitch){glitchBubble();nextGlitch=thinkClock+glitchRand(1.2,3.8);}}}
   else if(thinkClock>=nextThought){if(busy)nextThought=thinkClock+5;else think();}
   requestAnimationFrame(thinkLoop);
 });
