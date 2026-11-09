@@ -247,6 +247,13 @@ body:has(.ace-companion.is-dragging) .hero__plate{opacity:0}
   border:1px solid rgba(217,164,65,.4);background:var(--ink-800,#121110);color:var(--gold-hi,#EEBE63);
 }
 .ace-xmas svg{width:15px;height:15px}
+.ace-blizzard{
+  width:26px;height:26px;padding:0;display:grid;place-items:center;cursor:pointer;
+  border:1px solid rgba(217,164,65,.4);background:var(--ink-800,#121110);color:var(--gold-hi,#EEBE63);
+}
+.ace-blizzard svg{width:15px;height:15px}
+.ace-blizzard:hover{border-color:var(--gold,#D9A441)}
+.ace-blizzard:focus-visible{outline:2px solid var(--gold-hi,#EEBE63);outline-offset:2px}
 .ace-xmas.is-off{color:var(--on-dark-mute,#A29C93);border-color:rgba(217,164,65,.25)}
 .ace-xmas:hover{border-color:var(--gold,#D9A441)}
 .ace-xmas:focus-visible{outline:2px solid var(--gold-hi,#EEBE63);outline-offset:2px}

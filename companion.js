@@ -23,7 +23,7 @@ const physics=window.AcePhysics;if(!physics)return;
 let knowledge=window.AceKnowledge||null,knowledgeLoad=null;
 function loadKnowledge(){
  if(knowledge)return Promise.resolve(knowledge);
- if(!knowledgeLoad)knowledgeLoad=new Promise((res,rej)=>{const s=document.createElement('script');s.src='knowledge.js?v=2';
+ if(!knowledgeLoad)knowledgeLoad=new Promise((res,rej)=>{const s=document.createElement('script');s.src='knowledge.js?v=3';
   s.onload=()=>{knowledge=window.AceKnowledge||null;knowledge?res(knowledge):rej();};s.onerror=()=>{knowledgeLoad=null;s.remove();rej();};document.head.append(s);});
  return knowledgeLoad;}
 
@@ -167,7 +167,7 @@ function loadChatSheet(){
   if(chatAsked)return;
   chatAsked=true;
   chatImg.onload=()=>{chatReady=true;lastChatCell=-1;};
-  chatImg.src=window.ACE_XMAS?'assets/images/ace-chat-pose-xmas.webp?v=1':'assets/images/ace-chat-pose.webp';
+  chatImg.src=window.ACE_XMAS?'assets/images/ace-chat-pose-xmas.webp?v=2':'assets/images/ace-chat-pose.webp';
 }
 function renderChat(cell){
   if(!chatReady||cell===lastChatCell)return;
@@ -317,7 +317,36 @@ const xmasButton=panel.querySelector('.ace-xmas');
 xmasButton.innerHTML=SNOW_ICON;
 function updateXmas(){const on=!!window.ACE_XMAS;xmasButton.setAttribute('aria-pressed',String(on));xmasButton.classList.toggle('is-off',!on);xmasButton.title=on?'Christmas mode: on. Click to turn it off':'Christmas mode: off. Click to turn it on';}
 updateXmas();
-xmasButton.addEventListener('click',()=>{const on=!window.ACE_XMAS;try{localStorage.setItem('ace-xmas',on?'on':'off');}catch(e){}location.reload();});
+xmasButton.addEventListener('click',()=>{const on=!window.ACE_XMAS;try{localStorage.setItem('ace-xmas',on?'on':'off');sessionStorage.removeItem('ace-xmas-t0');sessionStorage.removeItem('ace-xmas-stuck');}catch(e){}location.reload();});
+/* THE BLIZZARD (Christmas mode only): a second small button beside the Christmas switch. It closes the chat so the page
+   is in view and asks xmas.js to blow a storm (window.AceSnow.blizzard). When the pile reaches full xmas.js fires
+   'ace:snowfull' and Little Ace is left STUCK in the snow for the rest of the visit: he stops roaming, stands on the
+   floor and holds one frame (the clips 'stuck', an eight-frame arm-waving loop, and now and then 'shiver', both from ace-stuck-xmas.webp).
+   He can be dragged out and set on top of the snow (see floorLift); he sinks back in slowly. Turning Christmas off or on
+   again with the switch above frees him for good. */
+let stuck=false;
+/* Dragged out of the snow he is set down ON TOP of it: for as long as floorLift is above zero the floor under him is the
+   top of the snow (SNOW_TOP px above the bottom of the window, about where xmas.js's front lip ends), so he lands and runs
+   about up there. While he is on that floor floorLift falls by SINK_PX_S a second: he slowly sinks back in, and when it
+   reaches zero he is stuck again. Standing on a ledge he does not sink. Big moments wait until he is down. */
+let floorLift=0;
+let nextShiver=0,shiverUntil=0;   // buried: every so often he stops waving and shivers for a few seconds
+const SNOW_TOP=60,SINK_PX_S=1.5;
+const snowLift=()=>SNOW_TOP*(innerWidth<600?.8:1)*Math.min(1,innerHeight/800)-16;   // same scaling as the drift in xmas.js
+const floorY=()=>innerHeight-16-floorLift;
+const STUCK_KEY='ace-xmas-stuck';
+try{if(window.ACE_XMAS&&sessionStorage.getItem(STUCK_KEY)==='1')stuck=true;else sessionStorage.removeItem(STUCK_KEY);}catch(e){}
+if(window.ACE_XMAS){
+  const bzButton=document.createElement('button');bzButton.type='button';bzButton.className='ace-blizzard';
+  bzButton.setAttribute('aria-label','Blizzard');bzButton.title='Blizzard: whip up a snowstorm';
+  bzButton.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 8h11a3 3 0 1 0-3-3"/><path d="M3 12h16a3 3 0 1 1-3 3"/><path d="M3 16h8a2.5 2.5 0 1 1-2.5 2.5"/></svg>';
+  xmasButton.after(bzButton);
+  bzButton.addEventListener('click',()=>{hideChat();if(window.AceSnow&&window.AceSnow.blizzard)window.AceSnow.blizzard();});
+}
+document.addEventListener('ace:snowfull',()=>{
+  if(!window.ACE_XMAS||stuck)return;
+  const hold=setInterval(()=>{if(power||sleigh||flight)return;clearInterval(hold);stuck=true;try{sessionStorage.setItem(STUCK_KEY,'1');}catch(e){}},300);   // wait for a big moment to finish first
+});
 
 /* ── SPRITE ────────────────────────────────────────────────────
    The atlas is a uniform grid, built offline by
@@ -349,6 +378,10 @@ const CLIPS={
   /* Idle, cells 0-7: eight frames from the painterly sheet. 3 and 7 are the
      blinks, 4-6 the side glances. 3.8fps gives a 2.1s loop. */
   idle  :{f:[0,1,2,3,4,5,6,7],       fps:3.8,loop:true, dir:0},
+  /* Stuck in the blizzard's snow (Christmas): for now just his idle frame, held. */
+  stuck :{f:[0,1,2,3,4,5,6,7],         fps:8,  loop:true, dir:0},   // cells of ace-stuck-xmas.webp, not of the atlas (see renderSprite)
+  /* Now and then, buried: arms crossed, teeth chattering (cells 8-13 of the same strip). */
+  shiver:{f:[8,9,10,11,12,13],         fps:24, loop:true, dir:0},
   /* Wave: eight frames (cells 8-12, then 83-85): hand up, wave, hand down. */
   wave  :{f:[8,9,10,11,12,83,84,85], fps:10, loop:true, dir:0},
   /* A real eight-frame gait, played whole and in order at 11fps — the
@@ -412,6 +445,10 @@ img.onerror=()=>{pet.hidden=true;shadow.hidden=true;};
    identical and colour within ~1.5/255 on average. Re-export after a rebuild. */
 img.src=window.ACE_ATLAS||'assets/images/ace-atlas.webp?v=11';   // bump when the sheet changes: the page caches it
 
+/* The buried "Ahh!" loop (Christmas only) has its own six-cell strip, loaded once; until it arrives he holds his idle frame. */
+let stuckImg=null,stuckReady=false;
+if(window.ACE_XMAS){stuckImg=new Image();stuckImg.onload=()=>{stuckReady=true;lastCell=-1;};stuckImg.src='assets/images/ace-stuck-xmas.webp?v=6';}
+
 function play(name){if(clipName!==name){clipName=name;clipStart=clock;}}
 /* Where a clip has got to. A looping clip wraps; a one-shot holds its last
    frame, which is what makes `point` read as a held gesture rather than a
@@ -435,14 +472,16 @@ function renderSprite(facing){
   const dir=(CLIPS[clipName]||CLIPS.idle).dir;
   const look=clipName==='idle'&&IDLE_LOOK.has(cell)&&state.x>innerWidth/2;
   const flip=(dir!==0&&facing!==dir)||look;
-  if(cell===lastCell&&flip===lastFlip)return;   // nothing changed, skip the blit
-  lastCell=cell;lastFlip=flip;
-  const sx=(cell%ATLAS_COLS)*CELL_W,sy=Math.floor(cell/ATLAS_COLS)*CELL_H;
+  const own=(clipName==='stuck'||clipName==='shiver')&&stuckReady;      // drawn from the stuck strip instead of the atlas
+  const key=own?100+cell:cell;
+  if(key===lastCell&&flip===lastFlip)return;   // nothing changed, skip the blit
+  lastCell=key;lastFlip=flip;
+  const sx=own?cell*CELL_W:(cell%ATLAS_COLS)*CELL_W,sy=own?0:Math.floor(cell/ATLAS_COLS)*CELL_H;
   ctx.clearRect(0,0,CELL_W,CELL_H);
   ctx.save();
   if(look){ctx.translate(LEGS_X*2,0);ctx.scale(-1,1);}
   else if(flip){ctx.translate(CELL_W,0);ctx.scale(-1,1);}
-  ctx.drawImage(img,sx,sy,CELL_W,CELL_H,0,0,CELL_W,CELL_H);
+  ctx.drawImage(own?stuckImg:img,sx,sy,CELL_W,CELL_H,0,0,CELL_W,CELL_H);
   ctx.restore();
 }
 
@@ -475,7 +514,7 @@ function findPerches(){
        until the scroll choreography composes them, and he should not be
        standing on a button nobody can see yet. The skip link is parked
        off-screen at left:-9999px until it takes focus. */
-    if(el.closest('.site-head,.mnav,.foot,#ace-chat,.sprite,.skip,'+
+    if(el.closest('.site-head,.mnav,.foot,#ace-chat,.sprite,.skip,.portrait__cap,'+
                   '.ace-companion,.ace-shadow,.ace-launcher,[data-hero] .hero__content'))continue;
     const r=el.getBoundingClientRect();
     /* No minimum height: a horizontal rule is the flattest thing on the
@@ -749,6 +788,7 @@ addEventListener('pointermove',e=>{
     climb=null;runGoal=null;pendingJump=null;pointUntil=0;
     state.vx=0;state.vy=0;state.ground=null;state.bouncy=false;dragVX=dragVY=0;
     dragPose=6;dragSwingV=0;
+    if(stuck){stuck=false;nextShiver=shiverUntil=0;floorLift=snowLift();}                  // pulled out of the snow: he will be set down on top of it
   }
   const nx=clampX(e.clientX+dragOffX),dx=nx-state.x;
   const ny=Math.max(-10,Math.min(innerHeight+40,e.clientY+dragOffY)),dy=ny-state.y;
@@ -798,7 +838,7 @@ function textSurfaceNow(){
   if(r.width<100||r.bottom<40||r.top>innerHeight-20)return null;
   return {id:'text',left:r.left,right:r.right,y:r.top,el:textSurface.el};
 }
-function scan(){surfaces=[];for(let i=0;i<perches.length;i++){const p=perches[i],r=p.el.getBoundingClientRect();const y=perchY(p,r);if(r.width>PERCH_MIN_WIDTH&&y>150&&y<innerHeight-60&&r.right>60&&r.left<innerWidth-60){surfaces.push({id:String(i),left:Math.max(20,r.left),right:Math.min(innerWidth-20,r.right),y,el:p.el});}}surfaces=bridge(surfaces);const t=state.ground==='text'&&textSurfaceNow();if(t)surfaces.push(t);const v=visitSurface();if(v)surfaces.push(v);const l=launcherSurface();if(l)surfaces.push(l);surfaces.push({id:'floor',left:0,right:innerWidth,y:innerHeight-16});}
+function scan(){surfaces=[];for(let i=0;i<perches.length;i++){const p=perches[i],r=p.el.getBoundingClientRect();const y=perchY(p,r);if(r.width>PERCH_MIN_WIDTH&&y>150&&y<innerHeight-60&&r.right>60&&r.left<innerWidth-60){surfaces.push({id:String(i),left:Math.max(20,r.left),right:Math.min(innerWidth-20,r.right),y,el:p.el});}}surfaces=bridge(surfaces);const t=state.ground==='text'&&textSurfaceNow();if(t)surfaces.push(t);const v=visitSurface();if(v)surfaces.push(v);const l=launcherSurface();if(l)surfaces.push(l);surfaces.push({id:'floor',left:0,right:innerWidth,y:floorY()});}
 /* The Ask Little Ace button, as a ledge. Added after the perch filter on
    purpose: it sits in the bottom 60px that filter keeps him out of, and it
    is where he spawns. Gone while the chat is open and the button is hidden. */
@@ -825,7 +865,7 @@ function bridge(list){
   }
   return out;
 }
-function currentSurface(){if(state.ground==='floor')return {id:'floor',left:0,right:innerWidth,y:innerHeight-16};if(state.ground==='text')return textSurfaceNow();if(state.ground==='visit')return visitSurface();if(state.ground==='launcher')return launcherSurface();if(state.ground===null)return null;
+function currentSurface(){if(state.ground==='floor')return {id:'floor',left:0,right:innerWidth,y:floorY()};if(state.ground==='text')return textSurfaceNow();if(state.ground==='visit')return visitSurface();if(state.ground==='launcher')return launcherSurface();if(state.ground===null)return null;
  /* The scanned list first: if he is standing on a bridged run, the element's
     own rect is only the card he happens to be over, and using it would drop
     him into the first gutter he reached. */
@@ -1043,7 +1083,7 @@ const pwCtx=pwCv.getContext('2d'),bmCtx=beamCv.getContext('2d');
 let power=null,pwImg=null,pwReady=false,pwClock=0,pwLast=0,nextAuto=POWER_EVERY,powerQueue=false,powerQueueKind='power',powerQueueUntil=0,beamDpr=1,lastBig='';
 function powerOk(){
   const h=document.documentElement;
-  return ready&&!open&&!dragging&&!parked&&!motionPaused&&!calm.matches&&state.ground!==null&&!climb&&!pendingJump&&!visit
+  return ready&&!open&&!dragging&&!stuck&&floorLift===0&&!parked&&!motionPaused&&!calm.matches&&state.ground!==null&&!climb&&!pendingJump&&!visit
     &&!h.classList.contains('gate-locked')&&!h.classList.contains('intro')&&clock>=waveUntil&&!holdingPoint();
 }
 function sizeBeam(){beamDpr=Math.min(2,window.devicePixelRatio||1);beamCv.style.width=innerWidth+'px';beamCv.style.height=innerHeight+'px';beamCv.width=Math.round(innerWidth*beamDpr);beamCv.height=Math.round(innerHeight*beamDpr);}
@@ -1131,12 +1171,12 @@ function stepPower(dt){
    The second of the big moments (see POWER-UP above; they share one scheduler). He runs off the
    page on the left, a few moments later flies across the top of the page in a sleigh pulled by two
    mechanical reindeer, waving, in an arc that ends off the right edge, and a few moments after
-   that runs back in from the right edge. Six frames from their own sheet
-   (assets/images/ace-sleigh.webp, 2x3 cells of 562x250, loaded the first time it plays).
+   that runs back in from the right edge. Twelve frames from their own sheet
+   (assets/images/ace-sleigh.webp, 3x4 cells of 562x250, loaded the first time it plays).
    While it runs he is moved from here, not by the roaming code: tick() just draws whatever clip
    and facing this asks for. Triggers: Shift + S, A, N, T, A typed in order, or the shared timer
    (Christmas only). Same guards as the power-up; if the chat opens or he is picked up it ends at once. */
-const SLEIGH_SHEET='assets/images/ace-sleigh.webp?v=1',SL_CW=562,SL_CH=250,SL_FPS=9,SL_RUN=1.15;
+const SLEIGH_SHEET='assets/images/ace-sleigh.webp?v=2',SL_CW=562,SL_CH=250,SL_FPS=15,SL_FRAMES=12,SL_COLS=3,SL_RUN=1.15;
 const slCv=document.createElement('canvas');slCv.width=SL_CW;slCv.height=SL_CH;slCv.setAttribute('aria-hidden','true');
 slCv.style.cssText='position:fixed;left:0;top:0;pointer-events:none;display:none;will-change:transform;z-index:120';
 document.body.append(slCv);
@@ -1177,8 +1217,8 @@ function stepSleigh(dt){
     const x=X(u),y=Y(u),ang=Math.atan2(Y(Math.min(1,u+.02))-Y(Math.max(0,u-.02)),X(Math.min(1,u+.02))-X(Math.max(0,u-.02)))*.7;
     slCv.style.width=W+'px';slCv.style.height=Hh+'px';slCv.style.transformOrigin='50% 60%';
     slCv.style.transform='translate3d('+x.toFixed(1)+'px,'+y.toFixed(1)+'px,0) rotate('+ang.toFixed(3)+'rad)';
-    const fi=Math.floor(s.t*SL_FPS)%6;
-    if(fi!==s.fi){s.fi=fi;slCtx.clearRect(0,0,SL_CW,SL_CH);slCtx.drawImage(slImg,(fi%2)*SL_CW,Math.floor(fi/2)*SL_CH,SL_CW,SL_CH,0,0,SL_CW,SL_CH);}
+    const fi=Math.floor(s.t*SL_FPS)%SL_FRAMES;
+    if(fi!==s.fi){s.fi=fi;slCtx.clearRect(0,0,SL_CW,SL_CH);slCtx.drawImage(slImg,(fi%SL_COLS)*SL_CW,Math.floor(fi/SL_COLS)*SL_CH,SL_CW,SL_CH,0,0,SL_CW,SL_CH);}
     // a trail of gold sparkles drifting off the runners and hooves
     const c=bmCtx;c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,beamCv.width,beamCv.height);c.setTransform(beamDpr,0,0,beamDpr,0,0);
     if(u<1)for(let i=0;i<3;i++)s.sparks.push({x:x+W*(.05+Math.random()*.85),y:y+Hh*(.5+Math.random()*.45),vx:-(25+Math.random()*60),vy:8+Math.random()*40,l:0,m:.6+Math.random()*.7,r:1.4+Math.random()*2.4,w:Math.random()<.35});
@@ -1401,10 +1441,19 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
     play('drag');renderSprite(facing);
   }
   else if(stationary){state.x=innerWidth-85;state.y=innerHeight-68;state.vx=0;state.vy=0;state.ground=null;play('idle');renderSprite(1);}
+  else if(stuck){   // stuck in the snow: on the floor, not moving, one held frame
+    scroll=scrollY;floorLift=0;state.vx=state.vy=0;state.ground='floor';state.y=innerHeight-16;state.x=clampX(state.x);
+    runGoal=null;pendingJump=null;climb=null;nextDecision=clock+99;facing=1;
+    if(!nextShiver)nextShiver=clock+5+Math.random()*7;
+    if(clock>=nextShiver&&!shiverUntil){shiverUntil=clock+2.25+Math.random()*1.5;play('shiver');}   // three or four chattering loops
+    if(shiverUntil&&clock>=shiverUntil){shiverUntil=0;nextShiver=clock+6+Math.random()*9;}
+    play(shiverUntil?'shiver':'stuck');renderSprite(facing);
+  }
   else if(sleigh){scroll=scrollY;facing=sleigh.facing;play(sleigh.clip);renderSprite(facing);}   // the sleigh sequence moves him (stepSleigh); this only draws
   else if(flight){scroll=scrollY;}   // flying: drawn by stepFlight on its own canvas, the page sprite is hidden
   else{
    const dy=scrollY-scroll;scroll=scrollY;
+   if(floorLift>0&&state.ground==='floor'){floorLift=Math.max(0,floorLift-SINK_PX_S*dt);if(!floorLift)stuck=true;}   // on top of the snow he slowly sinks back in
    if(clock-lastSurfaceUpdate>.12||dy){scan();lastSurfaceUpdate=clock;}
 
    /* ── CLIMBING ────────────────────────────────────────────────
@@ -1504,7 +1553,7 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
        }
      }
    }}
-   if(state.y>innerHeight+60){state.y=innerHeight-16;state.ground='floor';state.vy=state.vx=0;nextDecision=clock+.5;}
+   if(state.y>innerHeight+60){state.y=floorY();state.ground='floor';state.vy=state.vx=0;nextDecision=clock+.5;}
    }
    state.x=clampX(state.x);
 
@@ -1534,7 +1583,7 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
     ?-RUN_BOB*Math.abs(Math.sin((clock-clipStart)*Math.PI*2*CLIPS.run.fps/CLIPS.run.f.length))
     :0;
   pet.style.transform=`translate3d(${(state.x-SPRITE_W/2).toFixed(1)}px,${(state.y-FEET_Y/2+bob).toFixed(1)}px,0)`;
-  const shadowY=state.ground!==null?state.y:innerHeight-16;const distance=Math.max(0,shadowY-state.y);shadow.style.opacity=(stationary||flight||(sleigh&&sleigh.hidden))?'0':String(Math.max(.08,.6-distance/450));shadow.style.transform=`translate3d(${state.x-26}px,${shadowY-3}px,0) scale(${Math.max(.35,1-distance/600)},1)`;
+  const shadowY=state.ground!==null?state.y:floorY();const distance=Math.max(0,shadowY-state.y);shadow.style.opacity=(stationary||stuck||flight||(sleigh&&sleigh.hidden))?'0':String(Math.max(.08,.6-distance/450));shadow.style.transform=`translate3d(${state.x-26}px,${shadowY-3}px,0) scale(${Math.max(.35,1-distance/600)},1)`;
  }else if(open&&ready){
   /* Chatting: parked beside the panel rather than roaming, and drawn from
      the big sheet rather than the atlas. He eases into place — a glide,
@@ -1568,6 +1617,6 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
 }
 /* A narrower window can leave his goal outside the new walkable strip, so
    it is dropped rather than carried across the resize. */
-window.addEventListener('resize',()=>{scan();state.x=clampX(state.x);runGoal=null;if(state.y>innerHeight)state.y=innerHeight-16;});
+window.addEventListener('resize',()=>{scan();state.x=clampX(state.x);runGoal=null;if(state.y>innerHeight)state.y=floorY();});
 scan();requestAnimationFrame(tick);
 })();

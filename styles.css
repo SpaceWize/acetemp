@@ -1389,6 +1389,9 @@ html.intro .hero__cue{opacity:0}
       linear-gradient(196deg,#251F19 0%,#0B0A09 66%));
   background-size:cover;background-position:center;
 }
+/* The road under the man in the photo is a walkable strip for Little Ace: invisible (a painted strip is what his ledge
+   finder looks for), 95% of the way down and across the left 80% of the photo, where the gravel is; the grass is not. */
+.portrait__walk{position:absolute;left:0;width:80%;top:95%;height:4px;background:rgba(0,0,0,.004)}
 .portrait__art::after{
   content:"";position:absolute;inset:0;opacity:.6;
   background:

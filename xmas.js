@@ -29,14 +29,36 @@
   };
 
   /* ── how much snow there is ─────────────────────────────────────
-     Very little at load, piling up slowly: amt() runs from 0.07 to 1 over PILE_S seconds (5 minutes).
-     Everything below reads it: the bank, the caps on ledges, the icicles and how many flakes fall.
+     Very little snow at load, piling up: amt() runs from 0.07 to 1 over PILE_S seconds (two and a half minutes). The bank, the caps
+     on ledges and how many flakes fall read it.
+     The icicles grow on their own, faster curve: iceAmt() starts at half length (about what they reached after two
+     minutes before) and is full length after ICE_S seconds (half of PILE_S, so 75 seconds).
      window.AceSnow.skip(seconds) jumps ahead (for testing). */
-  const PILE_S = window.ACE_PILE_SECONDS || 300;
-  let skipped = 0;
-  const T0 = performance.now();
-  const amt = () => 0.07 + 0.93 * Math.min(1, (performance.now() / 1000 - T0 / 1000 + skipped) / PILE_S);
-  window.AceSnow = { amount: amt, skip: (s) => { skipped += s; } };
+  const PILE_S = window.ACE_PILE_SECONDS || 150;
+  const ICE_S = PILE_S / 2, ICE_START = 0.5;
+  /* The pile belongs to the visit, not to one page: when it started is kept in sessionStorage, so clicking through to
+     another page carries on from where the snow had got to instead of starting again from nothing. The chat's
+     Christmas switch clears it, so turning Christmas on starts a fresh pile. */
+  const SKEY = 'ace-xmas-t0';
+  let t0 = Date.now();
+  try { const s = Number(sessionStorage.getItem(SKEY)); if (s > 0 && s <= t0) t0 = s; else sessionStorage.setItem(SKEY, String(t0)); } catch (e) {}
+  const secsRaw = () => (Date.now() - t0) / 1000;
+  /* THE BLIZZARD (the chat's blizzard button, Christmas mode only): for about 12 seconds the snow falls several times
+     faster and thicker and swirls, a pale haze rolls over the page, and the pile is driven up to full (the bank, the
+     caps and the icicles all reach maximum over BZ_RAMP_MS). When it reaches full, 'ace:snowfull' is fired: companion.js
+     leaves Little Ace stuck in the snow. The new start time is kept, so the full pile carries across pages. */
+  const BZ_RAMP_MS = 8000, BZ_UP_MS = 1500, BZ_DOWN_MS = 3000, BZ_TOTAL_MS = 12000;
+  let bz = null;
+  const secs = () => {
+    if (bz && !bz.rampDone) {
+      const u = Math.min(1, (performance.now() - bz.start) / BZ_RAMP_MS), e = u * u * (3 - 2 * u);
+      return bz.from + (PILE_S - bz.from) * e;
+    }
+    return secsRaw();
+  };
+  const amt = () => 0.07 + 0.93 * Math.min(1, secs() / PILE_S);
+  const iceAmt = () => ICE_START + (1 - ICE_START) * Math.min(1, secs() / ICE_S);
+  window.AceSnow = { blizzard: () => startBlizzard(), amount: amt, ice: iceAmt, skip: (s) => { t0 -= s * 1000; try { sessionStorage.setItem(SKEY, String(t0)); } catch (e) {} } };
 
   /* ── the snowbank ──────────────────────────────────────────── */
   const back = mk(78, 'bottom:0;width:100vw;height:64px');
@@ -97,19 +119,36 @@
     }
   }
 
-  let bankKey = '';
+  /* The bank is drawn ONCE, at full height, and then slid up out of the bottom edge of the window by however much it has
+     grown (a transform, set every frame). Growth is then perfectly smooth at any speed. (It used to be redrawn
+     whole, a pixel taller at a time, twice a second, which looked jittery, and far worse during a blizzard.)
+     Fully piled the back bank tops out at about 100px and the front drift at about 60px (the lumps add ~10px to
+     these bases). His feet are 16px above the bottom of the window and he is about 105px tall with his shoulders about
+     64px up, so the drift comes to his shoulders and everything from there up shows. (Too-high tries: 110px hid him to
+     the face; about 70px started to cover his shoulders.) */
+  const bankDims = (a) => {
+    const k = (innerWidth < 600 ? 0.8 : 1) * Math.min(1, innerHeight / 800);   // a short window gets a smaller drift so it never buries the page's buttons
+    return { bb: (2 + 85 * a) * k, ba: (1 + 10 * a) * k, fb: (1 + 50 * a) * k, fa: (0.8 + 4 * a) * k };
+  };
+  let bankMax = null;
+  function placeBanks(a) {
+    if (!bankMax) return;
+    const m = bankDims(a);
+    back.style.transform = 'translate3d(0,' + (bankMax.bb - m.bb).toFixed(2) + 'px,0)';
+    front.style.transform = 'translate3d(0,' + (bankMax.fb - m.fb).toFixed(2) + 'px,0)';
+  }
   function drawBanks() {
-    const a = amt(), small = innerWidth < 600, k = small ? 0.8 : 1;
-    // fully piled the back bank stands ~55px tall: past the elbows of a person ~90px high; the front lip ~25px
-    const bb = (2 + 40 * a) * k, ba = (1 + 7 * a) * k, fb = (1 + 17 * a) * k, fa = (0.8 + 3.4 * a) * k;
+    const m = bankDims(1), bb = m.bb, ba = m.ba, fb = m.fb, fa = m.fa;
     const bh = Math.ceil(bb + ba * 2.2 + 14), fh = Math.ceil(fb + fa * 2.2 + 10);
-    bankKey = Math.round(bb) + ':' + innerWidth;
+    bankMax = { bb, fb };
     back.style.height = bh + 'px'; front.style.height = fh + 'px';
+    back.style.willChange = front.style.willChange = 'transform';
     back.style.width = front.style.width = innerWidth + 'px';
     const bt = profile(innerWidth, bb, ba, 11);
     const ft = profile(innerWidth, fb, fa, 23);
     drawBank(back, bh, bt, { max: bh, mid: '#f3f7fc', low: '#dbe6f3', shade: 0.30, seed: 5, sparkles: true });
     drawBank(front, fh, ft, { max: fh, mid: '#fbfdff', low: '#e6eef8', shade: 0.22, seed: 9, sparkles: false });
+    placeBanks(amt());
   }
 
   /* ── the snowfall ──────────────────────────────────────────── */
@@ -143,6 +182,38 @@
     }
     flakes.length = want;
   }
+  function boost(ms) {                                                  // how hard it is blowing: 0 to 1 and back
+    if (!bz) return 0;
+    const e = ms - bz.start;
+    if (e < 0 || e >= BZ_TOTAL_MS) return 0;
+    if (e < BZ_UP_MS) return e / BZ_UP_MS;
+    if (e < BZ_TOTAL_MS - BZ_DOWN_MS) return 1;
+    return 1 - (e - (BZ_TOTAL_MS - BZ_DOWN_MS)) / BZ_DOWN_MS;
+  }
+  function finishRamp() {
+    if (!bz || bz.rampDone) return;
+    bz.rampDone = true;
+    t0 = Date.now() - PILE_S * 1000;                                   // full from now on, on every page of the visit
+    try { sessionStorage.setItem(SKEY, String(t0)); } catch (e) {}
+    try { document.dispatchEvent(new CustomEvent('ace:snowfull')); } catch (e) {}
+  }
+  function startBlizzard() {
+    if (bz && !bz.rampDone) return;                                    // already blowing
+    bz = { start: performance.now(), from: secsRaw(), rampDone: false, extra: [] };
+    if (calm.matches) { finishRamp(); bz = null; return; }             // reduced motion: no storm, the pile just fills
+    const n = Math.round(Math.max(36, Math.min(150, (W * H) / 11000)) * 3.2);
+    for (let i = 0; i < n; i++) {
+      const l = Math.floor(Math.pow(Math.random(), 1.7) * SIZES.length);
+      bz.extra.push({ x: Math.random() * W, y: Math.random() * H, l, vy: 18 + l * 16 + Math.random() * 14, ph: Math.random() * 6.28, sw: 0.6 + Math.random() * 1.1, am: 8 + l * 5, a: 0.55 + Math.random() * 0.4 });
+    }
+  }
+  function drift(f, dt, sk, bzk, wind) {                               // one flake's step, calm or in the storm
+    f.y += f.vy * dt * sk;
+    f.x += (Math.sin(f.ph + tt * f.sw) * f.am + wind * (0.5 + f.l * 0.25) * (1 + 3 * bzk) + bzk * 240 * Math.sin(tt * 1.6 + f.y * 0.011 + f.ph)) * dt;
+    if (f.y > H + 8) { f.y = -8; f.x = Math.random() * W; }
+    if (f.x > W + 8) f.x = -8; else if (f.x < -8) f.x = W + 8;
+  }
+  let hazeEl = null, hazeOn = false;
   let last = 0, tt = 0;
   function frame(now) {
     requestAnimationFrame(frame);
@@ -151,17 +222,32 @@
     if (calm.matches) { fc.clearRect(0, 0, W, H); return; }
     tt += dt;
     const wind = Math.sin(tt * 0.23) * 14 + 6;
+    const nowMs = performance.now(), bzk = boost(nowMs), sk = 1 + 3.6 * bzk;
+    if (bz && !bz.rampDone && nowMs - bz.start >= BZ_RAMP_MS) finishRamp();
     fc.clearRect(0, 0, W, H);
+    if (hazeEl && (bzk > 0.01 || hazeOn)) {                            // a pale haze that drifts across the page (its own layer: only opacity and position change)
+      hazeOn = bzk > 0.01;
+      hazeEl.style.opacity = bzk.toFixed(3);
+      hazeEl.style.transform = 'translate3d(' + (Math.sin(tt * 0.7) * 6).toFixed(2) + 'vw,' + (Math.cos(tt * 0.5) * 5).toFixed(2) + 'vh,0)';
+    }
     const live = Math.max(6, Math.round(flakes.length * (0.12 + 0.88 * amt())));
     for (let fi = 0; fi < live; fi++) {
       const f = flakes[fi];
-      f.y += f.vy * dt;
-      f.x += (Math.sin(f.ph + tt * f.sw) * f.am + wind * (0.5 + f.l * 0.25)) * dt;
-      if (f.y > H + 8) { f.y = -8; f.x = Math.random() * W; }
-      if (f.x > W + 8) f.x = -8; else if (f.x < -8) f.x = W + 8;
+      drift(f, dt, sk, bzk, wind);
       const sp = sprites[f.l];
       fc.globalAlpha = f.a;
       fc.drawImage(sp.cv, f.x - sp.s / 2, f.y - sp.s / 2);
+    }
+    if (bz && bz.extra.length) {                                       // the extra storm flakes, thinning out as it eases
+      const show = Math.round(bz.extra.length * Math.min(1, bzk * 1.4));
+      for (let fi = 0; fi < show; fi++) {
+        const f = bz.extra[fi];
+        drift(f, dt, sk, bzk, wind);
+        const sp = sprites[f.l];
+        fc.globalAlpha = f.a;
+        fc.drawImage(sp.cv, f.x - sp.s / 2, f.y - sp.s / 2);
+      }
+      if (bzk === 0 && nowMs - bz.start > BZ_TOTAL_MS) { bz.extra.length = 0; if (bz.rampDone) bz = null; }
     }
     fc.globalAlpha = 1;
   }
@@ -255,18 +341,35 @@
   function buildItems() {
     const perches = window.AcePerches || [], tops = new Set(), seen = new Map(), list = [];
     for (const p of perches) if (p.edge === 'top') tops.add(p.el);
+    /* A grid marked data-xmas-rows (the "Reservoir of Talents" tiles) is dressed by row, found from where the tiles
+       really are, so it still works when the grid reflows to fewer columns: the top row is snowed on and has no
+       icicles, the bottom row grows long icicles, and any rows between get tiny icicles that never grow. */
+    const rowKind = new Map();
+    for (const grid of document.querySelectorAll('[data-xmas-rows]')) {
+      const tiles = [...grid.children], tops2 = tiles.map(el => Math.round((el.getBoundingClientRect().top + scrollY) / 8));
+      const rows = [...new Set(tops2)].sort((a, b) => a - b);
+      tiles.forEach((el, i) => { const k = rows.indexOf(tops2[i]); rowKind.set(el, k === 0 ? 'snow' : k === rows.length - 1 ? 'ice-long' : 'ice-small'); });
+    }
     for (const p of perches) {
       if (seen.has(p.el)) continue;
       const r = p.el.getBoundingClientRect();
       if (r.width < 90) continue;
+      if (p.el.tagName === 'IMG' && p.el.closest('.logos')) continue;               // no snow piles up on the logos themselves
       const cs = getComputedStyle(p.el), rad = parseFloat(cs.borderBottomLeftRadius) || 0;
       /* Only real boxes: text painted with a gradient (the headings) and inline spans are not, and an edge
          counts only if something is drawn along it (a border, or a filled background / picture / control). */
       const text = /text/.test(cs.backgroundClip) || cs.display === 'inline';
       const fill = cs.backgroundImage !== 'none' || !/^rgba\(.*,\s*0\)$|^transparent$/.test(cs.backgroundColor) ||
         /^(IMG|CANVAS|INPUT|TEXTAREA|SELECT)$/.test(p.el.tagName);
-      const it = { el: p.el, cap: !text && tops.has(p.el), ice: !text && r.height >= 24 && (fill || parseFloat(cs.borderBottomWidth) > 0),
+      /* Only boxes carry snow and icicles: something filled in, or a button or field. A line (a divider, a row with only
+         a border on one side, the rule above a quote's name) is not a box, so it gets neither. */
+      const thin = r.height < 6 && !p.el.classList.contains('portrait__walk');         // a hairline drawn with a background is still a line
+      const box = !thin && (fill || p.el.matches('.btn,button,input,select,textarea,.copy'));
+      const it = { el: p.el, cap: !text && box && tops.has(p.el), ice: !text && box && r.height >= 24,
         rad, w: 0, capS: null, iceS: null, op: 1, n: seen.size + 1 };
+      const kind = rowKind.get(p.el);
+      if (kind === 'snow') it.ice = false;
+      else if (kind) { it.cap = false; it.small = kind === 'ice-small'; }
       if (it.ice) {
         /* Room to hang: the gap to whatever sits underneath (the next ledge, the next sibling, or the end
            of the parent). Icicles are cut to fit, and left off where there is no room, so they never
@@ -277,9 +380,10 @@
           Math.min(q.right, rr) - Math.max(q.left, l) > (rr - l) * 0.3) gap = q.y - bot;
         const nx = p.el.nextElementSibling;
         if (nx) { const nr = nx.getBoundingClientRect(); if (nr.height > 0 && nr.top + scrollY - bot > -2) gap = Math.min(gap, nr.top + scrollY - bot); }
-        else if (p.el.parentElement) { const pr = p.el.parentElement.getBoundingClientRect(); if (pr.bottom + scrollY - bot > -2) gap = Math.min(gap, pr.bottom + scrollY - bot); }
+        // (the Reservoir grid ends at its last tile, so there the room below is the section's padding, not a limit)
+        else if (p.el.parentElement && !p.el.parentElement.hasAttribute('data-xmas-rows')) { const pr = p.el.parentElement.getBoundingClientRect(); if (pr.bottom + scrollY - bot > -2) gap = Math.min(gap, pr.bottom + scrollY - bot); }
         it.maxLen = Math.min(30, gap - 4);
-        if (it.maxLen < 9) it.ice = false; else { it.bot = bot; it.l = l; it.rr = rr; }
+        if (it.maxLen < 9) it.ice = false; else { it.bot = bot; it.l = l; it.rr = rr; if (it.small) it.maxLen = 8; }      // a tiny one stays tiny
       }
       seen.set(p.el, 1);
       if (it.cap || it.ice) list.push(it);
@@ -316,12 +420,14 @@
   }
   const flashOn = () => !window.AceFlashlight || window.AceFlashlight.isOn();
 
+  const GLINT_MIN = 9;                                       // px: icicles shorter than this (as drawn now) stay dull
   function glint(it, r, vs, now) {
     const R = Math.max(130, Math.min(235, innerWidth * 0.15)) * 0.75 * 0.62;   // the spade's reach is ~0.55 x its radius
     if (r.bottom + 40 < ptr.sy - R || r.bottom - 4 > ptr.sy + R + 40) return;
     const kx = r.width / it.w;
     for (const m of it.iceS.meta) {
       const x = r.left + m.x * kx, tipx = r.left + m.tip * kx, len = m.len * vs, y0 = r.bottom - 1;
+      if (len < GLINT_MIN) continue;                                               // the teeny tiny ones do not glint
       const d = Math.hypot(x - ptr.sx, y0 + len * 0.55 - ptr.sy);
       if (d >= R) continue;
       let k = Math.pow(1 - d / R, 1.3);
@@ -347,10 +453,10 @@
     requestAnimationFrame(ledgeFrame);
     if (document.hidden) return;
     lc.clearRect(0, 0, LW, LH); tick++;
-    const a = amt(), capH = Math.max(1.5, CAP_H * a), vs = 0.1 + 0.9 * a;
+    const a = amt(), capH = Math.max(1.5, CAP_H * a), vs = iceAmt();
     const gl = canGlint && ptr.on && flashOn();
     if (gl) { ptr.sx += (ptr.x - ptr.sx) * 0.18; ptr.sy += (ptr.y - ptr.sy) * 0.18; }
-    if (tick % 30 === 0 && (Math.round((2 + 40 * a) * (innerWidth < 600 ? 0.8 : 1)) + ':' + innerWidth) !== bankKey) drawBanks();
+    placeBanks(a);
     for (let i = 0; i < items.length; i++) {
       const it = items[i], r = it.el.getBoundingClientRect();
       if (!r || r.width < 1 || r.height < 1 || r.bottom < -40 || r.top > LH + 10) continue;
@@ -364,8 +470,9 @@
       lc.globalAlpha = it.op;
       if (it.capS) lc.drawImage(it.capS, r.left, r.top - (capH - 1), r.width, capH);
       if (it.iceS) {
-        lc.drawImage(it.iceS, r.left, r.bottom - 1, r.width, it.iceS.height / dprL * vs);
-        if (gl) glint(it, r, vs, now || 0);
+        const v = it.small ? 1 : vs;                                               // tiny ones never grow
+        lc.drawImage(it.iceS, r.left, r.bottom - 1, r.width, it.iceS.height / dprL * v);
+        if (gl) glint(it, r, v, now || 0);
       }
     }
     lc.globalAlpha = 1;
@@ -379,11 +486,15 @@
   }
 
   function start() {
-    document.body.append(back, front, fall);
+    hazeEl = document.createElement('div');
+    hazeEl.setAttribute('aria-hidden', 'true');
+    hazeEl.style.cssText = 'position:fixed;left:-20vw;top:-20vh;width:140vw;height:140vh;pointer-events:none;z-index:83;opacity:0;will-change:opacity,transform;' +
+      'background:radial-gradient(closest-side at 50% 50%,rgba(240,246,255,.22),rgba(220,232,250,.07) 70%,rgba(220,232,250,0))';
+    document.body.append(back, front, fall, hazeEl);
     drawBanks(); sizeFall();
     startLedges(0);
     let rt = 0;
-    addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { drawBanks(); sizeFall(); if (items.length) sizeLedge(); }, 120); });
+    addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { drawBanks(); sizeFall(); if (items.length) { buildItems(); sizeLedge(); } }, 120); });
     requestAnimationFrame(frame);
   }
   if (document.body) start(); else addEventListener('DOMContentLoaded', start);
