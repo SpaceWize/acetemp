@@ -1407,13 +1407,13 @@ function stepSleigh(dt){
    The other half of the power-up: he powers up on the spot, floats up into the air, hovers there for a moment
    in his gold aura, then comes back down where he was and powers back down to normal. Shares the power-up's
    triggers: Shift + A + C + E and the hold on the button pick the beam or this (never the same twice running),
-   and the big-moment timer chooses between them too. Not at Christmas (these frames have no Santa hat).
+   and the big-moment timer chooses between them too. At Christmas the frames come from ace-flight-xmas.webp (Santa hat).
    Frames: assets/images/ace-flight.webp, 6x4 cells of 240x280 (the same size as the atlas), loaded the first time.
      0-4 power up on the ground, 6 rising, 14-17 hover loop, 18 coming down, 19-23 touch-down and power down
      (23 = his idle pose). The gold aura, flames, sparks and flashes are drawn here, on the beam canvas.
    While it runs his page sprite is hidden and the roaming code leaves him alone. Opening the chat, picking him up
    or the gate coming up ends it at once. */
-const FLIGHT_SHEET='assets/images/ace-flight.webp?v=1',FL_PIVOT=52.5;    // FL_PIVOT: his body centre, px above his feet
+const FLIGHT_SHEET=window.ACE_XMAS?'assets/images/ace-flight-xmas.webp?v=1':'assets/images/ace-flight.webp?v=1',FL_PIVOT=52.5;    // FL_PIVOT: his body centre, px above his feet
 const FL_RISE=110,FL_RISE_T=1.1,FL_HOVER_T=3.2,FL_DOWN_T=1.0;            // how high (px), and how long each part takes (s)
 const FL_UP=[[0,.30],[1,.22],[2,.40],[3,.55],[4,.28]];                  // power-up frames and how long each is held (s)
 const FL_LAND=[[19,.16],[20,.26],[21,.34],[22,.32],[23,.30]];            // touch-down and power-down
@@ -1552,9 +1552,9 @@ requestAnimationFrame(function powerLoop(now){
 const pwKeys=new Set();let pwSeq=[];
 const typing=t=>t&&(t.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
 function startBig(kind){if(kind==='summon')beginSummon();else if(kind==='sleigh')beginSleigh();else if(kind==='flight')beginFlight();else beginPower();}
-function pickBig(){const pool=window.ACE_XMAS?['power','sleigh']:['power','flight','summon'],c=pool.filter(k=>k!==lastBig),from=c.length?c:pool;lastBig=from[Math.floor(Math.random()*from.length)];return lastBig;}   // never the same one twice running
+function pickBig(){const pool=window.ACE_XMAS?['power','sleigh','flight']:['power','flight','summon'],c=pool.filter(k=>k!==lastBig),from=c.length?c:pool;lastBig=from[Math.floor(Math.random()*from.length)];return lastBig;}   // never the same one twice running
 /* The ace code (and the hold on the button): the beam or the flight, never the same one twice running. */
-function pickAce(){return window.ACE_XMAS?'power':pickBig();}
+function pickAce(){return pickBig();}
 /* A deliberate trigger (the codes, or holding the button) waits for powerReady(), not powerOk(): the snow is no reason
    to refuse it. Stuck in the snow it pulls him out first, as a drag does, and the moment starts from the top of the drift.
    Before, both the trigger and its queue waited on powerOk(), which the snow blocks, so the press was lost. */
