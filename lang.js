@@ -7,7 +7,7 @@
    Only pages in PAGES are translated so far. Loaded in <head>, so the page stays hidden (1.5s at most) until it is ready. */
 (function () {
   'use strict';
-  var PAGES = ['premium-pickup-transport.html', 'advisory.html'], V = 32;
+  var PAGES = ['premium-pickup-transport.html', 'advisory.html', 'private-working-session.html', 'public-speaking.html'], V = 33;
   var LANGS = ['ja', 'da', 'ru', 'ar', 'de', 'he', 'fr', 'yue', 'zh', 'tl', 'en-GB', 'en-US', 'en-CA', 'en-NL', 'en-AU'], RTL = { ar: 1, he: 1 }, KEY = 'ace-lang';
   function pick() {
     var forced = null;
@@ -69,7 +69,7 @@
     sets.forEach(function (d) { for (var k in d.src) if (d.tr[k]) map[clean(d.src[k])] = d.tr[k]; });
     root.lang = { 'en-NL': 'en-CA', yue: 'zh-HK', zh: 'zh-CN', tl: 'fil' }[lang] || lang;
     if (RTL[lang]) root.dir = 'rtl';
-    document.querySelectorAll('h1,h2,h3,p,li,dt,dd,a,button,blockquote,span').forEach(function (el) {
+    document.querySelectorAll('h1,h2,h3,p,li,dt,dd,a,button,blockquote,span,label,legend').forEach(function (el) {
       var t = map[clean(el.textContent)];
       if (!t) return;
       var inner = Array.prototype.some.call(el.children, function (k) { return !/^svg$/i.test(k.tagName) && clean(k.textContent) === clean(el.textContent); });
