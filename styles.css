@@ -2228,3 +2228,4 @@ html:not([data-depth="flat"]) .hero__line--gold.ll{
 /* Good News Coffee page: the logo sits on a light panel, as it does in the logo strip */
 .gnc__panel{display:inline-block;background:#fff;padding:1.25rem 1.75rem;margin:1.5rem 0 1rem;border-radius:2px;max-width:100%}
 .gnc__panel img{display:block;width:min(300px,70vw);height:auto}
+.logos__h{margin-bottom:var(--sp-4)}
