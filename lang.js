@@ -7,7 +7,7 @@
    Only pages in PAGES are translated so far. Loaded in <head>, so the page stays hidden (1.5s at most) until it is ready. */
 (function () {
   'use strict';
-  var PAGES = ['premium-pickup-transport.html', 'advisory.html', 'private-working-session.html', 'public-speaking.html', 'mastermind-membership.html', 'mastermind-application.html', 'group-activities.html', 'contact.html', 'good-news-coffee.html', 'index.html'], V = 91;
+  var PAGES = ['premium-pickup-transport.html', 'advisory.html', 'private-working-session.html', 'public-speaking.html', 'mastermind-membership.html', 'mastermind-application.html', 'group-activities.html', 'contact.html', 'good-news-coffee.html', 'index.html'], V = 92;
   var LANGS = ['ja', 'da', 'ru', 'ar', 'de', 'he', 'fr', 'yue', 'zh', 'tl', 'es', 'pt', 'en-GB', 'en-US', 'en-CA', 'en-NL', 'en-AU', 'pig', 'bin', 'egy'], RTL = { ar: 1, he: 1 }, KEY = 'ace-lang', ALGO = { pig: 1, bin: 1, egy: 1 };   // ALGO: made by rule, not by dictionary
   function pick() {
     var forced = null;
@@ -160,10 +160,12 @@
   var left = 2;
   function done() {
     if (--left) return;
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', apply); else apply();
     /* The chat widget and the picker are built after this runs, so re-apply when new text appears (apply is quiet on text it has already changed). */
-    var t, ob = new MutationObserver(function () { clearTimeout(t); t = setTimeout(function () { ob.disconnect(); apply(); ob.observe(document.body, { childList: true, subtree: true, characterData: true }); }, 300); });
-    ob.observe(document.body, { childList: true, subtree: true, characterData: true });
+    function watch() {
+      var t, ob = new MutationObserver(function () { clearTimeout(t); t = setTimeout(function () { ob.disconnect(); apply(); ob.observe(document.body, { childList: true, subtree: true, characterData: true }); }, 300); });
+      ob.observe(document.body, { childList: true, subtree: true, characterData: true });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { apply(); watch(); }); else { apply(); watch(); }
   }
   ['common', page.replace('.html', '')].forEach(function (n) {
     var s = document.createElement('script');
