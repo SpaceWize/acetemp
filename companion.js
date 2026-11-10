@@ -610,7 +610,7 @@ for(const p of perches)p.button=p.edge==='top'&&p.el.matches(BUTTONISH);
 function findClimbables(){
   const out=[];
   for(const el of document.body.querySelectorAll('h1,h2,h3,p,li,blockquote')){
-    if(el.closest('.site-head,.mnav,.foot,#ace-chat,.ace-companion,[data-hero] .hero__content,.tier,.btn,button'))continue;   // not the copy inside cards: he looked stuck on their sides
+    if(el.closest('.site-head,.mnav,.foot,#ace-chat,.ace-companion,[data-hero] .hero__content,.tier__price,.tier__name,.btn,button'))continue;   // not the copy inside cards: he looked stuck on their sides
     if(el.querySelector('h1,h2,h3,p,li'))continue;      // containers, not text
     if(!el.textContent.trim())continue;
     const r=el.getBoundingClientRect();
