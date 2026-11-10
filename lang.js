@@ -7,7 +7,7 @@
    Only pages in PAGES are translated so far. Loaded in <head>, so the page stays hidden (1.5s at most) until it is ready. */
 (function () {
   'use strict';
-  var PAGES = ['premium-pickup-transport.html'], V = 5;
+  var PAGES = ['premium-pickup-transport.html'], V = 6;
   var LANGS = ['ja', 'da', 'ru', 'ar', 'de', 'he', 'fr', 'yue', 'zh', 'tl', 'en-GB', 'en-US', 'en-CA', 'en-NL', 'en-AU'], RTL = { ar: 1, he: 1 }, KEY = 'ace-lang';
   function pick() {
     var forced = null;
