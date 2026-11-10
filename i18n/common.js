@@ -16,7 +16,7 @@ yue:{"skip":"跳至主要內容","about":"關於","apply":"申請","act":"活動
 zh:{"skip":"跳转至主要内容","about":"关于","apply":"申请","act":"活动","start":"与我们聊聊","open":"打开菜单","back":"返回","appt":"仅限预约","work":"服务内容","also":"其他服务","rep":"代表服务","st":"开始","book":"预约初步评估通话","am":"申请加入 Mastermind","hire":"聘请 Ace 的网站管理员","rights":"© 2026 Ace Spaders. 保留所有权利。","gate":"再次查看大门","q1":"“既然要吃苦，就为成功而吃苦。<br>我爱黄金，也爱如金子般可贵的人。”","q2":"“理解一个人，只需愿意倾听。”"},
 tl:{"skip":"Dumiretso sa nilalaman","about":"Tungkol kay Ace","apply":"Mag-apply","act":"Mga Aktibidad","start":"Simulan ang Usapan","open":"Buksan ang menu","back":"Bumalik","appt":"Kailangan ng appointment","work":"Mga Serbisyo","also":"Iba pang Serbisyo","rep":"Representasyon","st":"Magsimula","book":"Mag-book ng Assessment Call","am":"Mag-apply sa Mastermind","hire":"Kunin ang Webmaster ni Ace","rights":"© 2026 Ace Spaders. Nakalaan ang lahat ng karapatan.","gate":"Tingnan muli ang gate","q1":"\"Kung magdurusa ka rin lang, magdusa ka para sa tagumpay.<br>Mahal ko ang ginto at ang mga taong kasinghalaga nito.\"","q2":"\"Para maintindihan ang tao, kailangan lang ng kahandaang makinig.\""},
 "en-GB":{start:"Let’s Have a Chat",act:"Goings-On",appt:"By appointment only, mind",gate:"Have Another Look at the Gate"},
-"en-US":{start:"Let’s Talk",act:"Stuff Goin’ On",gate:"Run the Gate Back"},
+"en-US":{start:"Let’s Talk",act:"What’s Happening",gate:"See the Gate Again"},
 "en-CA":{start:"Start the Conversation, Eh?",act:"Things on the Go",gate:"See the Gate Again, Eh?"},
 "en-NL":{start:"Come On, Have a Yarn",act:"What’s On the Go, B’y",back:"Go On Back",appt:"Call ahead first, me ducky",gate:"Have Another Gawk at the Gate"},
 "en-AU":{start:"Have a Yarn, Mate",act:"What’s On",back:"Head Back",gate:"Have a Squiz at the Gate"}
