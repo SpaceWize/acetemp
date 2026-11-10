@@ -610,7 +610,7 @@ for(const p of perches)p.button=p.edge==='top'&&p.el.matches(BUTTONISH);
 function findClimbables(){
   const out=[];
   for(const el of document.body.querySelectorAll('h1,h2,h3,p,li,blockquote')){
-    if(el.closest('.site-head,.mnav,.foot,#ace-chat,.ace-companion,[data-hero] .hero__content'))continue;
+    if(el.closest('.site-head,.mnav,.foot,#ace-chat,.ace-companion,[data-hero] .hero__content,.tier,.btn,button'))continue;   // not the copy inside cards: he looked stuck on their sides
     if(el.querySelector('h1,h2,h3,p,li'))continue;      // containers, not text
     if(!el.textContent.trim())continue;
     const r=el.getBoundingClientRect();
@@ -1013,6 +1013,7 @@ const CLIMB_SPEED=78;             // px/s up the face of a block of copy
 function climbTarget(){
   const best=[];
   for(const c of climbables){
+    if(clock<(c.rest||0))continue;                        // climbed (or fell off) lately: not straight back up it
     const r=c.el.getBoundingClientRect();
     if(r.top<90||r.bottom>innerHeight-40)continue;
     const rise=state.y-r.top;
@@ -1679,6 +1680,7 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
      const r=climb.el.getBoundingClientRect();
      const gone=r.bottom<60||r.top>innerHeight-30||r.width<100;
      if(gone){
+       const cc=climbables.find(c=>c.el===climb.el);if(cc)cc.rest=clock+25;
        climb=null;state.vy=Math.max(60,state.vy);nextDecision=clock+.4;
      }else if(Math.abs(state.x-climb.x)<12){
        ascending=true;
@@ -1691,6 +1693,7 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
             standing on it — copy is not a perch anyone can jump to, but
             having climbed it he has to have somewhere to be. */
          state.y=r.top;textSurface={el:climb.el};state.ground='text';
+         const cc=climbables.find(c=>c.el===climb.el);if(cc)cc.rest=clock+25;
          climb=null;ascending=false;nextDecision=clock+.6;
        }
      }else{
