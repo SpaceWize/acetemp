@@ -7,7 +7,7 @@
    Only pages in PAGES are translated so far. Loaded in <head>, so the page stays hidden (1.5s at most) until it is ready. */
 (function () {
   'use strict';
-  var PAGES = ['premium-pickup-transport.html', 'advisory.html', 'private-working-session.html', 'public-speaking.html', 'mastermind-membership.html', 'mastermind-application.html', 'group-activities.html', 'contact.html', 'good-news-coffee.html', 'index.html'], V = 71;
+  var PAGES = ['premium-pickup-transport.html', 'advisory.html', 'private-working-session.html', 'public-speaking.html', 'mastermind-membership.html', 'mastermind-application.html', 'group-activities.html', 'contact.html', 'good-news-coffee.html', 'index.html'], V = 72;
   var LANGS = ['ja', 'da', 'ru', 'ar', 'de', 'he', 'fr', 'yue', 'zh', 'tl', 'en-GB', 'en-US', 'en-CA', 'en-NL', 'en-AU'], RTL = { ar: 1, he: 1 }, KEY = 'ace-lang';
   function pick() {
     var forced = null;
@@ -32,7 +32,7 @@
   if (PAGES.indexOf(page) < 0) return;
 
   /* The picker: a globe and a short code, with a real <select> laid invisibly over them, so phones get their own list. */
-  var PICK = [['orig', 'English (original)', 'EN'], ['ja', 'Japanese', 'JA'], ['da', 'Danish', 'DA'], ['ru', 'Russian', 'RU'], ['ar', 'Arabic', 'AR'], ['de', 'German', 'DE'], ['he', 'Hebrew', 'HE'], ['fr', 'French', 'FR'], ['yue', 'Cantonese', 'YUE'], ['zh', 'Mandarin', 'ZH'], ['tl', 'Tagalog', 'TL'], ['en-GB', 'British English', 'UK'], ['en-US', 'American English', 'US'], ['en-CA', 'Canadian English', 'CA'], ['en-NL', 'Newfoundland English', 'NF'], ['en-AU', 'Australian English', 'AU']];
+  var PICK = [['orig', 'English', 'EN'], ['ja', '日本語', 'JA'], ['da', 'Dansk', 'DA'], ['ru', 'Русский', 'RU'], ['ar', 'العربية', 'AR'], ['de', 'Deutsch', 'DE'], ['he', 'עברית', 'HE'], ['fr', 'Français', 'FR'], ['yue', '廣東話', 'YUE'], ['zh', '普通话', 'ZH'], ['tl', 'Filipino', 'TL'], ['en-GB', 'British English', 'UK'], ['en-US', 'American English', 'US'], ['en-CA', 'Canadian English', 'CA'], ['en-NL', 'Newfoundland English', 'NF'], ['en-AU', 'Australian English', 'AU']];
   var css = document.createElement('style');
   css.textContent = '.ace-lang{position:relative;display:inline-flex;align-items:center;gap:6px;flex:none;height:38px;padding:0 10px;margin-inline:10px;border:1px solid rgba(217,164,65,.45);color:#F1EDE6;font:600 12px/1 system-ui,sans-serif;letter-spacing:.06em}.ace-lang:hover{border-color:#D9A441}.ace-lang:focus-within{outline:2px solid #D9A441;outline-offset:2px}.ace-lang svg{width:15px;height:15px;fill:none;stroke:#D9A441;stroke-width:1.6}.ace-lang select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:16px}.ace-lang option{background:#121110;color:#F1EDE6}html[dir=rtl] .skip{left:auto;right:-9999px}html[dir=rtl] .skip:focus{left:auto;right:1rem}html[dir=rtl] .hero__back svg{transform:none}';
   document.head.appendChild(css);
@@ -87,6 +87,9 @@
   function done() {
     if (--left) return;
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', apply); else apply();
+    /* The chat widget and the picker are built after this runs, so re-apply when new text appears (apply is quiet on text it has already changed). */
+    var t, ob = new MutationObserver(function () { clearTimeout(t); t = setTimeout(function () { ob.disconnect(); apply(); ob.observe(document.body, { childList: true, subtree: true, characterData: true }); }, 300); });
+    ob.observe(document.body, { childList: true, subtree: true, characterData: true });
   }
   ['common', page.replace('.html', '')].forEach(function (n) {
     var s = document.createElement('script');
