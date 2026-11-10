@@ -45,7 +45,7 @@ const shadow=document.createElement('div');shadow.className='ace-shadow';shadow.
    this darkens without taking the page hostage. */
 const scrim=document.createElement('div');scrim.className='ace-scrim';scrim.ariaHidden='true';document.body.append(scrim);
 const launcher=document.createElement('button');launcher.type='button';launcher.className='ace-launcher';launcher.innerHTML='<span aria-hidden="true"><img class="ace-spade" src="assets/icons/favicon-192.png" alt=""></span><span>Ask Little Ace</span>';launcher.setAttribute('aria-controls','ace-chat');launcher.setAttribute('aria-expanded','false');document.body.append(launcher);
-const panel=document.createElement('section');panel.id='ace-chat';panel.className='ace-chat';panel.hidden=true;panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','false');panel.setAttribute('aria-labelledby','ace-chat-title');panel.innerHTML='<div class="ace-chat-head"><span class="ace-chat-symbol" aria-hidden="true"><img class="ace-spade" src="assets/icons/favicon-192.png" alt=""></span><div><h2 id="ace-chat-title">Little Ace</h2><p>Your guide to Ace Spaders</p></div><button type="button" class="ace-chat-close" aria-label="Close chat">×</button></div><div class="ace-chat-messages" role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversation"></div><div class="ace-chat-suggestions" aria-label="Suggested questions"><button type="button">Advisory fees</button><button type="button">About Ace</button><button type="button">Group Activities</button></div><form class="ace-chat-form"><label class="ace-sr" for="ace-question">Ask about Ace or the website</label><input id="ace-question" name="question" maxlength="600" autocomplete="off" placeholder="Ask a short, simple question…" required><button type="submit" aria-label="Send question">↑</button></form><div class="ace-chat-foot"><span>Published-site answers · questions logged anonymously</span><span class="ace-foot-actions"><button class="ace-xmas" type="button" aria-pressed="false" aria-label="Christmas mode"></button><button class="ace-park" type="button">Park Little Ace</button></span></div>';document.body.append(panel);
+const panel=document.createElement('section');panel.id='ace-chat';panel.className='ace-chat';panel.hidden=true;panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','false');panel.setAttribute('aria-labelledby','ace-chat-title');panel.innerHTML='<div class="ace-chat-head"><span class="ace-chat-symbol" aria-hidden="true"><img class="ace-spade" src="assets/icons/favicon-192.png" alt=""></span><div><h2 id="ace-chat-title">Little Ace</h2><p>Your guide to Ace Spaders</p></div><button type="button" class="ace-chat-close" aria-label="Close chat">×</button></div><div class="ace-chat-messages" role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversation"></div><div class="ace-chat-suggestions" aria-label="Suggested questions"><button type="button">Advisory fees</button><button type="button">About Ace</button><button type="button">Group Activities</button><button type="button" class="ace-cheats">Cheat codes</button></div><form class="ace-chat-form"><label class="ace-sr" for="ace-question">Ask about Ace or the website</label><input id="ace-question" name="question" maxlength="600" autocomplete="off" placeholder="Ask a short, simple question…" required><button type="submit" aria-label="Send question">↑</button></form><div class="ace-chat-foot"><span>Published-site answers · questions logged anonymously</span><span class="ace-foot-actions"><button class="ace-xmas" type="button" aria-pressed="false" aria-label="Christmas mode"></button><button class="ace-park" type="button">Park Little Ace</button></span></div>';document.body.append(panel);
 const log=panel.querySelector('.ace-chat-messages'),input=panel.querySelector('input'),close=panel.querySelector('.ace-chat-close'),parkButton=panel.querySelector('.ace-park');
 
 /* Reduced motion parks him by default rather than hiding him: the chat is
@@ -308,7 +308,10 @@ function answer(q,source){startChat();
  if(!wait){addMessage(a.text,'bot',a.links,a.suggest);return;}
  showTyping();
  typingTimer=setTimeout(()=>{if(typingEl){typingEl.remove();typingEl=null;}addMessage(a.text,'bot',a.links,a.suggest);},wait);}
-panel.querySelector('form').addEventListener('submit',e=>{e.preventDefault();ask(input.value);});panel.querySelectorAll('.ace-chat-suggestions button').forEach(b=>b.addEventListener('click',()=>ask(b.textContent,'chip')));
+panel.querySelector('form').addEventListener('submit',e=>{e.preventDefault();ask(input.value);});panel.querySelectorAll('.ace-chat-suggestions button:not(.ace-cheats)').forEach(b=>b.addEventListener('click',()=>ask(b.textContent,'chip')));
+/* Cheat codes: just the list, no descriptions. Keep it in step with the keydown handler (search SHIFT CODES). */
+const CHEATS=['Shift + ACE','Shift + FLY','Shift + THOR','Shift + SANTA','Shift + SLIP'];
+panel.querySelector('.ace-cheats').addEventListener('click',()=>{addMessage('Cheat codes','user');addMessage(CHEATS.join(String.fromCharCode(10)),'bot');const m=log.lastElementChild&&log.lastElementChild.querySelector('p');if(m)m.style.whiteSpace='pre-line';});
 function updatePark(){parkButton.textContent=parked?'Let Little Ace roam':'Park Little Ace';}
 parkButton.addEventListener('click',()=>{parked=!parked;try{sessionStorage.setItem('ace-parked',parked?'yes':'no');}catch{}updatePark();if(!parked){state.ground=null;state.vy=0;nextDecision=clock+.5;}});updatePark();
 /* Christmas mode: a switch visitors can use, kept in this browser (localStorage "ace-xmas"). gate.js reads that choice
@@ -721,7 +724,12 @@ const THOUGHTS=[
   {t:'Need the unfiltered report on a team, a location or an opportunity? Ask about On-Site Assignments.',href:'contact.html'},
   {t:'Imagine having Ace on call between meetings. That’s part of Ongoing Private Advisory.',href:'advisory.html'},
   {t:'Not sure where to start? Everything starts with a 30-minute assessment call.',href:'contact.html'},
-].map(l=>typeof l==='string'?{t:l}:l).filter(l=>(!l.xmas||window.ACE_XMAS)&&(!l.href||l.href.split('#')[0]!==(location.pathname.split('/').pop()||'index.html')));
+  'Press Shift + ACE and see what happens.',
+  'Press Shift + FLY and see what happens.',
+  {t:'Press Shift + THOR and see what happens.',normal:true},
+  'Press Shift + SANTA and see what happens.',
+  {t:'Press Shift + SLIP and see what happens.',xmas:true},
+].map(l=>typeof l==='string'?{t:l}:l).filter(l=>(!l.xmas||window.ACE_XMAS)&&(!l.normal||!window.ACE_XMAS)&&(!l.href||l.href.split('#')[0]!==(location.pathname.split('/').pop()||'index.html')));
 const THINK_GAP_MIN=20,THINK_GAP_MAX=45,thinkGap=()=>THINK_GAP_MIN+Math.random()*(THINK_GAP_MAX-THINK_GAP_MIN),THINK_FOR=7,THINK_LINK_FOR=11,ACE_THOUGHT_KEY='ace-thought';
 const bubble=document.createElement('div');bubble.className='ace-think';bubble.setAttribute('aria-hidden','true');
 bubble.innerHTML='<p></p><i class="ace-think__dot ace-think__dot--a"></i><i class="ace-think__dot ace-think__dot--b"></i><i class="ace-think__tear ace-think__tear--a"></i><i class="ace-think__tear ace-think__tear--b"></i>';
@@ -1553,7 +1561,7 @@ requestAnimationFrame(function powerLoop(now){
 const pwKeys=new Set();let pwSeq=[];
 const typing=t=>t&&(t.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
 function startBig(kind){if(kind==='summon')beginSummon();else if(kind==='sleigh')beginSleigh();else if(kind==='flight')beginFlight();else beginPower();}
-function pickBig(){const pool=window.ACE_XMAS?['power','sleigh','flight']:['power','flight','summon'],c=pool.filter(k=>k!==lastBig),from=c.length?c:pool;lastBig=from[Math.floor(Math.random()*from.length)];return lastBig;}   // never the same one twice running
+function pickBig(){const pool=window.ACE_XMAS?['power','flight','sleigh']:['power','flight','summon'];lastBig=pool[(pool.indexOf(lastBig)+1)%pool.length];return lastBig;}   // takes turns: kamehameha, fly, then sleigh (Christmas) or shield and hammer
 /* The ace code (and the hold on the button): the beam or the flight, never the same one twice running. */
 function pickAce(){return pickBig();}
 /* A deliberate trigger (the codes, or holding the button) waits for powerReady(), not powerOk(): the snow is no reason
@@ -1606,14 +1614,15 @@ addEventListener('keydown',e=>{
   if(typing(e.target)||e.repeat)return;
   pwKeys.add(e.code);
   if(!e.shiftKey)return;
-  const ch={KeyA:'a',KeyC:'c',KeyE:'e',KeyS:'s',KeyN:'n',KeyT:'t',KeyL:'l',KeyI:'i',KeyP:'p',KeyH:'h',KeyO:'o',KeyR:'r'}[e.code]||'';
+  const ch={KeyA:'a',KeyC:'c',KeyE:'e',KeyS:'s',KeyN:'n',KeyT:'t',KeyL:'l',KeyI:'i',KeyP:'p',KeyH:'h',KeyO:'o',KeyR:'r',KeyF:'f',KeyY:'y'}[e.code]||'';
   if(!ch){pwSeq=[];return;}
   const now=performance.now();pwSeq=pwSeq.filter(s=>now-s.t<3000);pwSeq.push({ch,t:now});
   const typed=pwSeq.slice(-3).map(s=>s.ch).join('')==='ace';
   const held=pwKeys.has('KeyA')&&pwKeys.has('KeyC')&&pwKeys.has('KeyE');
-  if(typed||held){pwSeq=[];askPower(pickAce());}
+  if(typed||held){pwSeq=[];askPower('power');}                                                // Shift + A, C, E: the kamehameha
   else if(pwSeq.slice(-5).map(s=>s.ch).join('')==='santa'){pwSeq=[];askPower('sleigh');}      // Shift + S, A, N, T, A
   else if(pwSeq.slice(-4).map(s=>s.ch).join('')==='thor'&&!window.ACE_XMAS){pwSeq=[];askPower('summon');}   // Shift + T, H, O, R
+  else if(pwSeq.slice(-3).map(s=>s.ch).join('')==='fly'){pwSeq=[];askPower('flight');}       // Shift + F, L, Y   (SHIFT CODES)
   else if(pwSeq.slice(-4).map(s=>s.ch).join('')==='slip'){pwSeq=[];slipWant=true;}            // Shift + S, L, I, P: slips the next time he is on a button
 });
 addEventListener('keyup',e=>{pwKeys.delete(e.code);});
