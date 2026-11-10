@@ -270,7 +270,7 @@ note:"Not sure you need Ace on an ongoing basis? Start with a <a href='private-w
 "en-NL":{p3:"Between meetings or calls, the work is yours to get at. You acts on what was discussed, or you don’t. Making the advice work takes an honest effort and a real commitment to following through.",
 go:"Come Get Started",
 note:"Not sure you needs Ace on an ongoing basis? Start with a <a href='private-working-session.html'>Private Working Session</a>."},
-"en-AU":{p3:"Between meetings or calls, the work’s yours. You act on what was discussed, or you don’t. The advice only works if you stick with it, honestly and properly.",
+"en-AU":{p3:"Between meetings or calls, the work’s yours. You act on what was discussed, or you don’t. Making the advice work takes honest effort and follow-through.",
 go:"Let’s Get Cracking",
 note:"Not sure you need Ace on an ongoing basis? Start with a <a href='private-working-session.html'>Private Working Session</a> and see how you go."}
 });
