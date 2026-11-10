@@ -33,6 +33,7 @@ if(window.ACE_XMAS){const s=document.createElement('script');s.src='xmas.js?v=28
   /* ── settings ───────────────────────────────────────────────── */
   var WAITLIST_URL = 'https://script.google.com/macros/s/AKfycbwRub8l8LauagWedq_6iBhvU0G50PWcpYg02KWfncxomim-FAhTo7C16CDK4s1EbYY6/exec';
   var CONTACT = 'info@acespaders.com';
+  var tr = function (s) { return window.ACE_TR ? window.ACE_TR(s) : s; };   // the translated line when the page is not in English
   var KEY = 'ace-waitlist-v1';            // bump (and COOKIE) to ask everyone again: a new list, a new year
   var COOKIE = 'ace_waitlist_v1';
   var ENTERED = 'ace-entered-v1';         // this visit has been through the gates
@@ -214,7 +215,7 @@ if(window.ACE_XMAS){const s=document.createElement('script');s.src='xmas.js?v=28
           '</div>' +
           '<div class="gate__hp" aria-hidden="true"><label>Leave this empty<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>' +
           '<p class="gate__msg" id="' + id + '-msg" role="status" aria-live="polite"></p>' +
-          '<p class="gate__help" hidden>Still not working? Email <a href="mailto:' + CONTACT + '?subject=Waitlist%202027">' + CONTACT + '</a> and you will be added by hand.' +
+          '<p class="gate__help" hidden><span>Still not working? Email </span><a href="mailto:' + CONTACT + '?subject=Waitlist%202027">' + CONTACT + '</a><span> and you will be added by hand.</span>' +
             '<button type="button" class="gate__skip">Continue to the site</button></p>' +
         '</form>' +
       '</div>';
@@ -306,7 +307,7 @@ if(window.ACE_XMAS){const s=document.createElement('script');s.src='xmas.js?v=28
       input.setAttribute('aria-invalid', t ? 'true' : 'false');
       help.hidden = !withHelp;
     }
-    function idle() { busy = false; btn.disabled = false; btn.textContent = 'Join the waitlist'; }
+    function idle() { busy = false; btn.disabled = false; btn.textContent = tr('Join the waitlist'); }
     input.addEventListener('input', function () { if (msg.textContent && !busy) say('', !help.hidden); });
     box.querySelector('.gate__skip').addEventListener('click', function () { if (opts.onSkip) opts.onSkip(); });
     function succeed() {
@@ -317,10 +318,10 @@ if(window.ACE_XMAS){const s=document.createElement('script');s.src='xmas.js?v=28
       e.preventDefault();
       if (busy) return;
       var email = (input.value || '').trim();
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { say('Use a full email address, like name@company.com.'); input.focus(); return; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { say(tr('Use a full email address, like name@company.com.')); input.focus(); return; }
       // a person never fills the hidden field and always touches the page first; a bot gets the same success, nothing is sent
       if (hp.value || !human || navigator.webdriver === true) { succeed(); return; }
-      busy = true; btn.disabled = true; btn.textContent = 'Sending…'; say('');
+      busy = true; btn.disabled = true; btn.textContent = tr('Sending…'); say('');
       var salt = String(shownAt);                       // the moment the box appeared: the same salt the old sheet script expects
       var wait = new Promise(function (r) { setTimeout(r, Math.max(0, MIN_MS - (Date.now() - shownAt))); });
       Promise.all([proofOfWork(email.toLowerCase(), salt), wait]).then(function (all) {
@@ -333,10 +334,10 @@ if(window.ACE_XMAS){const s=document.createElement('script');s.src='xmas.js?v=28
       }).then(function (res) {
         if (res.ok) { succeed(); return; }
         idle();
-        say(res.code === 'bad email' ? 'Use a full email address, like name@company.com.'
-          : res.code === 'busy' ? 'Lots of people are joining right now. Please try again in a minute. (busy)'
-          : 'That did not go through. Please try again in a moment. (' + res.code + ')', res.code !== 'bad email');
-      }, function () { idle(); say('That did not go through. Please try again in a moment. (error)', true); });
+        say(res.code === 'bad email' ? tr('Use a full email address, like name@company.com.')
+          : res.code === 'busy' ? tr('Lots of people are joining right now. Please try again in a minute.') + ' (busy)'
+          : tr('That did not go through. Please try again in a moment.') + ' (' + res.code + ')', res.code !== 'bad email');
+      }, function () { idle(); say(tr('That did not go through. Please try again in a moment.') + ' (error)', true); });
     });
     trapTab(box);
     return {

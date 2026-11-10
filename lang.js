@@ -7,7 +7,7 @@
    Only pages in PAGES are translated so far. Loaded in <head>, so the page stays hidden (1.5s at most) until it is ready. */
 (function () {
   'use strict';
-  var PAGES = ['premium-pickup-transport.html', 'advisory.html', 'private-working-session.html', 'public-speaking.html', 'mastermind-membership.html', 'mastermind-application.html', 'group-activities.html', 'contact.html', 'good-news-coffee.html', 'index.html'], V = 90;
+  var PAGES = ['premium-pickup-transport.html', 'advisory.html', 'private-working-session.html', 'public-speaking.html', 'mastermind-membership.html', 'mastermind-application.html', 'group-activities.html', 'contact.html', 'good-news-coffee.html', 'index.html'], V = 91;
   var LANGS = ['ja', 'da', 'ru', 'ar', 'de', 'he', 'fr', 'yue', 'zh', 'tl', 'es', 'pt', 'en-GB', 'en-US', 'en-CA', 'en-NL', 'en-AU', 'pig', 'bin', 'egy'], RTL = { ar: 1, he: 1 }, KEY = 'ace-lang', ALGO = { pig: 1, bin: 1, egy: 1 };   // ALGO: made by rule, not by dictionary
   function pick() {
     var forced = null;
@@ -149,9 +149,11 @@
         texts.forEach(function (n) { var v = n.nodeValue; pairs.forEach(function (p) { v = v.split(p[0]).join(p[1]); }); if (v !== n.nodeValue) n.nodeValue = v; });
       }
     }
-    document.querySelectorAll('[placeholder]').forEach(function (el) {
-      var pt = map[clean(el.getAttribute('placeholder'))];
-      if (pt) el.setAttribute('placeholder', pt);
+    ['placeholder', 'aria-label'].forEach(function (at) {
+      document.querySelectorAll('[' + at + ']').forEach(function (el) {
+        var pt = map[clean(el.getAttribute(at))];
+        if (pt) el.setAttribute(at, pt);
+      });
     });
     show();
   }
