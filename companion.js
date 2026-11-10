@@ -1422,21 +1422,24 @@ flCv.style.cssText='position:fixed;left:0;top:0;width:200px;height:200px;pointer
 document.body.append(flCv);
 const flCtx=flCv.getContext('2d');
 let flight=null,flImg=null,flReady=false;
-function beginFlight(){
+function beginFlight(escape){
   if(!flImg){flImg=new Image();flImg.onload=()=>{flReady=true;};flImg.src=FLIGHT_SHEET;}
-  if(!flReady){powerQueue=true;powerQueueKind='flight';powerQueueUntil=pwClock+10;return;}
+  if(!flReady){if(!escape){powerQueue=true;powerQueueKind='flight';powerQueueUntil=pwClock+10;}return false;}
   const top=Math.max(90,state.y-FL_PIVOT-FL_RISE);                     // not up into the header
   flight={phase:'up',t:0,fx:state.x,fy:state.y,g0:state.ground,px:state.x,py:state.y-FL_PIVOT,hy:top,vy:0,
-          frame:0,aura:0,sparks:[],flashes:[]};
+          frame:0,aura:0,sparks:[],flashes:[],escape:!!escape};
+  if(escape){stuck=false;nextShiver=shiverUntil=0;floorLift=snowLift();f0Land();try{sessionStorage.removeItem(STUCK_KEY);}catch(e){}}
   runGoal=null;pendingJump=null;climb=null;waveUntil=0;nextDecision=clock+99;state.vx=state.vy=0;
   pet.style.visibility='hidden';flCv.style.display='block';sizeBeam();beamCv.style.display='block';
 }
+function f0Land(){flight.ly=innerHeight-16-floorLift;}   // escape: where his feet come down, on top of the snow
 function endFlight(abort){
   const f=flight;flight=null;
   flCv.style.display='none';beamCv.style.display='none';
   bmCtx.setTransform(1,0,0,1,0,0);bmCtx.clearRect(0,0,beamCv.width,beamCv.height);
   pet.style.visibility='';state.vx=state.vy=0;
   if(f){state.x=clampX(f.fx);state.y=f.fy;}
+  if(f&&f.escape){state.ground='floor';state.y=floorY();runGoal=null;pendingJump=null;nextDecision=clock+1.2;nextAuto=pwClock+POWER_EVERY;return;}
   // back where he stood: the floor, or (on a ledge, which may have scrolled) a short drop onto whatever is under him
   if(!f||f.g0==='floor'||abort){state.ground='floor';state.y=innerHeight-16;}else state.ground=null;
   runGoal=null;pendingJump=null;nextDecision=clock+(abort?.4:1.2);
@@ -1446,7 +1449,7 @@ function stepFlight(dt){
   const h=document.documentElement;
   if(open||dragging||h.classList.contains('gate-locked')){endFlight(true);return;}
   const f=flight;f.t+=dt;
-  const base=f.fy-FL_PIVOT,ease=u=>u*u*(3-2*u),oy=f.py;
+  const base=f.fy-FL_PIVOT,lbase=(f.escape?f.ly:f.fy)-FL_PIVOT,ease=u=>u*u*(3-2*u),oy=f.py;
   if(f.phase==='up'){
     let acc=0,idx=FL_UP.length-1;
     for(let i=0;i<FL_UP.length;i++){if(f.t<acc+FL_UP[i][1]){idx=i;break;}acc+=FL_UP[i][1];}
@@ -1463,12 +1466,12 @@ function stepFlight(dt){
     if(f.t>=FL_HOVER_T){f.phase='down';f.t=0;f.dy0=f.py;}
   }else if(f.phase==='down'){                                      // comes back down where he was
     const u=Math.min(1,f.t/FL_DOWN_T);f.frame=18;f.aura=1;
-    f.py=f.dy0+(base-f.dy0)*ease(u);
+    f.py=f.dy0+(lbase-f.dy0)*ease(u);
     if(u>=1){f.phase='land';f.t=0;}
   }else if(f.phase==='land'){
     let acc=0,idx=FL_LAND.length-1;
     for(let i=0;i<FL_LAND.length;i++){if(f.t<acc+FL_LAND[i][1]){idx=i;break;}acc+=FL_LAND[i][1];}
-    f.frame=FL_LAND[idx][0];f.py=base;
+    f.frame=FL_LAND[idx][0];f.py=lbase;
     if(f.frame>=21&&!f.flashedDown){f.flashedDown=true;f.flashes.push({x:f.px,y:f.py,t:0,small:true});}
     f.aura=f.frame>=21?Math.max(0,f.aura-dt*3):1;
     if(f.t>=FL_LAND.reduce((a,b)=>a+b[1],0)){endFlight(false);return;}
@@ -1652,8 +1655,9 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
     scroll=scrollY;floorLift=stuckLift();state.vx=state.vy=0;state.ground='floor';state.y=floorY();state.x=clampX(state.x);
     runGoal=null;pendingJump=null;climb=null;nextDecision=clock+99;facing=1;
     if(!nextShiver)nextShiver=clock+5+Math.random()*7;
-    if(clock>=nextShiver&&!shiverUntil){shiverUntil=clock+2.25+Math.random()*1.5;play('shiver');}   // three or four chattering loops
-    if(shiverUntil&&clock>=shiverUntil){shiverUntil=0;nextShiver=clock+6+Math.random()*9;}
+    if(!flImg){flImg=new Image();flImg.onload=()=>{flReady=true;};flImg.src=FLIGHT_SHEET;}   // ready for the flight out
+    if(clock>=nextShiver&&!shiverUntil){shiverUntil=clock+2.25+Math.random()*1.5;play('shiver');}   // one shiver
+    if(shiverUntil&&clock>=shiverUntil){shiverUntil=0;nextShiver=clock+99;if(!(power||sleigh||summon)&&beginFlight(true)!==false){}else nextShiver=clock+1;}   // then he flies up out of the drift
     play(shiverUntil?'shiver':'stuck');renderSprite(facing);
   }
   else if(slip){stepSlip(dt);}
