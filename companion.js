@@ -735,12 +735,13 @@ document.addEventListener('visibilitychange',()=>{thinkLast=0;});
 let nextThought=thinkGap(),thinkUntil=-1;
 let thoughtIx=Math.floor(Math.random()*THOUGHTS.length);
 try{const n=parseInt(sessionStorage.getItem(ACE_THOUGHT_KEY),10);if(n>=0)thoughtIx=n;}catch(e){}
+const ACE_T=s=>window.ACE_TR?window.ACE_TR(s):s;   /* the translated line, when the page is in another language */
 function think(line){
   if(typeof line==='string')line={t:line};
   if(!line){line=THOUGHTS[thoughtIx++%THOUGHTS.length];try{sessionStorage.setItem(ACE_THOUGHT_KEY,String(thoughtIx%THOUGHTS.length));}catch(e){}}
   const p=bubble.querySelector('p');p.textContent='';
-  if(line.href){const a=document.createElement('a');a.href=line.href;a.textContent=line.t;p.append(a);bubble.removeAttribute('aria-hidden');}
-  else{p.textContent=line.t;bubble.setAttribute('aria-hidden','true');}
+  if(line.href){const a=document.createElement('a');a.href=line.href;a.textContent=ACE_T(line.t);p.append(a);bubble.removeAttribute('aria-hidden');}
+  else{p.textContent=ACE_T(line.t);bubble.setAttribute('aria-hidden','true');}
   bubble.classList.toggle('has-link',!!line.href);
   bubble.classList.toggle('is-red',Math.random()<THINK_RED);bubble.classList.remove('is-glitch');
   nextGlitch=thinkClock+.6+Math.random();
@@ -754,7 +755,8 @@ function glitchBubble(){
   bubble.classList.remove('is-glitch');void bubble.offsetWidth;bubble.classList.add('is-glitch');
   clearTimeout(glitchOff);glitchOff=setTimeout(()=>bubble.classList.remove('is-glitch'),360);
 }
-function quiet(){thinkUntil=-1;bubble.classList.remove('is-on','has-link','is-glitch');bubble.setAttribute('aria-hidden','true');}
+let thinkHeld=false;   // the pickup line: stays up while he is being carried
+function quiet(){thinkUntil=-1;thinkHeld=false;bubble.classList.remove('is-on','has-link','is-glitch');bubble.setAttribute('aria-hidden','true');}
 /* Up and to his right, off the top of his cap; to his left where the right side has no room. */
 function placeBubble(){
   const w=bubble.offsetWidth,h=bubble.offsetHeight,head=state.y-FEET_Y/2;
@@ -771,7 +773,7 @@ requestAnimationFrame(function thinkLoop(now){
   const html=document.documentElement;
   const busy=!ready||open||dragging||html.classList.contains('gate-locked')||html.classList.contains('intro');
   const held=bubble.classList.contains('has-link')&&(bubble.matches(':hover')||bubble.contains(document.activeElement));   // being read or clicked: it stays up and stays put
-  if(thinkUntil>=0){if(busy||(thinkClock>=thinkUntil&&!held)){quiet();nextThought=thinkClock+thinkGap();}else{if(!held)placeBubble();if(thinkClock>=nextGlitch){glitchBubble();nextGlitch=thinkClock+glitchRand(1.2,3.8);}}}
+  if(thinkUntil>=0){if((busy&&!(thinkHeld&&dragging))||(thinkClock>=thinkUntil&&!held)){quiet();nextThought=thinkClock+thinkGap();}else{if(!held)placeBubble();if(thinkClock>=nextGlitch){glitchBubble();nextGlitch=thinkClock+glitchRand(1.2,3.8);}}}
   else if(thinkClock>=nextThought){if(busy)nextThought=thinkClock+5;else think();}
   requestAnimationFrame(thinkLoop);
 });
@@ -851,6 +853,7 @@ addEventListener('pointermove',e=>{
   if(!dragging){
     if(Math.hypot(e.clientX-dragDownX,e.clientY-dragDownY)<DRAG_SLOP)return;
     dragging=true;suppressClick=true;
+    try{const n=(parseInt(sessionStorage.getItem('ace-pickups'),10)||0)+1;sessionStorage.setItem('ace-pickups',String(n));if(n%2===0){think('Please stop throwing me. …Okay, one more.');thinkHeld=true;}else if(thinkHeld)quiet();}catch(e){}   // every second pickup
     try{pet.setPointerCapture(dragPointer);}catch{}
     pet.classList.add('is-dragging');
     climb=null;runGoal=null;pendingJump=null;pointUntil=0;

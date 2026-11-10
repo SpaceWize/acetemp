@@ -7,7 +7,7 @@
    Only pages in PAGES are translated so far. Loaded in <head>, so the page stays hidden (1.5s at most) until it is ready. */
 (function () {
   'use strict';
-  var PAGES = ['premium-pickup-transport.html', 'advisory.html', 'private-working-session.html', 'public-speaking.html', 'mastermind-membership.html', 'mastermind-application.html', 'group-activities.html', 'contact.html', 'good-news-coffee.html', 'index.html'], V = 81;
+  var PAGES = ['premium-pickup-transport.html', 'advisory.html', 'private-working-session.html', 'public-speaking.html', 'mastermind-membership.html', 'mastermind-application.html', 'group-activities.html', 'contact.html', 'good-news-coffee.html', 'index.html'], V = 83;
   var LANGS = ['ja', 'da', 'ru', 'ar', 'de', 'he', 'fr', 'yue', 'zh', 'tl', 'en-GB', 'en-US', 'en-CA', 'en-NL', 'en-AU'], RTL = { ar: 1, he: 1 }, KEY = 'ace-lang';
   function pick() {
     var forced = null;
@@ -69,10 +69,11 @@
     sets.forEach(function (d) { for (var k in d.src) if (d.tr[k]) map[clean(d.src[k])] = d.tr[k]; });
     var map2 = Object.create(null);
     for (var mk in map) map2[mk.replace(/\s/g, '')] = map[mk];
+    window.ACE_TR = function (s) { return map[clean(s)] || map2[String(s).replace(/\s/g, '')] || s; };   // for text the page builds later, like Little Ace's thoughts
     var link = '<a href="mastermind-membership.html">' + (map[clean('Invested Aces Mastermind')] || 'Invested Aces Mastermind') + '</a>';
     root.lang = { 'en-NL': 'en-CA', yue: 'zh-HK', zh: 'zh-CN', tl: 'fil' }[lang] || lang;
     if (RTL[lang]) root.dir = 'rtl';
-    document.querySelectorAll('h1,h2,h3,p,li,dt,dd,a,button,blockquote,span,label,legend,option,em,figcaption').forEach(function (el) {
+    document.querySelectorAll('h1,h2,h3,p,li,dt,dd,a,button,blockquote,span,label,legend,option,em,figcaption,th,td').forEach(function (el) {
       var t = map[clean(el.textContent)] || map2[el.textContent.replace(/\s/g, '')];
       if (!t) return;
       if (el.tagName === 'OPTION' && !el.hasAttribute('value')) el.value = el.textContent;   // the form still sends the English choice
@@ -86,7 +87,7 @@
     });
     /* Names inside sentences, and headings that have no key of their own: swap in the translated name, longest first. */
     if (lang) {
-      var names = ['The Invested Aces Mastermind', 'I-AM: Invested Aces Mastermind', 'Invested Aces Mastermind', 'Premium Pickup & Transport', 'Ongoing Private Advisory', 'Private Working Session', 'Ongoing Advisory', 'Mastermind'];
+      var names = ['The Invested Aces Mastermind', 'I-AM: Invested Aces Mastermind', 'Invested Aces Mastermind', 'Premium Pickup & Transport', 'Ongoing Private Advisory', 'Private Working Session', 'Ongoing Advisory', 'Public Speaking', 'On-Site Assignments', 'Advisory', 'Mastermind'];
       var pairs = [];
       names.forEach(function (en) { var tr = map[en]; if (tr) pairs.push([en, tr]); });
       if (pairs.length) {
