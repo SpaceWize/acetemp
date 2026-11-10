@@ -17,7 +17,7 @@ zh:{"skip":"跳转至主要内容","about":"关于","apply":"申请","act":"活�
 tl:{"skip":"Dumiretso sa nilalaman","about":"Tungkol kay Ace","apply":"Mag-apply","act":"Mga Aktibidad","start":"Simulan ang Usapan","open":"Buksan ang menu","back":"Bumalik","appt":"Kailangan ng appointment","work":"Mga Serbisyo","also":"Iba pang Serbisyo","rep":"Representasyon","st":"Magsimula","book":"Mag-book ng Assessment Call","am":"Mag-apply sa Mastermind","hire":"Kunin ang Webmaster ni Ace","rights":"© 2026 Ace Spaders. Nakalaan ang lahat ng karapatan.","gate":"Tingnan muli ang gate","q1":"\"Kung magdurusa ka rin lang, magdusa ka para sa tagumpay.<br>Mahal ko ang ginto at ang mga taong kasinghalaga nito.\"","q2":"\"Para maintindihan ang tao, kailangan lang ng kahandaang makinig.\""},
 "en-GB":{start:"Let’s Have a Chat",act:"Goings-On",appt:"By appointment only",gate:"Have Another Look at the Gate"},
 "en-US":{start:"Let’s Talk",act:"What’s Happening",gate:"See the Gate Again"},
-"en-CA":{start:"Start the Conversation, Eh?",act:"Things on the Go",gate:"See the Gate Again, Eh?"},
+"en-CA":{start:"Let’s Have a Chat, Eh?",act:"Things on the Go",gate:"See the Gate Again, Eh?"},
 "en-NL":{start:"Come Have a Yarn",act:"What’s on the Go",back:"Go On Back",appt:"By appointment only",gate:"Have Another Gawk at the Gate"},
 "en-AU":{start:"Let’s Have a Yarn",act:"What’s On",back:"Head Back",gate:"Have Another Squiz at the Gate"}
 });
