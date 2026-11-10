@@ -14,7 +14,7 @@ he:{skip:"דילוג לתוכן",about:"אודות",apply:"הגשת מועמדו
 fr:{skip:"Aller au contenu",about:"À propos",apply:"Postuler",act:"Activités",start:"Lancer la conversation",open:"Ouvrir le menu",back:"Retour",appt:"Sur rendez-vous uniquement",work:"Le travail",also:"Également disponible",rep:"Représentation",st:"Commencer",book:"Réserver un appel d’évaluation",am:"Postuler au Mastermind",hire:"Engager le webmestre d’Ace",rights:"© 2026 Ace Spaders. Tous droits réservés.",gate:"Revoir le portail",q1:"« Quitte à souffrir, autant souffrir de réussite.<br>J’aime l’or et les gens en or. »",q2:"« Pour comprendre les gens, il suffit d’avoir la volonté d’écouter. »"},
 "en-GB":{start:"Let’s Have a Chat",act:"Goings-On",appt:"By appointment only, mind",gate:"Have Another Look at the Gate"},
 "en-US":{start:"Let’s Talk",act:"Stuff Goin’ On",gate:"Run the Gate Back"},
-"en-CA":{start:"Start the Conversation, Eh",act:"Things on the Go",gate:"See the Gate Again, Eh"},
+"en-CA":{start:"Start the Conversation, Eh?",act:"Things on the Go",gate:"See the Gate Again, Eh?"},
 "en-NL":{start:"Come On, Have a Yarn",act:"What’s On the Go, B’y",back:"Go On Back",appt:"Call ahead first, me ducky",gate:"Have Another Gawk at the Gate"},
 "en-AU":{start:"Have a Yarn, Mate",act:"What’s On",back:"Head Back",gate:"Have a Squiz at the Gate"}
 });
