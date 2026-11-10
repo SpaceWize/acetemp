@@ -243,7 +243,7 @@ vfmt:"Hindi bababa sa tatlong nakaiskedyul na Private Meeting kada buwan (nang h
 vinc:"May libreng access ang mga kliyente ng Ongoing Private Advisory sa mga pulong ng {M} at sa <a href='group-activities.html'>mga Group Activity ni Ace</a>.<span class='ast'>***</span>",
 vadd:"Maaaring isama sa inyong kasunduan ang mga karagdagang serbisyo, tulad ng <a href='premium-pickup-transport.html'>Premium Pickup &amp; Transport</a>, <a href='public-speaking.html'>Public Speaking</a> (para sa mga team o tagapakinig), at iba pa.",
 appr:"Ang Pamamaraan",
-a1:"Sagutan ang <a href='contact.html'>contact form</a> o mag-email sa Assistant ni Ace sa info@acespader.com.",
+a1:"Sagutan ang <a href='contact.html'>form ng pakikipag-ugnayan</a> o mag-email sa Assistant ni Ace sa info@acespader.com.",
 a2:"Kapag nakumpleto na ninyo ang maikling paunang proseso at naaprubahan ang inyong aplikasyon, maaasahan ninyo ang sumusunod na serbisyo at mga paraan ng pakikipag-ugnayan kay Ace.",
 t1:"Pagtatanong",t2:"Pagsusuri",t3:"Pagsasagawa",t4:"Pagsusuri at Muling Pag-aangkop",
 p1:"Nakikinig si Ace at nagtatanong para maipaliwanag ninyo ang sitwasyon hanggang magkaroon ng malinaw na pagkakaunawaan. May mga pulong na diretso sa punto. May iba namang mas kaswal at nakadepende sa sitwasyon. Parehong epektibo.",
