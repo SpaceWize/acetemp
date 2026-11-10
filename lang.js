@@ -67,10 +67,13 @@
   function apply() {
     var map = Object.create(null);
     sets.forEach(function (d) { for (var k in d.src) if (d.tr[k]) map[clean(d.src[k])] = d.tr[k]; });
+    var map2 = Object.create(null);
+    for (var mk in map) map2[mk.replace(/\s/g, '')] = map[mk];
+    var link = '<a href="mastermind-membership.html">' + (map[clean('Invested Aces Mastermind')] || 'Invested Aces Mastermind') + '</a>';
     root.lang = { 'en-NL': 'en-CA', yue: 'zh-HK', zh: 'zh-CN', tl: 'fil' }[lang] || lang;
     if (RTL[lang]) root.dir = 'rtl';
     document.querySelectorAll('h1,h2,h3,p,li,dt,dd,a,button,blockquote,span,label,legend,option,em,figcaption').forEach(function (el) {
-      var t = map[clean(el.textContent)];
+      var t = map[clean(el.textContent)] || map2[el.textContent.replace(/\s/g, '')];
       if (!t) return;
       if (el.tagName === 'OPTION' && !el.hasAttribute('value')) el.value = el.textContent;   // the form still sends the English choice
       var inner = Array.prototype.some.call(el.children, function (k) { return !/^svg$/i.test(k.tagName) && clean(k.textContent) === clean(el.textContent); });
@@ -79,7 +82,7 @@
         for (var i = el.childNodes.length - 1; i >= 0; i--) if (el.childNodes[i].nodeType === 3 && clean(el.childNodes[i].nodeValue)) { el.childNodes[i].nodeValue = ' ' + t; break; }
         return;
       }
-      el.innerHTML = t.replace(/\{M\}/g, M);
+      el.innerHTML = t.replace(/\{M\}/g, link);
     });
     document.querySelectorAll('[placeholder]').forEach(function (el) {
       var pt = map[clean(el.getAttribute('placeholder'))];
