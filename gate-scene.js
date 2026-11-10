@@ -24,8 +24,8 @@ const SWING = 2.6;            // s from open to the moment the halves meet: slow
 const SETTLE = 0.9;           // s of rebound after they meet
 const CAM_Z = 14, FOV = 38;
 
-// Sprite sheet: 8 columns x 9 rows of 240x280 cells; the run cycle is cells 13-20 at 11fps (as in companion.js).
-const COLS = 8, ROWS = 11, RUN = [13, 14, 15, 16, 17, 18, 19, 20], RUN_FPS = 11, IDLE = 0;
+// Sprite sheet: 8 columns of 240x280 cells, as many rows as the image has (read when it loads, because the sheet grows); the run cycle is cells 13-20 at 11fps (as in companion.js).
+const COLS = 8, CELL_H = 280, RUN = [13, 14, 15, 16, 17, 18, 19, 20], RUN_FPS = 11, IDLE = 0;
 const FALL = [28, 29], LAND = [30, 31, 32, 33], LAND_FPS = 17, GRAVITY_PX = 1650;   // the page companion's clips and gravity
 
 export function start(host, opts = {}) {
@@ -159,10 +159,11 @@ export function start(host, opts = {}) {
   const ACE_Z = -4.2, ACE_H = 2.3;
   const ace = new THREE.Group();
   back.add(ace);
-  let aceTex = null, aceMat = null, aceShadow = null;
+  let aceTex = null, aceMat = null, aceShadow = null, ROWS = 13;
   if (opts.atlasUrl) {
     new THREE.TextureLoader().load(opts.atlasUrl, (t) => {
       t.colorSpace = THREE.SRGBColorSpace;
+      ROWS = Math.round(t.image.height / CELL_H);
       t.repeat.set(1 / COLS, 1 / ROWS);
       t.magFilter = THREE.LinearFilter;
       t.minFilter = THREE.LinearMipmapLinearFilter;
