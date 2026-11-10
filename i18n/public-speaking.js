@@ -14,5 +14,5 @@ ACE_I18N({"tag":"Need someone who understands the halo effect?Maybe someone who 
 "en-GB":{"p4":"To book Ace to speak, simply fill in the form below.","hleave":"Motivation, something sorted, a call to action?"},
 "en-US":{"r2":"Please allow 1-2 business days for an email response. If it’s a good fit, we’ll get you on the calendar right away for a 30-minute meeting to talk it through."},
 "en-CA":{"hroom":"Students, employees, hockey parents, others?","lcount":"Number of attendees? Sorry, we have to ask."},
-"en-NL":{"lroom":"Who’s going to be in the room?","hroom":"Students, employees, the whole crowd, others?"},
+"en-NL":{"lroom":"Who’s going to be in the room?","hroom":"Students, employees, or anyone else?"},
 "en-AU":{"p3":"Most talks run 20 to 45 minutes, plus questions. That said, Ace is more than happy to run full-day interactive workshops or discussions on these topics and plenty of others."}});
