@@ -7,8 +7,8 @@
    Only pages in PAGES are translated so far. Loaded in <head>, so the page stays hidden (1.5s at most) until it is ready. */
 (function () {
   'use strict';
-  var PAGES = ['premium-pickup-transport.html'], V = 3;
-  var LANGS = ['ja', 'da', 'ru', 'ar', 'de', 'he', 'fr', 'en-GB', 'en-US', 'en-CA', 'en-NL', 'en-AU'], RTL = { ar: 1, he: 1 }, KEY = 'ace-lang';
+  var PAGES = ['premium-pickup-transport.html'], V = 4;
+  var LANGS = ['ja', 'da', 'ru', 'ar', 'de', 'he', 'fr', 'yue', 'zh', 'tl', 'en-GB', 'en-US', 'en-CA', 'en-NL', 'en-AU'], RTL = { ar: 1, he: 1 }, KEY = 'ace-lang';
   function pick() {
     var forced = null;
     try {
@@ -20,7 +20,10 @@
     if (forced === 'orig') return null;                     // chose the original in the picker
     if (LANGS.indexOf(forced) >= 0) return forced;
     var two = (navigator.language || '').toLowerCase().split('-')[0];
+    var full = (navigator.language || '').toLowerCase();
     if (two === 'iw') two = 'he';
+    if (two === 'fil') two = 'tl';
+    if (two === 'zh' && /-(hk|mo)$/.test(full)) two = 'yue';    // Hong Kong and Macau: Cantonese
     return LANGS.indexOf(two) >= 0 && two.indexOf('en') !== 0 ? two : null;
   }
   var lang = pick();
@@ -29,7 +32,7 @@
   if (PAGES.indexOf(page) < 0) return;
 
   /* The picker: a globe and a short code, with a real <select> laid invisibly over them, so phones get their own list. */
-  var PICK = [['orig', 'English (original)', 'EN'], ['ja', '日本語', 'JA'], ['da', 'Dansk', 'DA'], ['ru', 'Русский', 'RU'], ['ar', 'العربية', 'AR'], ['de', 'Deutsch', 'DE'], ['he', 'עברית', 'HE'], ['fr', 'Français', 'FR'], ['en-GB', 'British English', 'UK'], ['en-US', 'American English', 'US'], ['en-CA', 'Canadian English', 'CA'], ['en-NL', 'Newfoundland English', 'NF'], ['en-AU', 'Australian English', 'AU']];
+  var PICK = [['orig', 'English (original)', 'EN'], ['ja', 'Japanese', 'JA'], ['da', 'Danish', 'DA'], ['ru', 'Russian', 'RU'], ['ar', 'Arabic', 'AR'], ['de', 'German', 'DE'], ['he', 'Hebrew', 'HE'], ['fr', 'French', 'FR'], ['yue', 'Cantonese', 'YUE'], ['zh', 'Mandarin', 'ZH'], ['tl', 'Tagalog', 'TL'], ['en-GB', 'British English', 'UK'], ['en-US', 'American English', 'US'], ['en-CA', 'Canadian English', 'CA'], ['en-NL', 'Newfoundland English', 'NF'], ['en-AU', 'Australian English', 'AU']];
   var css = document.createElement('style');
   css.textContent = '.ace-lang{position:relative;display:inline-flex;align-items:center;gap:6px;flex:none;height:38px;padding:0 10px;margin-inline:10px;border:1px solid rgba(217,164,65,.45);color:#F1EDE6;font:600 12px/1 system-ui,sans-serif;letter-spacing:.06em}.ace-lang:hover{border-color:#D9A441}.ace-lang:focus-within{outline:2px solid #D9A441;outline-offset:2px}.ace-lang svg{width:15px;height:15px;fill:none;stroke:#D9A441;stroke-width:1.6}.ace-lang select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:16px}.ace-lang option{background:#121110;color:#F1EDE6}html[dir=rtl] .skip{left:auto;right:-9999px}html[dir=rtl] .skip:focus{left:auto;right:1rem}html[dir=rtl] .hero__back svg{transform:none}';
   document.head.appendChild(css);
@@ -64,7 +67,7 @@
   function apply() {
     var map = Object.create(null);
     sets.forEach(function (d) { for (var k in d.src) if (d.tr[k]) map[clean(d.src[k])] = d.tr[k]; });
-    root.lang = lang === 'en-NL' ? 'en-CA' : lang;
+    root.lang = { 'en-NL': 'en-CA', yue: 'zh-HK', zh: 'zh-CN', tl: 'fil' }[lang] || lang;
     if (RTL[lang]) root.dir = 'rtl';
     document.querySelectorAll('h1,h2,h3,p,li,dt,dd,a,button,blockquote,span').forEach(function (el) {
       var t = map[clean(el.textContent)];
