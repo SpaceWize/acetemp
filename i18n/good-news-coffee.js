@@ -1,0 +1,17 @@
+/* Good News Coffee. Service names, Invested Aces Mastermind and Aces stay in English; Ace is written エース/Эйс/إيس/אייס. Shared lines reuse reviewed wording. Form error messages are not translated yet. */
+ACE_I18N({"soon":"Website coming soon!"},
+{"ja":{"soon":"ウェブサイトは近日公開予定です！"},
+"da":{"soon":"Hjemmesiden kommer snart!"},
+"ru":{"soon":"Сайт скоро появится!"},
+"ar":{"soon":"الموقع الإلكتروني قريبًا!"},
+"de":{"soon":"Website folgt in Kürze!"},
+"he":{"soon":"האתר יעלה בקרוב!"},
+"fr":{"soon":"Site Web à venir bientôt!"},
+"yue":{"soon":"網站即將推出！"},
+"zh":{"soon":"网站即将上线！"},
+"tl":{"soon":"Malapit nang ilunsad ang website!"},
+"en-GB":{},
+"en-US":{},
+"en-CA":{},
+"en-NL":{},
+"en-AU":{}});
