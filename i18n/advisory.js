@@ -257,7 +257,7 @@ n3:"<span class='ast'>***</span>Hindi kasama ang mga benepisyo ng pagiging miyem
 go:"Magsimula",
 note:"Hindi sigurado kung kailangan ninyo si Ace nang tuloy-tuloy? Magsimula sa isang <a href='private-working-session.html'>Private Working Session</a>."},
 "en-GB":{tag:"Two heads are better than one, but not all heads are created equal.",
-p3:"Between meetings or calls, the work is yours. You act on what was discussed, or you don’t. The advice only works if you stick to it, honestly and properly.",
+p3:"Between meetings or calls, the work is yours. You act on what was discussed, or you don’t. The advice only works if you make an honest effort to put it into practice.",
 go:"Let’s Get Started",
 note:"Not sure you need Ace on an ongoing basis? Start with a <a href='private-working-session.html'>Private Working Session</a> instead."},
 "en-US":{tag:"Two heads beat one, but not all heads are created equal.",
