@@ -81,6 +81,10 @@
       }
       el.innerHTML = t.replace(/\{M\}/g, M);
     });
+    document.querySelectorAll('[placeholder]').forEach(function (el) {
+      var pt = map[clean(el.getAttribute('placeholder'))];
+      if (pt) el.setAttribute('placeholder', pt);
+    });
     show();
   }
   var left = 2;
