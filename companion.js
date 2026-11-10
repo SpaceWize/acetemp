@@ -995,6 +995,10 @@ function buttonAbove(){
 }
 
 const SURFACE_EDGE=60;
+/* Edges: he never stands, lands or stops within EDGE_KEEP px of a ledge's end, where the 'still on it' test and
+   the landing test disagree and he flickers between falling and landing. inward() gives a safe spot. */
+const EDGE_KEEP=30;
+const inward=(g,x)=>g.right-g.left<EDGE_KEEP*2?(g.left+g.right)/2:Math.max(g.left+EDGE_KEEP,Math.min(g.right-EDGE_KEEP,x));
 /* How often a decision made ON THE FLOOR is just "walk somewhere else
    along it" rather than a hunt for something to jump onto. The floor is
    exempt from the ledge rule below — it always has room, so applying that
@@ -1110,7 +1114,7 @@ function choose(busy){
  const p=scored[Math.min(scored.length-1,Math.random()<.25?1:0)].p;
  /* Spread landings across the ledge instead of always touching down where
     he took off, so a wide tray gets walked rather than stood on. */
- const x=Math.max(p.left+35,Math.min(p.right-35,state.x+(Math.random()-.5)*260));
+ const x=inward(p,Math.max(p.left+35,Math.min(p.right-35,state.x+(Math.random()-.5)*260)));
  target={id:p.id,x,y:p.y};
  const distance=Math.abs(x-state.x);
  /* Too far to jump: walk to the near end of the current surface first.
@@ -1704,9 +1708,13 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
 
    if(!ascending){
    let ground=currentSurface();
+   if(ground&&ground.id!=='floor'&&ground.id!=='visit'&&ground.id!=='launcher'&&!climb){
+     if(runGoal!==null&&runGoal>=ground.left&&runGoal<=ground.right)runGoal=inward(ground,runGoal);   // a walk along it, not off it
+     else if(runGoal===null&&!pendingJump){const safe=inward(ground,state.x);if(Math.abs(safe-state.x)>1)state.x+=Math.sign(safe-state.x)*Math.min(Math.abs(safe-state.x),RUN_SPEED*dt);}   // drifted to an end: back in
+   }
    if(ground){state.y=ground.y;if((ground.id!=='visit'&&state.y<120)||state.y>innerHeight+30||state.x<ground.left+6||state.x>ground.right-6){state.ground=null;state.y=Math.max(-15,Math.min(innerHeight-20,state.y));state.vy=100;ground=null;runGoal=null;pendingJump=null;}}
    else if(dy){state.y=Math.max(-15,Math.min(innerHeight-35,state.y-dy));if(Math.abs(dy)>60){state.vy=Math.max(100,state.vy);pendingJump=null;}}
-   if(pendingJump&&clock>=crouchUntil){const p=surfaces.find(p=>p.id===pendingJump.id);if(p){const tx=Math.max(p.left+30,Math.min(p.right-30,pendingJump.x));physics.jump(state,{x:tx,y:p.y});facing=Math.sign(state.vx)||facing;}pendingJump=null;ground=null;}
+   if(pendingJump&&clock>=crouchUntil){const p=surfaces.find(p=>p.id===pendingJump.id);if(p){const tx=inward(p,pendingJump.x);physics.jump(state,{x:tx,y:p.y});facing=Math.sign(state.vx)||facing;}pendingJump=null;ground=null;}
    if(state.ground!==null){
     if(holdingPoint()||clock<waveUntil){
       /* Holding a gesture (the point, or the hello wave): no walking, no
