@@ -7,7 +7,7 @@
    Only pages in PAGES are translated so far. Loaded in <head>, so the page stays hidden (1.5s at most) until it is ready. */
 (function () {
   'use strict';
-  var PAGES = ['premium-pickup-transport.html', 'advisory.html', 'private-working-session.html', 'public-speaking.html', 'mastermind-membership.html', 'mastermind-application.html', 'group-activities.html', 'contact.html', 'good-news-coffee.html', 'index.html'], V = 66;
+  var PAGES = ['premium-pickup-transport.html', 'advisory.html', 'private-working-session.html', 'public-speaking.html', 'mastermind-membership.html', 'mastermind-application.html', 'group-activities.html', 'contact.html', 'good-news-coffee.html', 'index.html'], V = 67;
   var LANGS = ['ja', 'da', 'ru', 'ar', 'de', 'he', 'fr', 'yue', 'zh', 'tl', 'en-GB', 'en-US', 'en-CA', 'en-NL', 'en-AU'], RTL = { ar: 1, he: 1 }, KEY = 'ace-lang';
   function pick() {
     var forced = null;
@@ -69,7 +69,7 @@
     sets.forEach(function (d) { for (var k in d.src) if (d.tr[k]) map[clean(d.src[k])] = d.tr[k]; });
     root.lang = { 'en-NL': 'en-CA', yue: 'zh-HK', zh: 'zh-CN', tl: 'fil' }[lang] || lang;
     if (RTL[lang]) root.dir = 'rtl';
-    document.querySelectorAll('h1,h2,h3,p,li,dt,dd,a,button,blockquote,span,label,legend,option').forEach(function (el) {
+    document.querySelectorAll('h1,h2,h3,p,li,dt,dd,a,button,blockquote,span,label,legend,option,em,figcaption').forEach(function (el) {
       var t = map[clean(el.textContent)];
       if (!t) return;
       if (el.tagName === 'OPTION' && !el.hasAttribute('value')) el.value = el.textContent;   // the form still sends the English choice
