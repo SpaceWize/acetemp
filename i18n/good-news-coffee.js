@@ -14,4 +14,6 @@ ACE_I18N({"soon":"Website coming soon!"},
 "en-US":{},
 "en-CA":{},
 "en-NL":{},
-"en-AU":{}});
+"en-AU":{},
+"es":{"soon":"¡Sitio web próximamente!"},
+"pt":{"soon":"Site em breve!"}});
