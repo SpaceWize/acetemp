@@ -18,6 +18,6 @@ tl:{"skip":"Dumiretso sa nilalaman","about":"Tungkol kay Ace","apply":"Mag-apply
 "en-GB":{start:"Let’s Have a Chat",act:"Goings-On",appt:"By appointment only, mind",gate:"Have Another Look at the Gate"},
 "en-US":{start:"Let’s Talk",act:"What’s Happening",gate:"See the Gate Again"},
 "en-CA":{start:"Start the Conversation, Eh?",act:"Things on the Go",gate:"See the Gate Again, Eh?"},
-"en-NL":{start:"Come On, Have a Yarn",act:"What’s On the Go, B’y",back:"Go On Back",appt:"Call ahead first, me ducky",gate:"Have Another Gawk at the Gate"},
+"en-NL":{start:"Come Have a Yarn",act:"What’s on the Go",back:"Go On Back",appt:"By appointment only",gate:"Have Another Gawk at the Gate"},
 "en-AU":{start:"Have a Yarn, Mate",act:"What’s On",back:"Head Back",gate:"Have a Squiz at the Gate"}
 });
