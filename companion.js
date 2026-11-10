@@ -353,7 +353,7 @@ if(window.ACE_XMAS){
 }
 document.addEventListener('ace:snowfull',()=>{
   if(!window.ACE_XMAS||stuck)return;
-  const hold=setInterval(()=>{if(power||sleigh||flight)return;clearInterval(hold);stuck=true;try{sessionStorage.setItem(STUCK_KEY,'1');}catch(e){}},300);   // wait for a big moment to finish first
+  const hold=setInterval(()=>{if(power||sleigh||flight||summon)return;clearInterval(hold);stuck=true;try{sessionStorage.setItem(STUCK_KEY,'1');}catch(e){}},300);   // wait for a big moment to finish first
 });
 
 /* ── SPRITE ────────────────────────────────────────────────────
@@ -1252,6 +1252,80 @@ function stepPower(dt){
     beamSnow(idx+frac,power.dir,ox,oy,dt);
   }
 }
+/* ── SUMMON ─────────────────────────────────────────────────
+   Normal mode only (the art has his cap, not the Santa hat). He calls a shield and a hammer in from off the page, catches
+   them, holds the hammer up while lightning crackles around him, throws them off opposite sides of the page and goes back
+   to being chill. His frames are the top four rows of assets/images/ace-summon.webp (5 x 4 cells of 280x300, feet at 140,292);
+   the fifth row holds the shield and the hammer on their own, for the flights. Lightning and flights are drawn on the beam canvas.
+   SU_STEPS is [cell, milliseconds]. Shares the big-moment timer; Shift + T, H, O, R plays it. */
+const SUMMON_SHEET='assets/images/ace-summon.webp?v=1',SU_CW=280,SU_CH=300,SU_COLS=5,SU_FX=140,SU_FY=292;
+const SU_STEPS=[[0,120],[1,110],[2,110],[3,150],[4,250],[5,180],[6,200],[7,130],[8,100],[9,80],[10,110],[11,110],[10,110],[11,110],[10,110],[11,110],[12,270],[13,90],[14,100],[15,440],[16,170],[17,100],[18,110],[1,110],[19,850]];
+const SU_AT=[];{let t=0;for(const st of SU_STEPS){SU_AT.push(t);t+=st[1]/1000;}SU_AT.push(t);}
+const SU_TOTAL=SU_AT[SU_AT.length-1],SU_THROW=SU_AT[20],SU_THROW_SPEED=1700;
+const SU_SHIELD=[170,197],SU_HAMMER=[85,196],SU_SHIELD_OUT=[162,193],SU_HAMMER_OUT=[104,176],SU_BOLT=[91,100];   // in cell px
+const suCv=document.createElement('canvas');suCv.width=SU_CW;suCv.height=SU_CH;suCv.setAttribute('aria-hidden','true');
+suCv.style.cssText='position:fixed;left:0;top:0;width:'+SU_CW/2+'px;height:'+SU_CH/2+'px;pointer-events:none;display:none;will-change:transform;z-index:'+(pwZ==='auto'?'60':pwZ);
+document.body.append(suCv);
+const suCtx=suCv.getContext('2d');
+let summon=null,suImg=null,suReady=false;
+function beginSummon(){
+  if(!suImg){suImg=new Image();suImg.onload=()=>{suReady=true;};suImg.src=SUMMON_SHEET;}
+  if(!suReady){powerQueue=true;powerQueueKind='summon';powerQueueUntil=pwClock+10;return;}
+  summon={t:0,bolts:[],nextBolt:0};
+  waveUntil=clock+SU_TOTAL+.3;nextDecision=Math.max(nextDecision,clock+SU_TOTAL+1.2);runGoal=null;
+  pet.style.visibility='hidden';suCv.style.display='block';beamCv.style.display='block';sizeBeam();
+}
+function endSummon(){
+  summon=null;suCv.style.display='none';beamCv.style.display='none';bmCtx.setTransform(1,0,0,1,0,0);bmCtx.clearRect(0,0,beamCv.width,beamCv.height);
+  pet.style.visibility='';nextAuto=pwClock+POWER_EVERY;waveUntil=Math.min(waveUntil,clock+.1);
+}
+function suObject(c,which,x,y,rot,h){
+  const w=h*(which?123/200:195/200),sx=which*SU_CW+(SU_CW-(which?123:195))/2,sy=4*SU_CH+50;
+  c.save();c.translate(x,y);c.rotate(rot);c.drawImage(suImg,sx,sy,which?123:195,200,-w/2,-h/2,w,h);c.restore();
+}
+function suJag(x0,y0,x1,y1){
+  const pts=[[x0,y0]],n=7+Math.floor(Math.random()*4),len=Math.hypot(x1-x0,y1-y0),nx=-(y1-y0)/(len||1),ny=(x1-x0)/(len||1);
+  for(let i=1;i<n;i++){const u=i/n,off=(Math.random()-.5)*len*.22;pts.push([x0+(x1-x0)*u+nx*off,y0+(y1-y0)*u+ny*off]);}
+  pts.push([x1,y1]);return pts;
+}
+function stepSummon(dt){
+  const h=document.documentElement;
+  if(open||dragging||h.classList.contains('gate-locked')){endSummon();return;}
+  const s=summon;s.t+=dt;
+  if(s.t>=SU_TOTAL){endSummon();return;}
+  let idx=SU_STEPS.length-1;for(let i=0;i<SU_STEPS.length;i++)if(s.t<SU_AT[i+1]){idx=i;break;}
+  const cell=SU_STEPS[idx][0],ox=state.x-SU_FX/2,oy=state.y-SU_FY/2,px=p=>[ox+p[0]/2,oy+p[1]/2];
+  suCv.style.transform='translate3d('+ox.toFixed(1)+'px,'+oy.toFixed(1)+'px,0)';
+  suCtx.clearRect(0,0,SU_CW,SU_CH);
+  suCtx.drawImage(suImg,(cell%SU_COLS)*SU_CW,Math.floor(cell/SU_COLS)*SU_CH,SU_CW,SU_CH,0,0,SU_CW,SU_CH);
+  const c=bmCtx;c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,beamCv.width,beamCv.height);c.setTransform(beamDpr,0,0,beamDpr,0,0);
+  const flyIn=(from,to,a,b,which,sz,spins)=>{
+    if(s.t<a||s.t>=b)return;
+    const u=(s.t-a)/(b-a),e=u*u*(3-2*u);
+    suObject(c,which,from[0]+(to[0]-from[0])*e,from[1]+(to[1]-from[1])*e,(1-e)*spins*6.283,sz);
+  };
+  flyIn([innerWidth+60,oy-40],px(SU_SHIELD),SU_AT[3],SU_AT[5],0,34,3);
+  flyIn([-60,oy-40],px(SU_HAMMER),SU_AT[5],SU_AT[7],1,40,3);
+  if(s.t>=SU_THROW){
+    const d=s.t-SU_THROW,a=px(SU_SHIELD_OUT),b=px(SU_HAMMER_OUT);
+    suObject(c,0,a[0]+SU_THROW_SPEED*d,a[1]-90*d,d*22,34);
+    suObject(c,1,b[0]-SU_THROW_SPEED*d,b[1]-90*d,-d*22,40);
+  }
+  if(idx>=10&&idx<=15){                                          // lightning: fresh bolts every few hundredths of a second
+    const hp=px(SU_BOLT),cx=state.x,cy=state.y-60;
+    if(s.t>=s.nextBolt){
+      s.nextBolt=s.t+.065;s.bolts=[suJag(hp[0],hp[1],hp[0]+(Math.random()-.5)*90,-20)];
+      for(let i=0;i<5;i++){const a=Math.random()*6.283,r=55+Math.random()*85;s.bolts.push(suJag(i%2?hp[0]:cx,i%2?hp[1]:cy,cx+Math.cos(a)*r,cy+Math.sin(a)*r*.9));}
+    }
+    c.globalCompositeOperation='lighter';c.lineJoin='round';c.lineCap='round';
+    const line=(p,col,w,blur)=>{c.strokeStyle=col;c.lineWidth=w;c.shadowColor='rgba(110,180,255,.95)';c.shadowBlur=blur;c.beginPath();p.forEach((q,i)=>i?c.lineTo(q[0],q[1]):c.moveTo(q[0],q[1]));c.stroke();};
+    for(const b of s.bolts){line(b,'rgba(95,165,255,.55)',4,14);line(b,'rgba(240,248,255,.95)',1.4,5);}
+    c.shadowBlur=0;
+    const g=c.createRadialGradient(hp[0],hp[1],0,hp[0],hp[1],46);g.addColorStop(0,'rgba(225,240,255,.8)');g.addColorStop(1,'rgba(90,160,255,0)');
+    c.fillStyle=g;c.beginPath();c.arc(hp[0],hp[1],46,0,6.283);c.fill();
+    c.globalCompositeOperation='source-over';
+  }
+}
 /* ── SANTA'S SLEIGH ───────────────────────────────────────────
    The second of the big moments (see POWER-UP above; they share one scheduler). He runs off the
    page on the left, a few moments later flies across the top of the page in a sleigh pulled by two
@@ -1462,6 +1536,7 @@ requestAnimationFrame(function powerLoop(now){
     if(power)stepPower(dt);
     else if(sleigh)stepSleigh(dt);
     else if(flight)stepFlight(dt);
+    else if(summon)stepSummon(dt);
     else{
       if(powerQueue&&pwClock>powerQueueUntil)powerQueue=false;
       if(powerQueue&&powerReady()){powerQueue=false;leaveSnow();startBig(powerQueueKind);}
@@ -1473,16 +1548,16 @@ requestAnimationFrame(function powerLoop(now){
 /* Shift + A + C + E: held together, or typed one after another within about two seconds. */
 const pwKeys=new Set();let pwSeq=[];
 const typing=t=>t&&(t.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
-function startBig(kind){if(kind==='sleigh')beginSleigh();else if(kind==='flight')beginFlight();else beginPower();}
-function pickBig(){const pool=window.ACE_XMAS?['power','sleigh']:['power','flight'],c=pool.filter(k=>k!==lastBig),from=c.length?c:pool;lastBig=from[Math.floor(Math.random()*from.length)];return lastBig;}   // never the same one twice running
+function startBig(kind){if(kind==='summon')beginSummon();else if(kind==='sleigh')beginSleigh();else if(kind==='flight')beginFlight();else beginPower();}
+function pickBig(){const pool=window.ACE_XMAS?['power','sleigh']:['power','flight','summon'],c=pool.filter(k=>k!==lastBig),from=c.length?c:pool;lastBig=from[Math.floor(Math.random()*from.length)];return lastBig;}   // never the same one twice running
 /* The ace code (and the hold on the button): the beam or the flight, never the same one twice running. */
-function pickAce(){if(window.ACE_XMAS)return 'power';lastBig=lastBig==='power'?'flight':lastBig==='flight'?'power':(Math.random()<.5?'power':'flight');return lastBig;}
+function pickAce(){return window.ACE_XMAS?'power':pickBig();}
 /* A deliberate trigger (the codes, or holding the button) waits for powerReady(), not powerOk(): the snow is no reason
    to refuse it. Stuck in the snow it pulls him out first, as a drag does, and the moment starts from the top of the drift.
    Before, both the trigger and its queue waited on powerOk(), which the snow blocks, so the press was lost. */
 function leaveSnow(){if(stuck){stuck=false;nextShiver=shiverUntil=0;floorLift=snowLift();}}
 function askPower(kind){
-  if(power||sleigh||flight||powerQueue)return;kind=kind||'power';
+  if(power||sleigh||flight||summon||powerQueue)return;kind=kind||'power';
   if(powerReady()){leaveSnow();startBig(kind);}
   else{powerQueue=true;powerQueueKind=kind;powerQueueUntil=pwClock+20;}
 }   // a deliberate trigger waits up to 20s for him to finish a climb or jump
@@ -1499,7 +1574,7 @@ function maybeSlip(){
   if(!window.ACE_XMAS||slip||visit||!window.AceSnow||AceSnow.amount()<.4)return;
   if(!nextSlip){nextSlip=clock+SLIP_FIRST[0]+Math.random()*(SLIP_FIRST[1]-SLIP_FIRST[0]);return;}
   if(clock<nextSlip&&!slipWant)return;
-  if(state.ground===null||state.ground==='floor'||!standingOnButton()||pendingJump||climb||runGoal!==null||holdingPoint()||clock<waveUntil||clock<landingUntil||power||sleigh||flight||dragging){if(!slipWant)nextSlip=clock+6;return;}
+  if(state.ground===null||state.ground==='floor'||!standingOnButton()||pendingJump||climb||runGoal!==null||holdingPoint()||clock<waveUntil||clock<landingUntil||power||sleigh||flight||summon||dragging){if(!slipWant)nextSlip=clock+6;return;}
   slipWant=false;nextSlip=clock+SLIP_EVERY[0]+Math.random()*(SLIP_EVERY[1]-SLIP_EVERY[0]);
   slip={phase:'wobble',t:0,dir:Math.random()<.5?-1:1};
   runGoal=null;pendingJump=null;nextDecision=clock+99;facing=slip.dir;play('slip');
@@ -1527,18 +1602,19 @@ addEventListener('keydown',e=>{
   if(typing(e.target)||e.repeat)return;
   pwKeys.add(e.code);
   if(!e.shiftKey)return;
-  const ch={KeyA:'a',KeyC:'c',KeyE:'e',KeyS:'s',KeyN:'n',KeyT:'t',KeyL:'l',KeyI:'i',KeyP:'p'}[e.code]||'';
+  const ch={KeyA:'a',KeyC:'c',KeyE:'e',KeyS:'s',KeyN:'n',KeyT:'t',KeyL:'l',KeyI:'i',KeyP:'p',KeyH:'h',KeyO:'o',KeyR:'r'}[e.code]||'';
   if(!ch){pwSeq=[];return;}
   const now=performance.now();pwSeq=pwSeq.filter(s=>now-s.t<3000);pwSeq.push({ch,t:now});
   const typed=pwSeq.slice(-3).map(s=>s.ch).join('')==='ace';
   const held=pwKeys.has('KeyA')&&pwKeys.has('KeyC')&&pwKeys.has('KeyE');
   if(typed||held){pwSeq=[];askPower(pickAce());}
   else if(pwSeq.slice(-5).map(s=>s.ch).join('')==='santa'){pwSeq=[];askPower('sleigh');}      // Shift + S, A, N, T, A
+  else if(pwSeq.slice(-4).map(s=>s.ch).join('')==='thor'&&!window.ACE_XMAS){pwSeq=[];askPower('summon');}   // Shift + T, H, O, R
   else if(pwSeq.slice(-4).map(s=>s.ch).join('')==='slip'){pwSeq=[];slipWant=true;}            // Shift + S, L, I, P: slips the next time he is on a button
 });
 addEventListener('keyup',e=>{pwKeys.delete(e.code);});
 addEventListener('blur',()=>{pwKeys.clear();pwSeq=[];});
-addEventListener('resize',()=>{if(power||sleigh||flight)sizeBeam();});
+addEventListener('resize',()=>{if(power||sleigh||flight||summon)sizeBeam();});
 /* Touch and mouse: hold the "Ask Little Ace" button for 2 seconds. A normal tap
    still opens the chat; a hold that sets it off swallows the click that follows
    the release so the chat does not open as well. Moving the finger or letting
