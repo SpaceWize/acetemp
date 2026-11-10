@@ -84,6 +84,17 @@
       }
       el.innerHTML = t.replace(/\{M\}/g, link);
     });
+    /* Names inside sentences, and headings that have no key of their own: swap in the translated name, longest first. */
+    if (lang) {
+      var names = ['The Invested Aces Mastermind', 'I-AM: Invested Aces Mastermind', 'Invested Aces Mastermind', 'Premium Pickup & Transport', 'Ongoing Private Advisory', 'Private Working Session', 'Ongoing Advisory', 'Mastermind'];
+      var pairs = [];
+      names.forEach(function (en) { var tr = map[en]; if (tr) pairs.push([en, tr]); });
+      if (pairs.length) {
+        var tw = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, { acceptNode: function (n) { return n.parentNode && /^(SCRIPT|STYLE|TEXTAREA)$/.test(n.parentNode.tagName) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; } });
+        var texts = []; while (tw.nextNode()) texts.push(tw.currentNode);
+        texts.forEach(function (n) { var v = n.nodeValue; pairs.forEach(function (p) { v = v.split(p[0]).join(p[1]); }); if (v !== n.nodeValue) n.nodeValue = v; });
+      }
+    }
     document.querySelectorAll('[placeholder]').forEach(function (el) {
       var pt = map[clean(el.getAttribute('placeholder'))];
       if (pt) el.setAttribute('placeholder', pt);
