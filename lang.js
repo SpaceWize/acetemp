@@ -7,8 +7,8 @@
    Only pages in PAGES are translated so far. Loaded in <head>, so the page stays hidden (1.5s at most) until it is ready. */
 (function () {
   'use strict';
-  var PAGES = ['premium-pickup-transport.html', 'advisory.html', 'private-working-session.html', 'public-speaking.html', 'mastermind-membership.html', 'mastermind-application.html', 'group-activities.html', 'contact.html', 'good-news-coffee.html', 'index.html'], V = 99;
-  var LANGS = ['ja', 'da', 'ru', 'ar', 'de', 'he', 'fr', 'yue', 'zh', 'tl', 'es', 'pt', 'la', 'el', 'af', 'pa', 'hi', 'en-GB', 'en-US', 'en-CA', 'en-NL', 'en-AU', 'pig', 'bin', 'egy'], RTL = { ar: 1, he: 1 }, KEY = 'ace-lang', ALGO = { pig: 1, bin: 1, egy: 1 };   // ALGO: made by rule, not by dictionary
+  var PAGES = ['premium-pickup-transport.html', 'advisory.html', 'private-working-session.html', 'public-speaking.html', 'mastermind-membership.html', 'mastermind-application.html', 'group-activities.html', 'contact.html', 'good-news-coffee.html', 'index.html'], V = 108;
+  var LANGS = ['ja', 'da', 'ru', 'ar', 'de', 'he', 'fr', 'yue', 'zh', 'tl', 'es', 'pt', 'la', 'el', 'af', 'pa', 'hi', 'no', 'sv', 'gd', 'ga', 'cy', 'sjn', 'tlh', 'en-GB', 'en-US', 'en-CA', 'en-NL', 'en-AU', 'en-IE', 'en-SC', 'pig', 'bin', 'egy', 'run', 'ogm'], RTL = { ar: 1, he: 1 }, KEY = 'ace-lang', ALGO = { pig: 1, bin: 1, egy: 1, run: 1, ogm: 1 };   // ALGO: made by rule, not by dictionary
   function pick() {
     var forced = null;
     try {
@@ -23,6 +23,7 @@
     var full = (navigator.language || '').toLowerCase();
     if (two === 'iw') two = 'he';
     if (two === 'fil') two = 'tl';
+    if (two === 'nb' || two === 'nn') two = 'no';
     if (two === 'zh' && /-(hk|mo)$/.test(full)) two = 'yue';    // Hong Kong and Macau: Cantonese
     return LANGS.indexOf(two) >= 0 && two.indexOf('en') !== 0 && !ALGO[two] ? two : null;
   }
@@ -32,7 +33,7 @@
   if (PAGES.indexOf(page) < 0) return;
 
   /* The picker: a globe and a short code, with a real <select> laid invisibly over them, so phones get their own list. */
-  var PICK = [['orig', 'English (original)', 'EN'], ['ja', 'Japanese', 'JA'], ['da', 'Danish', 'DA'], ['ru', 'Russian', 'RU'], ['ar', 'Arabic', 'AR'], ['de', 'German', 'DE'], ['he', 'Hebrew', 'HE'], ['fr', 'French', 'FR'], ['yue', 'Cantonese', 'YUE'], ['zh', 'Mandarin', 'ZH'], ['tl', 'Tagalog', 'TL'], ['es', 'Spanish', 'ES'], ['pt', 'Portuguese', 'PT'], ['la', 'Latin', 'LA'], ['el', 'Greek', 'EL'], ['af', 'Afrikaans', 'AF'], ['pa', 'Punjabi', 'PA'], ['hi', 'Hindi', 'HI'], ['en-GB', 'British English', 'UK'], ['en-US', 'American English', 'US'], ['en-CA', 'Canadian English', 'CA'], ['en-NL', 'Newfoundland English', 'NF'], ['en-AU', 'Australian English', 'AU'], ['pig', 'Pig Latin', 'PIG'], ['bin', 'Binary', 'BIN'], ['egy', 'Hieroglyphs', 'EGY']];
+  var PICK = [['orig','English (original)','EN'],['en-IE','Irish English','IE'],['en-SC','Scottish English','SC'],['en-CA','Canadian English','CA'],['en-GB','British English','UK'],['en-AU','Australian English','AU'],['en-NL','Newfoundland English','NF'],['en-US','American English','US'],['la','Latin','LA'],['gd','Scottish Gaelic','GD'],['ga','Irish Gaelic','GA'],['cy','Welsh','CY'],['de','German','DE'],['da','Danish','DA'],['ru','Russian','RU'],['no','Norwegian','NO'],['sv','Swedish','SV'],['af','Afrikaans','AF'],['fr','French','FR'],['el','Greek','EL'],['es','Spanish','ES'],['pt','Portuguese','PT'],['ja','Japanese','JA'],['yue','Cantonese','YUE'],['zh','Mandarin','ZH'],['tl','Tagalog','TL'],['pig','Pig Latin','PIG'],['bin','Binary','BIN'],['sjn','Elvish (Sindarin)','SJN'],['tlh','Klingon','TLH'],['egy','Hieroglyphs','EGY'],['run','Runes','RUN'],['ogm','Ogham','OGM'],['ar','Arabic','AR'],['he','Hebrew','HE'],['pa','Punjabi','PA'],['hi','Hindi','HI']];
   var css = document.createElement('style');
   css.textContent = '.ace-lang{position:relative;display:inline-flex;align-items:center;gap:6px;flex:none;height:38px;padding:0 10px;margin-inline:10px;border:1px solid rgba(217,164,65,.45);color:#F1EDE6;font:600 12px/1 system-ui,sans-serif;letter-spacing:.06em}.ace-lang:hover{border-color:#D9A441}.ace-lang:focus-within{outline:2px solid #D9A441;outline-offset:2px}.ace-lang svg{width:15px;height:15px;fill:none;stroke:#D9A441;stroke-width:1.6}.ace-lang select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:16px}.ace-lang option{background:#121110;color:#F1EDE6}html[dir=rtl] .skip{left:auto;right:-9999px}html[dir=rtl] .skip:focus{left:auto;right:1rem}html[dir=rtl] .hero__back svg{transform:none}';
   document.head.appendChild(css);
@@ -68,6 +69,12 @@
      Little Ace says, goes through the rule. Emails, links and the street address are left alone. */
   var LINKISH = /@|:\/\/|^www\.|\.(com|today|dev|ca)\b/i, KEEP_NODE = /1628 W 1st Ave|V6J 1G1|Vancouver, BC/, CODES = /^(ACE|FLY|THOR|SANTA|SLIP)$/;
   var EGY = { a: '𓄿', b: '𓃀', c: '𓎡', d: '𓂧', e: '𓇋', f: '𓆑', g: '𓎼', h: '𓉔', i: '𓇋', j: '𓆓', k: '𓎡', l: '𓃭', m: '𓅓', n: '𓈖', o: '𓅱', p: '𓊪', q: '𓈎', r: '𓂋', s: '𓋴', t: '𓏏', u: '𓅱', v: '𓆑', w: '𓅱', x: '𓎡𓋴', y: '𓇌', z: '𓊃' };
+  /* Runes (Elder Futhark) and Ogham are also made by rule: English spelled out, sound for sound where the old alphabets had a letter, with the digraphs TH and NG as their own signs. */
+  var RUN = { a: 'ᚨ', b: 'ᛒ', c: 'ᚲ', d: 'ᛞ', e: 'ᛖ', f: 'ᚠ', g: 'ᚷ', h: 'ᚺ', i: 'ᛁ', j: 'ᛃ', k: 'ᚲ', l: 'ᛚ', m: 'ᛗ', n: 'ᚾ', o: 'ᛟ', p: 'ᛈ', q: 'ᚲ', r: 'ᚱ', s: 'ᛊ', t: 'ᛏ', u: 'ᚢ', v: 'ᚠ', w: 'ᚹ', x: 'ᚲᛊ', y: 'ᛇ', z: 'ᛉ' };
+  var OGM = { a: 'ᚐ', b: 'ᚁ', c: 'ᚉ', d: 'ᚇ', e: 'ᚓ', f: 'ᚃ', g: 'ᚌ', h: 'ᚆ', i: 'ᚔ', j: 'ᚌ', k: 'ᚉ', l: 'ᚂ', m: 'ᚋ', n: 'ᚅ', o: 'ᚑ', p: 'ᚚ', q: 'ᚊ', r: 'ᚏ', s: 'ᚄ', t: 'ᚈ', u: 'ᚒ', v: 'ᚃ', w: 'ᚒ', x: 'ᚉᚄ', y: 'ᚔ', z: 'ᚎ' };
+  function spell(tok, map, th, ng) {
+    return tok.replace(/[Tt][Hh]|[Nn][Gg]|[A-Za-z]/g, function (c) { var l = c.toLowerCase(); return l === 'th' ? th : l === 'ng' ? ng : map[l]; });
+  }
   function pigWord(w) {
     if (CODES.test(w) || (w.length > 1 && w.length <= 4 && w === w.toUpperCase())) return w;     // codes and short acronyms (CAD, BC, VIP)
     var lo = w.toLowerCase(), i = 0;
@@ -82,22 +89,26 @@
     if (LINKISH.test(tok)) return tok;
     if (lang === 'pig') return tok.replace(/[A-Za-z]+(?:['’][A-Za-z]+)*/g, pigWord);
     if (lang === 'egy') return tok.replace(/[A-Za-z]/g, function (c) { return EGY[c.toLowerCase()]; });
+    if (lang === 'run') return spell(tok, RUN, 'ᚦ', 'ᛜ');
+    if (lang === 'ogm') return spell(tok, OGM, 'ᚈᚆ', 'ᚍ');
     return Array.prototype.map.call(new TextEncoder().encode(tok), function (b) { return ('0000000' + b.toString(2)).slice(-8); }).join(' ');
   }
   function algoText(str) {
     var m = str.match(/^(\s*)([\s\S]*?)(\s*)$/);
     var core = m[2].split(/(\s+)/).map(function (t, i) { return i % 2 ? (lang === 'bin' ? ' 00100000 ' : t) : algoToken(t); }).join('');
+    if (lang === 'ogm' && /[ᚁ-ᚚ]/.test(core)) core = '᚛' + core + '᚜';
     return m[1] + core + m[3];
   }
   var produced = Object.create(null);
   function algoApply() {
-    root.lang = { pig: 'en-x-piglatin', bin: 'en-x-binary', egy: 'egy' }[lang];
+    root.lang = { pig: 'en-x-piglatin', bin: 'en-x-binary', egy: 'egy', run: 'en-x-runic', ogm: 'en-x-ogham' }[lang];
     root.setAttribute('data-algo', lang);
     window.ACE_TR = function (str) { var o = algoText(String(str)); produced[o] = 1; return o; };   // for text built later, like Little Ace's thoughts
     if (!document.getElementById('algo-css')) {
       var st = document.createElement('style'); st.id = 'algo-css';
-      st.textContent = 'html[data-algo="bin"] body{overflow-wrap:anywhere;word-break:break-all}html[data-algo="egy"] body,html[data-algo="egy"] body *{font-family:"Noto Sans Egyptian Hieroglyphs","Segoe UI Historic","Segoe UI Symbol",sans-serif !important}';
+      st.textContent = 'html[data-algo="bin"] body{overflow-wrap:anywhere;word-break:break-all}html[data-algo="egy"] body,html[data-algo="egy"] body *{font-family:"Noto Sans Egyptian Hieroglyphs","Segoe UI Historic","Segoe UI Symbol",sans-serif !important}html[data-algo="run"] body,html[data-algo="run"] body *{font-family:"Noto Sans Runic","Segoe UI Historic","Segoe UI Symbol",sans-serif !important}html[data-algo="ogm"] body,html[data-algo="ogm"] body *{font-family:"Noto Sans Ogham","Segoe UI Historic","Segoe UI Symbol",sans-serif !important}';
       document.head.appendChild(st);
+      if (lang === 'run' || lang === 'ogm') { var lk2 = document.createElement('link'); lk2.rel = 'stylesheet'; lk2.href = 'https://fonts.googleapis.com/css2?family=' + (lang === 'run' ? 'Noto+Sans+Runic' : 'Noto+Sans+Ogham') + '&display=swap'; document.head.appendChild(lk2); }
       if (lang === 'egy') { var lk = document.createElement('link'); lk.rel = 'stylesheet'; lk.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans+Egyptian+Hieroglyphs&display=swap'; document.head.appendChild(lk); }
     }
     if (lang === 'pig') document.querySelectorAll('body *').forEach(function (el) {       // a word split into one-letter spans: change the whole word, then deal it back out
@@ -124,7 +135,7 @@
     for (var mk in map) map2[mk.replace(/\s/g, '')] = map[mk];
     window.ACE_TR = function (s) { return map[clean(s)] || map2[String(s).replace(/\s/g, '')] || s; };   // for text the page builds later, like Little Ace's thoughts
     var link = '<a href="mastermind-membership.html">' + (map[clean('Invested Aces Mastermind')] || 'Invested Aces Mastermind') + '</a>';
-    root.lang = { 'en-NL': 'en-CA', yue: 'zh-HK', zh: 'zh-CN', tl: 'fil', es: 'es-419', pt: 'pt-BR' }[lang] || lang;
+    root.lang = { 'en-NL': 'en-CA', yue: 'zh-HK', zh: 'zh-CN', tl: 'fil', es: 'es-419', pt: 'pt-BR', no: 'nb', 'en-SC': 'en-GB' }[lang] || lang;
     if (RTL[lang]) root.dir = 'rtl';
     document.querySelectorAll('h1,h2,h3,p,li,dt,dd,a,button,blockquote,span,label,legend,option,em,figcaption,th,td').forEach(function (el) {
       var t = map[clean(el.textContent)] || map2[el.textContent.replace(/\s/g, '')];
