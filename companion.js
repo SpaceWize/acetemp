@@ -1166,7 +1166,7 @@ function choose(busy){
    own every POWER_EVERY seconds of visible time, but only when he is
    standing about with nothing else going on. Never while the chat is open,
    the gate is up, he is being carried, or the visitor prefers reduced motion. */
-const POWER_SHEET=window.ACE_XMAS?'assets/images/ace-power-xmas.webp?v=1':'assets/images/ace-power.webp?v=1',POWER_EVERY=150,POWER_SLOW=1.25;   // POWER_EVERY: after this much normal roaming, one big moment (power-up, or the sleigh at Christmas)
+const POWER_SHEET=window.ACE_XMAS?'assets/images/ace-power-xmas.webp?v=1':'assets/images/ace-power.webp?v=1',POWER_EVERY=90,POWER_SLOW=1.25;   // POWER_EVERY: after this much normal roaming, one big moment (power-up, or the sleigh at Christmas)
 const POWER_CW=264,POWER_CH=300,POWER_COLS=6;
 const POWER_MS=[150,120,100,120,100,90,90,90,90,90,80,100,100,100,60,60,60,60,60,60,70,80,100,150];
 const POWER_HANDS=window.ACE_XMAS?{"15": [182, 183], "16": [188, 178], "17": [186, 177], "18": [181, 178], "19": [188, 175], "20": [187, 175], "21": [178, 194]}:{"15": [176, 181], "16": [186, 178], "17": [185, 178], "18": [180, 179], "19": [188, 176], "20": [187, 176], "21": [177, 109]};     // fingertips per beam frame (frame number -> x,y in the cell), side facing right
@@ -1178,7 +1178,12 @@ pwCv.style.cssText='position:fixed;left:0;top:0;width:'+POWER_CW/2+'px;height:'+
 beamCv.style.cssText='position:fixed;left:0;top:0;width:100vw;height:100vh;pointer-events:none;display:none;z-index:'+(pwZ==='auto'?'60':pwZ);
 document.body.append(beamCv,pwCv);
 const pwCtx=pwCv.getContext('2d'),bmCtx=beamCv.getContext('2d');
-let power=null,pwImg=null,pwReady=false,pwClock=0,pwLast=0,nextAuto=POWER_EVERY,powerQueue=false,powerQueueKind='power',powerQueueUntil=0,beamDpr=1,lastBig='';
+/* The big moments carry across pages: the last one played (so the next is never the same) and when it started (so
+   moving to another page does not restart the 90 seconds). */
+const BIG_KEY='ace-last-big',BIG_AT_KEY='ace-big-at';
+function storedBig(){try{return sessionStorage.getItem(BIG_KEY)||'';}catch(e){return '';}}
+function bigWait(){try{const t=Number(sessionStorage.getItem(BIG_AT_KEY));if(t>0){const since=(Date.now()-t)/1000;if(since>=0&&since<POWER_EVERY)return Math.max(8,POWER_EVERY-since);}}catch(e){}return POWER_EVERY;}
+let power=null,pwImg=null,pwReady=false,pwClock=0,pwLast=0,nextAuto=bigWait(),powerQueue=false,powerQueueKind='power',powerQueueUntil=0,beamDpr=1,lastBig=storedBig();
 /* Everything a big moment needs except the snow: the automatic timer also needs him out of it (powerOk). */
 function powerReady(){
   const h=document.documentElement;
@@ -1468,7 +1473,7 @@ function endFlight(abort){
   bmCtx.setTransform(1,0,0,1,0,0);bmCtx.clearRect(0,0,beamCv.width,beamCv.height);
   pet.style.visibility='';state.vx=state.vy=0;
   if(f){state.x=clampX(f.fx);state.y=f.fy;}
-  if(f&&f.escape){state.ground='floor';state.y=floorY();runGoal=null;pendingJump=null;nextDecision=clock+1.2;nextAuto=pwClock+POWER_EVERY;return;}
+  if(f&&f.escape){state.ground='floor';state.y=floorY();runGoal=null;pendingJump=null;nextDecision=clock+1.2;return;}
   // back where he stood: the floor, or (on a ledge, which may have scrolled) a short drop onto whatever is under him
   if(!f||f.g0==='floor'||abort){state.ground='floor';state.y=innerHeight-16;}else state.ground=null;
   runGoal=null;pendingJump=null;nextDecision=clock+(abort?.4:1.2);
@@ -1572,7 +1577,7 @@ requestAnimationFrame(function powerLoop(now){
     else{
       if(powerQueue&&pwClock>powerQueueUntil)powerQueue=false;
       if(powerQueue&&powerReady()){powerQueue=false;leaveSnow();startBig(powerQueueKind);}
-      else if(pwClock>=nextAuto){if(powerOk())startBig(pickBig());else nextAuto=pwClock+4;}
+      else if(pwClock>=nextAuto){if(powerReady()){leaveSnow();startBig(pickBig());}else nextAuto=pwClock+4;}
     }
   }
   requestAnimationFrame(powerLoop);
@@ -1580,8 +1585,8 @@ requestAnimationFrame(function powerLoop(now){
 /* Shift + A + C + E: held together, or typed one after another within about two seconds. */
 const pwKeys=new Set();let pwSeq=[];
 const typing=t=>t&&(t.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
-function startBig(kind){if(kind==='summon')beginSummon();else if(kind==='sleigh')beginSleigh();else if(kind==='flight')beginFlight();else beginPower();}
-function pickBig(){const pool=window.ACE_XMAS?['power','flight','sleigh']:['power','flight','summon'];lastBig=pool[(pool.indexOf(lastBig)+1)%pool.length];return lastBig;}   // takes turns: kamehameha, fly, then sleigh (Christmas) or shield and hammer
+function startBig(kind){lastBig=kind;try{sessionStorage.setItem(BIG_KEY,kind);sessionStorage.setItem(BIG_AT_KEY,String(Date.now()));}catch(e){}if(kind==='summon')beginSummon();else if(kind==='sleigh')beginSleigh();else if(kind==='flight')beginFlight();else beginPower();}
+function pickBig(){const pool=window.ACE_XMAS?['power','flight','sleigh']:['power','flight','summon'];const opts=pool.filter(k=>k!==lastBig);return opts[Math.floor(Math.random()*opts.length)];}   // random: the kamehameha, the flight, or the sleigh (Christmas) / shield and hammer, never the one that just played
 /* The ace code (and the hold on the button): the beam or the flight, never the same one twice running. */
 function pickAce(){return pickBig();}
 /* A deliberate trigger (the codes, or holding the button) waits for powerReady(), not powerOk(): the snow is no reason
