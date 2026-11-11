@@ -390,3 +390,61 @@ body:has(.ace-companion.is-dragging) .hero__plate{opacity:0}
   .ace-think.is-glitch .ace-think__tear{display:none}
   .ace-think.is-glitch p{text-shadow:none}
 }
+
+/* ── THOUGHT BUBBLE STYLES (picked in companion.js, pickThinkStyle) ─────────────────────────────────────────────
+   Gold (the default) and red are above. Three more now and then: ELECTRIC (neon green and red on black, with bolts that
+   flicker round the edge), GLASS (a cracked, chipped pane with the odd glint) and FAIRY (deep blue, rounded, with a soft
+   sparkle). The decorations are the two <b class="ace-think__fx"> spans, drawn with inline SVG backgrounds; they only show
+   in these styles. The words are never touched, so every line stays readable. */
+.ace-think__fx{position:absolute;inset:-8px;display:none;pointer-events:none;z-index:0;background-repeat:no-repeat}
+.ace-think p{position:relative;z-index:1}
+.ace-think.is-electric .ace-think__fx,.ace-think.is-glass .ace-think__fx,.ace-think.is-fairy .ace-think__fx{display:block}
+
+/* electric */
+.ace-think.is-electric{--edge:#39FF14;--edge-glow:rgba(57,255,20,.5);--plate:#040704;color:#F0FFEA}
+.ace-think.is-electric::before{background:linear-gradient(100deg,#39FF14 0 56%,#FF2B3D 56% 100%)}
+.ace-think.is-electric p{text-shadow:0 0 6px rgba(57,255,20,.35)}
+.ace-think.is-electric.has-link:hover{--edge:#8CFF6E}
+.ace-think.is-electric .ace-think__fx{filter:drop-shadow(0 0 3px rgba(57,255,20,.9));background-size:100% 100%;animation:aceBoltA .9s steps(1) infinite}
+.ace-think.is-electric .ace-think__fx--a{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 260 80' preserveAspectRatio='none'%3E%3Cg fill='none' stroke-linejoin='bevel'%3E%3Cpolyline points='0,6 22,0 40,9 62,2 90,10 118,1 150,9 180,2 214,8 260,3' stroke='%2339FF14' stroke-width='1.6' vector-effect='non-scaling-stroke'/%3E%3Cpolyline points='0,76 30,80 55,71 90,79 120,70 160,79 200,72 230,79 260,74' stroke='%23FF2B3D' stroke-width='1.6' vector-effect='non-scaling-stroke'/%3E%3Cpolyline points='4,0 0,20 6,32 0,50 5,66 0,80' stroke='%2339FF14' stroke-width='1.4' vector-effect='non-scaling-stroke'/%3E%3Cpolyline points='62,2 70,-4 76,4' stroke='%23FF2B3D' stroke-width='1.2' vector-effect='non-scaling-stroke'/%3E%3C/g%3E%3C/svg%3E")}
+.ace-think.is-electric .ace-think__fx--b{animation-name:aceBoltB;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 260 80' preserveAspectRatio='none'%3E%3Cg fill='none' stroke-linejoin='bevel'%3E%3Cpolyline points='256,0 260,18 253,34 260,52 254,66 260,80' stroke='%23FF2B3D' stroke-width='1.4' vector-effect='non-scaling-stroke'/%3E%3Cpolyline points='0,2 30,9 52,1 84,8 108,0 140,9 170,2 205,9 240,1 260,6' stroke='%23FF2B3D' stroke-width='1.6' vector-effect='non-scaling-stroke'/%3E%3Cpolyline points='0,78 24,70 62,79 98,71 135,80 170,72 210,79 260,72' stroke='%2339FF14' stroke-width='1.6' vector-effect='non-scaling-stroke'/%3E%3Cpolyline points='170,72 178,66 186,74' stroke='%2339FF14' stroke-width='1.2' vector-effect='non-scaling-stroke'/%3E%3C/g%3E%3C/svg%3E")}
+@keyframes aceBoltA{0%{opacity:1}22%{opacity:0}30%{opacity:.9}50%,100%{opacity:0}}
+@keyframes aceBoltB{0%,45%{opacity:0}50%{opacity:1}72%{opacity:0}80%{opacity:.85}100%{opacity:0}}
+.ace-think.is-electric .ace-think__dot{box-shadow:0 0 5px var(--edge)}
+
+/* glass */
+.ace-think.is-glass{--edge:#CDEBFF;--edge-glow:rgba(150,205,255,.3);--plate:#070c13;color:#F2F8FF}
+.ace-think.is-glass::before,.ace-think.is-glass::after{
+  clip-path:polygon(10px 0,38% 0,40% 5px,44% 0,100% 0,100% calc(100% - 16px),calc(100% - 7px) calc(100% - 9px),calc(100% - 14px) 100%,60% 100%,57% calc(100% - 5px),52% 100%,0 100%,0 14px,5px 8px)}
+.ace-think.is-glass::after{background:
+  linear-gradient(115deg,rgba(130,180,230,.2) 0,transparent 34%,rgba(255,255,255,.07) 52%,transparent 68%),
+  linear-gradient(62deg,transparent 0 70%,rgba(255,255,255,.05) 70% 76%,transparent 76%),var(--plate)}
+.ace-think.is-glass.has-link:hover{--edge:#fff}
+.ace-think.is-glass .ace-think__fx{background-size:100% 100%}
+.ace-think.is-glass .ace-think__fx--a{inset:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 260 80' preserveAspectRatio='none'%3E%3Cg stroke='%23DCF0FF' fill='none' stroke-linejoin='round'%3E%3Cpath d='M176,34 L150,0 M176,34 L212,0 M176,34 L260,14 M176,34 L252,80 M176,34 L120,80 M176,34 L0,58 M176,34 L96,0' stroke-opacity='.8' stroke-width='1' vector-effect='non-scaling-stroke'/%3E%3Cpath d='M160,30 L172,22 L188,27 L192,40 L180,48 L164,44 Z' stroke-opacity='.7' stroke-width='.9' vector-effect='non-scaling-stroke'/%3E%3Cpath d='M214,12 L222,26 M118,50 L132,44 M70,28 L82,22 L88,30 M230,56 L218,64' stroke-opacity='.55' stroke-width='.8' vector-effect='non-scaling-stroke'/%3E%3C/g%3E%3Cpath d='M176,34 L212,0 L260,14 Z' fill='white' fill-opacity='.07'/%3E%3Cpath d='M176,34 L120,80 L0,58 Z' fill='white' fill-opacity='.05'/%3E%3Cpath d='M176,34 L96,0 L150,0 Z' fill='%2388C4FF' fill-opacity='.07'/%3E%3C/svg%3E")}
+.ace-think.is-glass .ace-think__fx--b{inset:0;animation:aceGlint 2.6s ease-in-out infinite;background-image:radial-gradient(circle at 73% 42%,rgba(255,255,255,.9) 0 1.2px,transparent 2.4px),radial-gradient(circle at 58% 0,rgba(255,255,255,.8) 0 1px,transparent 2px),radial-gradient(circle at 12% 72%,rgba(255,255,255,.7) 0 1px,transparent 2px)}
+@keyframes aceGlint{0%,55%,100%{opacity:0}65%{opacity:1}80%{opacity:.2}90%{opacity:.8}}
+.ace-think.is-glass .ace-think__dot{transform:rotate(45deg) skew(10deg)}
+.ace-think.is-glass .ace-think__dot--b{transform:rotate(20deg)}
+
+/* fairy */
+.ace-think.is-fairy{--edge:#86B6FF;--edge-glow:rgba(120,170,255,.55);--plate:#081240;color:#E8F1FF;
+  filter:drop-shadow(0 8px 16px rgba(0,0,0,.6)) drop-shadow(0 0 11px rgba(110,160,255,.5))}
+.ace-think.is-fairy::before,.ace-think.is-fairy::after{clip-path:none;border-radius:17px}
+.ace-think.is-fairy::before{background:linear-gradient(160deg,#A9CBFF,#5E8FE8 60%,#86B6FF)}
+.ace-think.is-fairy::after{border-radius:16px;background:radial-gradient(130% 150% at 18% 0,#173a8c 0,#0b1850 52%,#060b2c 100%)}
+.ace-think.is-fairy p{text-shadow:0 0 7px rgba(140,185,255,.45)}
+.ace-think.is-fairy.has-link:hover{--edge:#BCD8FF}
+.ace-think.is-fairy .ace-think__dot{border-radius:50%;background:radial-gradient(circle,#CFE4FF,#6E9DEB);box-shadow:0 0 6px rgba(130,180,255,.8)}
+.ace-think.is-fairy .ace-think__fx{filter:drop-shadow(0 0 3px rgba(160,205,255,.95));transform-origin:50% 50%;animation:aceTwinkleA 2.2s ease-in-out infinite;
+  --star:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10,0 Q10,10 20,10 Q10,10 10,20 Q10,10 0,10 Q10,10 10,0 Z' fill='%23DCEBFF'/%3E%3C/svg%3E")}
+.ace-think.is-fairy .ace-think__fx--a{background:var(--star) 6% 14%/12px 12px no-repeat,var(--star) 93% 24%/9px 9px no-repeat,var(--star) 52% 98%/10px 10px no-repeat,var(--star) 22% 92%/6px 6px no-repeat}
+.ace-think.is-fairy .ace-think__fx--b{animation-name:aceTwinkleB;animation-delay:-1.1s;background:var(--star) 30% 3%/8px 8px no-repeat,var(--star) 78% 96%/12px 12px no-repeat,var(--star) 99% 70%/7px 7px no-repeat,var(--star) 3% 62%/9px 9px no-repeat}
+@keyframes aceTwinkleA{0%,100%{opacity:.25;transform:scale(.9)}50%{opacity:1;transform:scale(1.04)}}
+@keyframes aceTwinkleB{0%,100%{opacity:1;transform:scale(1.04)}50%{opacity:.2;transform:scale(.9)}}
+
+@media (prefers-reduced-motion:reduce){
+  .ace-think .ace-think__fx{animation:none}
+  .ace-think.is-electric .ace-think__fx--b{opacity:0}
+  .ace-think.is-glass .ace-think__fx--b{opacity:.6}
+}

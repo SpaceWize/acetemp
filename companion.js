@@ -365,7 +365,7 @@ if(window.ACE_XMAS){
 }
 document.addEventListener('ace:snowfull',()=>{
   if(!window.ACE_XMAS||stuck)return;
-  const hold=setInterval(()=>{if(power||sleigh||flight||summon)return;clearInterval(hold);stuck=true;try{sessionStorage.setItem(STUCK_KEY,'1');}catch(e){}},300);   // wait for a big moment to finish first
+  const hold=setInterval(()=>{if(power||sleigh||flight||summon||navi)return;clearInterval(hold);stuck=true;try{sessionStorage.setItem(STUCK_KEY,'1');}catch(e){}},300);   // wait for a big moment to finish first
 });
 
 /* ── SPRITE ────────────────────────────────────────────────────
@@ -736,7 +736,7 @@ const THOUGHTS=[
 ].map(l=>typeof l==='string'?{t:l}:l).filter(l=>(!l.xmas||window.ACE_XMAS)&&(!l.normal||!window.ACE_XMAS)&&(!l.href||l.href.split('#')[0]!==(location.pathname.split('/').pop()||'index.html')));
 const THINK_GAP_MIN=20,THINK_GAP_MAX=45,thinkGap=()=>THINK_GAP_MIN+Math.random()*(THINK_GAP_MAX-THINK_GAP_MIN),THINK_FOR=7,THINK_LINK_FOR=11,ACE_THOUGHT_KEY='ace-thought';
 const bubble=document.createElement('div');bubble.className='ace-think';bubble.setAttribute('aria-hidden','true');
-bubble.innerHTML='<p></p><i class="ace-think__dot ace-think__dot--a"></i><i class="ace-think__dot ace-think__dot--b"></i><i class="ace-think__tear ace-think__tear--a"></i><i class="ace-think__tear ace-think__tear--b"></i>';
+bubble.innerHTML='<p></p><i class="ace-think__dot ace-think__dot--a"></i><i class="ace-think__dot ace-think__dot--b"></i><i class="ace-think__tear ace-think__tear--a"></i><i class="ace-think__tear ace-think__tear--b"></i><b class="ace-think__fx ace-think__fx--a"></b><b class="ace-think__fx ace-think__fx--b"></b>';
 document.body.append(bubble);
 /* Its own clock, in real seconds the page is on screen. Little Ace's `clock` caps each frame's step, so on a
    slow or busy device it runs behind the wall clock and "every five minutes" would stretch. Time with the tab
@@ -755,12 +755,24 @@ function think(line){
   if(line.href){const a=document.createElement('a');a.href=line.href;a.textContent=ACE_T(line.t);p.append(a);bubble.removeAttribute('aria-hidden');}
   else{p.textContent=ACE_T(line.t);bubble.setAttribute('aria-hidden','true');}
   bubble.classList.toggle('has-link',!!line.href);
-  bubble.classList.toggle('is-red',Math.random()<THINK_RED);bubble.classList.remove('is-glitch');
+  pickThinkStyle(line.style);bubble.classList.remove('is-glitch');
   nextGlitch=thinkClock+.6+Math.random();
   thinkUntil=thinkClock+(line.href?THINK_LINK_FOR:THINK_FOR);placeBubble();bubble.classList.add('is-on');
 }
 /* Now and then the edge of the bubble tears for a third of a second (.is-glitch in companion.css): the bars land somewhere new each time. */
-const THINK_RED=.25,glitchRand=(a,b)=>a+Math.random()*(b-a);
+/* The look of each bubble: the gold plate most of the time, and now and then one of the others (companion.css, THOUGHT BUBBLE):
+   red, electric (neon green and red with sparks), glass (cracked and shattered) and fairy (deep blue with a soft sparkle). The same
+   style never comes up twice running. line.style ('red', 'electric', 'glass', 'fairy', 'gold') forces one, for trying them out. */
+const THINK_STYLES=[['gold',44],['red',14],['electric',15],['glass',14],['fairy',13]];
+let lastThinkStyle='gold';
+function pickThinkStyle(force){
+  let pick=THINK_STYLES.some(s=>s[0]===force)?force:null;
+  if(!pick){const pool=THINK_STYLES.filter(s=>s[0]!==lastThinkStyle);let r=Math.random()*pool.reduce((a,s)=>a+s[1],0);pick=pool[pool.length-1][0];for(const s of pool){if((r-=s[1])<0){pick=s[0];break;}}}
+  lastThinkStyle=pick;
+  for(const s of THINK_STYLES)bubble.classList.toggle('is-'+s[0],s[0]===pick&&pick!=='gold');
+  bubble.dataset.style=pick;
+}
+const glitchRand=(a,b)=>a+Math.random()*(b-a);
 let nextGlitch=0,glitchOff=0;
 function glitchBubble(){
   for(const t of bubble.querySelectorAll('.ace-think__tear')){t.style.setProperty('--y',glitchRand(10,82)+'%');t.style.setProperty('--w',glitchRand(20,32)+'px');t.style.setProperty('--h',glitchRand(2,5)+'px');}
@@ -785,7 +797,7 @@ requestAnimationFrame(function thinkLoop(now){
   const html=document.documentElement;
   const busy=!ready||open||dragging||html.classList.contains('gate-locked')||html.classList.contains('intro');
   const held=bubble.classList.contains('has-link')&&(bubble.matches(':hover')||bubble.contains(document.activeElement));   // being read or clicked: it stays up and stays put
-  if(thinkUntil>=0){if((busy&&!(thinkHeld&&dragging))||(thinkClock>=thinkUntil&&!held)){quiet();nextThought=thinkClock+thinkGap();}else{if(!held)placeBubble();if(thinkClock>=nextGlitch){glitchBubble();nextGlitch=thinkClock+glitchRand(1.2,3.8);}}}
+  if(thinkUntil>=0){if((busy&&!(thinkHeld&&dragging))||(thinkClock>=thinkUntil&&!held)){quiet();nextThought=thinkClock+thinkGap();}else{if(!held)placeBubble();if(thinkClock>=nextGlitch){if(bubble.dataset.style!=='glass'&&bubble.dataset.style!=='fairy')glitchBubble();nextGlitch=thinkClock+glitchRand(1.2,3.8);}}}
   else if(thinkClock>=nextThought){if(busy)nextThought=thinkClock+5;else think();}
   requestAnimationFrame(thinkLoop);
 });
@@ -1296,6 +1308,45 @@ function stepPower(dt){
     beamSnow(idx+frac,power.dir,ox,oy,dt);
   }
 }
+/* ── NAVI ─────────────────────────────────────────────────────
+   A fourth big moment (Shift + N, A, V, I, or in the 90-second rotation in normal mode): a sword drops out of the sky and sticks in
+   the ground beside him, a little blue fairy turns up, he pulls the sword out, there is a flash, and he is a green-capped hero. He does a
+   backflip, a big jump with a sweep of the sword, a wink and a hop, kneels and sets the sword back in the ground, a second flash, and he
+   is himself again, a bit puzzled, while the fairy flutters off. Thirty-six frames (assets/images/ace-navi.webp, 6x6 cells of 264x300,
+   feet on the same line as the power-up sheet), drawn on a canvas over him while his normal sprite is hidden, played in place; the whole
+   thing is mirrored when he is facing left. Cut from the three ChatGPT sheets in little-ace-sprites/link-transformation. */
+const NAVI_SHEET='assets/images/ace-navi.webp?v=1',NV_CW=264,NV_CH=300,NV_COLS=6;
+const NAVI_MS=[800,240,320,200,300,320,320,280,420,520,150,200,110,170,220,650,320,180,110,100,110,110,170,260,200,100,150,120,300,380,520,520,480,520,200,900];
+const NAVI_TOTAL=NAVI_MS.reduce((a,b)=>a+b,0)/1000;
+const nvCv=document.createElement('canvas');nvCv.width=NV_CW;nvCv.height=NV_CH;nvCv.className='ace-navi';nvCv.setAttribute('aria-hidden','true');
+nvCv.style.cssText='position:fixed;left:0;top:0;width:'+NV_CW/2+'px;height:'+NV_CH/2+'px;pointer-events:none;display:none;will-change:transform;z-index:'+(pwZ==='auto'?'60':pwZ);
+document.body.append(nvCv);
+const nvCtx=nvCv.getContext('2d');
+let navi=null,nvImg=null,nvReady=false;
+function beginNavi(){
+  if(!nvImg){nvImg=new Image();nvImg.onload=()=>{nvReady=true;};nvImg.src=NAVI_SHEET;}
+  if(!nvReady){powerQueue=true;powerQueueKind='navi';powerQueueUntil=pwClock+10;return;}
+  navi={t:0,dir:facing<0?-1:1};
+  waveUntil=clock+NAVI_TOTAL+.3;nextDecision=Math.max(nextDecision,clock+NAVI_TOTAL+1.2);runGoal=null;
+  pet.style.visibility='hidden';nvCv.style.display='block';
+}
+function endNavi(){
+  navi=null;nvCv.style.display='none';
+  pet.style.visibility='';nextAuto=pwClock+POWER_EVERY;waveUntil=Math.min(waveUntil,clock+.1);
+}
+function stepNavi(dt){
+  const h=document.documentElement;
+  if(open||dragging||h.classList.contains('gate-locked')){endNavi();return;}
+  navi.t+=dt;
+  let acc=0,idx=NAVI_MS.length-1;
+  for(let i=0;i<NAVI_MS.length;i++){const d=NAVI_MS[i]/1000;if(navi.t<acc+d){idx=i;break;}acc+=d;}
+  if(navi.t>=NAVI_TOTAL){endNavi();return;}
+  nvCv.style.transform='translate3d('+(state.x-NV_CW/4).toFixed(1)+'px,'+(state.y-FEET_Y/2).toFixed(1)+'px,0)';
+  nvCtx.clearRect(0,0,NV_CW,NV_CH);
+  const sx=(idx%NV_COLS)*NV_CW,sy=Math.floor(idx/NV_COLS)*NV_CH;
+  if(navi.dir<0){nvCtx.save();nvCtx.translate(NV_CW,0);nvCtx.scale(-1,1);nvCtx.drawImage(nvImg,sx,sy,NV_CW,NV_CH,0,0,NV_CW,NV_CH);nvCtx.restore();}
+  else nvCtx.drawImage(nvImg,sx,sy,NV_CW,NV_CH,0,0,NV_CW,NV_CH);
+}
 /* ── SUMMON ─────────────────────────────────────────────────
    Normal mode only (the art has his cap, not the Santa hat). He calls a shield and a hammer in from off the page, catches
    them, holds the hammer up while lightning crackles around him, throws them off opposite sides of the page and goes back
@@ -1584,6 +1635,7 @@ requestAnimationFrame(function powerLoop(now){
     else if(sleigh)stepSleigh(dt);
     else if(flight)stepFlight(dt);
     else if(summon)stepSummon(dt);
+    else if(navi)stepNavi(dt);
     else{
       if(powerQueue&&pwClock>powerQueueUntil)powerQueue=false;
       if(powerQueue&&powerReady()){powerQueue=false;leaveSnow();startBig(powerQueueKind);}
@@ -1595,8 +1647,8 @@ requestAnimationFrame(function powerLoop(now){
 /* Shift + A + C + E: held together, or typed one after another within about two seconds. */
 const pwKeys=new Set();let pwSeq=[];
 const typing=t=>t&&(t.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
-function startBig(kind){lastBig=kind;try{sessionStorage.setItem(BIG_KEY,kind);sessionStorage.setItem(BIG_AT_KEY,String(Date.now()));}catch(e){}if(kind==='summon')beginSummon();else if(kind==='sleigh')beginSleigh();else if(kind==='flight')beginFlight();else beginPower();}
-function pickBig(){const pool=window.ACE_XMAS?['power','flight','sleigh']:['power','flight','summon'];const opts=pool.filter(k=>k!==lastBig);return opts[Math.floor(Math.random()*opts.length)];}   // random: the kamehameha, the flight, or the sleigh (Christmas) / shield and hammer, never the one that just played
+function startBig(kind){lastBig=kind;try{sessionStorage.setItem(BIG_KEY,kind);sessionStorage.setItem(BIG_AT_KEY,String(Date.now()));}catch(e){}if(kind==='summon')beginSummon();else if(kind==='sleigh')beginSleigh();else if(kind==='flight')beginFlight();else if(kind==='navi')beginNavi();else beginPower();}
+function pickBig(){const pool=window.ACE_XMAS?['power','flight','sleigh']:['power','flight','summon','navi'];const opts=pool.filter(k=>k!==lastBig);return opts[Math.floor(Math.random()*opts.length)];}   // random: the kamehameha, the flight, or the sleigh (Christmas) / shield and hammer, never the one that just played
 /* The ace code (and the hold on the button): the beam or the flight, never the same one twice running. */
 function pickAce(){return pickBig();}
 /* A deliberate trigger (the codes, or holding the button) waits for powerReady(), not powerOk(): the snow is no reason
@@ -1604,7 +1656,7 @@ function pickAce(){return pickBig();}
    Before, both the trigger and its queue waited on powerOk(), which the snow blocks, so the press was lost. */
 function leaveSnow(){if(stuck){stuck=false;nextShiver=shiverUntil=0;floorLift=snowLift();}}
 function askPower(kind){
-  if(power||sleigh||flight||summon||powerQueue)return;kind=kind||'power';
+  if(power||sleigh||flight||summon||navi||powerQueue)return;kind=kind||'power';
   if(powerReady()){leaveSnow();startBig(kind);}
   else{powerQueue=true;powerQueueKind=kind;powerQueueUntil=pwClock+20;}
 }   // a deliberate trigger waits up to 20s for him to finish a climb or jump
@@ -1621,7 +1673,7 @@ function maybeSlip(){
   if(!window.ACE_XMAS||slip||visit||!window.AceSnow||AceSnow.amount()<.4)return;
   if(!nextSlip){nextSlip=clock+SLIP_FIRST[0]+Math.random()*(SLIP_FIRST[1]-SLIP_FIRST[0]);return;}
   if(clock<nextSlip&&!slipWant)return;
-  if(state.ground===null||stuck||pendingJump||climb||runGoal!==null||holdingPoint()||clock<waveUntil||clock<landingUntil||power||sleigh||flight||summon||dragging){if(!slipWant)nextSlip=clock+6;return;}
+  if(state.ground===null||stuck||pendingJump||climb||runGoal!==null||holdingPoint()||clock<waveUntil||clock<landingUntil||power||sleigh||flight||summon||navi||dragging){if(!slipWant)nextSlip=clock+6;return;}
   slipWant=false;nextSlip=clock+SLIP_EVERY[0]+Math.random()*(SLIP_EVERY[1]-SLIP_EVERY[0]);
   slip={phase:'wobble',t:0,dir:Math.random()<.5?-1:1};
   runGoal=null;pendingJump=null;nextDecision=clock+99;facing=slip.dir;play('slip');
@@ -1649,7 +1701,7 @@ addEventListener('keydown',e=>{
   if(typing(e.target)||e.repeat)return;
   pwKeys.add(e.code);
   if(!e.shiftKey)return;
-  const ch={KeyA:'a',KeyC:'c',KeyE:'e',KeyS:'s',KeyN:'n',KeyT:'t',KeyL:'l',KeyI:'i',KeyP:'p',KeyH:'h',KeyO:'o',KeyR:'r',KeyF:'f',KeyY:'y'}[e.code]||'';
+  const ch={KeyA:'a',KeyC:'c',KeyE:'e',KeyS:'s',KeyN:'n',KeyT:'t',KeyL:'l',KeyI:'i',KeyP:'p',KeyH:'h',KeyO:'o',KeyR:'r',KeyF:'f',KeyY:'y',KeyV:'v'}[e.code]||'';
   if(!ch){pwSeq=[];return;}
   const now=performance.now();pwSeq=pwSeq.filter(s=>now-s.t<3000);pwSeq.push({ch,t:now});
   const typed=pwSeq.slice(-3).map(s=>s.ch).join('')==='ace';
@@ -1658,6 +1710,7 @@ addEventListener('keydown',e=>{
   else if(pwSeq.slice(-5).map(s=>s.ch).join('')==='santa'){pwSeq=[];askPower('sleigh');}      // Shift + S, A, N, T, A
   else if(pwSeq.slice(-4).map(s=>s.ch).join('')==='thor'&&!window.ACE_XMAS){pwSeq=[];askPower('summon');}   // Shift + T, H, O, R
   else if(pwSeq.slice(-3).map(s=>s.ch).join('')==='fly'){pwSeq=[];askPower('flight');}       // Shift + F, L, Y   (SHIFT CODES)
+  else if(pwSeq.slice(-4).map(s=>s.ch).join('')==='navi'){pwSeq=[];askPower('navi');}            // Shift + N, A, V, I: the green-capped hero
   else if(pwSeq.slice(-4).map(s=>s.ch).join('')==='slip'){pwSeq=[];slipWant=true;}            // Shift + S, L, I, P: slips the next time he is on a button
 });
 addEventListener('keyup',e=>{pwKeys.delete(e.code);});
@@ -1702,7 +1755,7 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
     if(!nextShiver)nextShiver=clock+5+Math.random()*7;
     if(!flImg){flImg=new Image();flImg.onload=()=>{flReady=true;};flImg.src=FLIGHT_SHEET;}   // ready for the flight out
     if(clock>=nextShiver&&!shiverUntil){shiverUntil=clock+2.25+Math.random()*1.5;play('shiver');}   // one shiver
-    if(shiverUntil&&clock>=shiverUntil){shiverUntil=0;nextShiver=clock+99;if(!(power||sleigh||summon)&&beginFlight(true)!==false){}else nextShiver=clock+1;}   // then he flies up out of the drift
+    if(shiverUntil&&clock>=shiverUntil){shiverUntil=0;nextShiver=clock+99;if(!(power||sleigh||summon||navi)&&beginFlight(true)!==false){}else nextShiver=clock+1;}   // then he flies up out of the drift
     play(shiverUntil?'shiver':'stuck');renderSprite(facing);
   }
   else if(slip){stepSlip(dt);}
