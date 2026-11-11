@@ -37,7 +37,7 @@ if(window.ACE_XMAS){const s=document.createElement('script');s.src='xmas.js?v=28
   var KEY = 'ace-waitlist-v1';            // bump (and COOKIE) to ask everyone again: a new list, a new year
   var COOKIE = 'ace_waitlist_v1';
   var ENTERED = 'ace-entered-v1';         // this visit has been through the gates
-  var SCENE_URL = './gate-scene.js?v=9';
+  var SCENE_URL = './gate-scene.js?v=16';
   var ATLAS = window.ACE_ATLAS || 'assets/images/ace-atlas.webp?v=14';
   var POW_BITS = 16;                      // proof of work; the sheet accepts 14 and up
   var POW_BUDGET_MS = 6000;               // a browser slower than this sends without a proof (the sheet still takes it)
@@ -46,7 +46,7 @@ if(window.ACE_XMAS){const s=document.createElement('script');s.src='xmas.js?v=28
   var SCENE_WAIT_MS = 4000;               // the 3D gates must be running by then, or the plain gate is used
   var CLOSE_BY_MS = 11000;                 // the gates start to close by then at the latest (the home page waits for its intro)
   var CARD_BY_MS = 4500;                  // ...and the box is on them by this long after they start to close
-  var OPEN_MAX_MS = 2600;                 // the opening swing is cut off after this
+  var OPEN_MAX_MS = 4200;                 // the opening swing is cut off after this
 
   var root = document.documentElement;
   var REDUCED = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
