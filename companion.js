@@ -1008,6 +1008,23 @@ const inward=(g,x)=>g.right-g.left<EDGE_KEEP*2?(g.left+g.right)/2:Math.max(g.lef
    every floor decision straight to the jump hunt, which is where most of
    the remaining hopping came from. */
 const FLOOR_ROAM=.55;
+/* Why he kept ending up at the Ask Little Ace button (all three were him doing what the code told him):
+   1. Every walk along the floor was clamped to the window, so a goal past the right edge became exactly the
+      right edge: the clamp piles every overshoot onto the two edges, and the button sits on the right one.
+   2. The button is also a ledge right beside the floor, and in the scoring it is almost always the NEAREST
+      ledge to a floor-walker on the right, so he hopped floor to button to floor.
+   3. On the button itself the "wide ledge, so run it end to end" rule fired every time he stood mid-button.
+   Now floor walks keep out from under the button (a goal that lands there is spread out to its left instead of
+   piling up), the button costs LAUNCHER_PENALTY in the scoring, and the end-to-end run on it is rare. */
+const LAUNCHER_PENALTY=240;
+function roamX(x){
+  x=clampX(x);
+  const l=launcherSurface();
+  if(!l)return x;
+  const lo=l.left-45,hi=l.right+45;
+  if(x>lo&&x<hi)x=(state.x<(l.left+l.right)/2||hi>innerWidth-EDGE)?lo-Math.random()*180:hi;
+  return clampX(x);
+}
 function inReach(up,down){
   return surfaces.filter(p=>p.id!==state.ground&&state.y-p.y<up&&p.y-state.y<down&&p.right-p.left>75);
 }
@@ -1053,14 +1070,14 @@ function choose(busy){
     a turn. */
  if(ground&&ground.id!=='floor'&&ground.right-ground.left>140&&
     state.x-ground.left>SURFACE_EDGE&&ground.right-state.x>SURFACE_EDGE&&
-    !(busy&&Math.random()<.4)){
+    !(busy&&Math.random()<.4)&&!(ground.id==='launcher'&&Math.random()<.7)){
    const x=Math.random()<.5?ground.right-35:ground.left+35;
    runGoal=clampX(x);nextDecision=clock+.5;return;
  }
  /* On the floor: often enough, just walk it. He still explores the page,
     he simply does more of it on foot. */
  if(ground&&ground.id==='floor'&&Math.random()<(busy?.3:FLOOR_ROAM)){
-   runGoal=clampX(state.x+(Math.random()<.5?-1:1)*(140+Math.random()*220));
+   runGoal=roamX(state.x+(Math.random()<.5?-1:1)*(140+Math.random()*220));
    nextDecision=clock+.6;return;
  }
  /* Normal reach first, so he prefers a short readable hop. If nothing is
@@ -1098,7 +1115,7 @@ function choose(busy){
       than a choice. */
    let tx=state.x+(Math.random()<.5?-1:1)*(90+Math.random()*90);
    if(ground&&ground.id!=='floor')tx=Math.max(ground.left+35,Math.min(ground.right-35,tx));
-   runGoal=clampX(tx);nextDecision=clock+.6;return;
+   runGoal=ground&&ground.id==='floor'?roamX(tx):clampX(tx);nextDecision=clock+.6;return;
  }
  /* Nearest wins, minus wherever he has just been. Distance alone made
     him bounce between the same neighbouring pair indefinitely — the ledge
@@ -1110,19 +1127,21 @@ function choose(busy){
    Math.abs((p.left+p.right)/2-state.x)+Math.abs(p.y-state.y)*.5
    +Math.random()*55
    +(p.id==='floor'?140:0)
+   +(p.id==='launcher'?LAUNCHER_PENALTY:0)
    +recentBonus(p.id)
    +Math.abs((p.left+p.right)/2-cursorX)*(busy?.35:.6)
    -(perches[Number(p.id)]&&perches[Number(p.id)].button?90:0)})).sort((a,b)=>a.score-b.score);
  const p=scored[Math.min(scored.length-1,Math.random()<.25?1:0)].p;
  /* Spread landings across the ledge instead of always touching down where
     he took off, so a wide tray gets walked rather than stood on. */
- const x=inward(p,Math.max(p.left+35,Math.min(p.right-35,state.x+(Math.random()-.5)*260)));
+ let x=inward(p,Math.max(p.left+35,Math.min(p.right-35,state.x+(Math.random()-.5)*260)));
+ if(p.id==='floor')x=roamX(x);
  target={id:p.id,x,y:p.y};
  const distance=Math.abs(x-state.x);
  /* Too far to jump: walk to the near end of the current surface first.
     Clamped for the same reason — on the floor, ground.left is 0, so the
     unclamped run-up target was 35px off the left of the screen. */
- if(distance>230&&ground){runGoal=clampX(ground.id==='floor'?Math.max(ground.left+45,Math.min(ground.right-45,x)):(x>state.x?ground.right+35:ground.left-35));nextDecision=clock+.45;return;}
+ if(distance>230&&ground){runGoal=ground.id==='floor'?roamX(Math.max(ground.left+45,Math.min(ground.right-45,x))):clampX(x>state.x?ground.right+35:ground.left-35);nextDecision=clock+.45;return;}
  pendingJump=target;crouchUntil=clock+.16;runGoal=null;
 }
 /* dt is clamped at BOTH ends. The cap is the usual "do not let a long
