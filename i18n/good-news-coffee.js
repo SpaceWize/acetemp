@@ -16,4 +16,9 @@ ACE_I18N({"soon":"Website coming soon!"},
 "en-NL":{},
 "en-AU":{},
 "es":{"soon":"¡Sitio web próximamente!"},
-"pt":{"soon":"Site em breve!"}});
+"pt":{"soon":"Site em breve!"},
+"la":{"soon":"Situs interretialis mox aperietur!"},
+"el":{"soon":"Η ιστοσελίδα έρχεται σύντομα!"},
+"af":{"soon":"Webwerf binnekort beskikbaar!"},
+"pa":{"soon":"ਵੈਬਸਾਈਟ ਜਲਦੀ ਆ ਰਹੀ ਹੈ!"},
+"hi":{"soon":"वेबसाइट जल्द आ रही है!"}});

@@ -1609,19 +1609,19 @@ function askPower(kind){
   else{powerQueue=true;powerQueueKind=kind;powerQueueUntil=pwClock+20;}
 }   // a deliberate trigger waits up to 20s for him to finish a climb or jump
 /* ── SLIPPING ──────────────────────────────────────────────────
-   Christmas only, once the snow is up, and only now and then: standing on a button he slips. Three frames of wobble (his
+   Christmas only, once the snow is up, and every minute or two: standing on anything he can walk on (a ledge, a button or the floor) he slips. Three frames of wobble (his
    feet go, he tips back), then he falls backwards off the button with the fourth frame, tipped right over (it can be spun as he
    falls: SLIP_SPIN is the degrees a second, 0 for now), and
    lands in the drift, which fluffs up in a cloud of dust, and he is stuck (the same stuck as the blizzard's). Shift + S, L,
-   I, P makes it happen the next time he is on a button (and again at any time he is, if the snow is up). Grabbing him or
+   I, P makes it happen the next time he is standing on anything (and again at any time he is, if the snow is up). Grabbing him or
    opening the chat ends it. */
-const SLIP_WOBBLE=.6,SLIP_SPIN=0,SLIP_FIRST=[70,90],SLIP_EVERY=[150,240];
+const SLIP_WOBBLE=.6,SLIP_SPIN=0,SLIP_FIRST=[30,50],SLIP_EVERY=[60,110];
 function standingOnButton(){const p=perches[Number(state.ground)];return state.ground==='launcher'||!!(p&&p.button);}
 function maybeSlip(){
   if(!window.ACE_XMAS||slip||visit||!window.AceSnow||AceSnow.amount()<.4)return;
   if(!nextSlip){nextSlip=clock+SLIP_FIRST[0]+Math.random()*(SLIP_FIRST[1]-SLIP_FIRST[0]);return;}
   if(clock<nextSlip&&!slipWant)return;
-  if(state.ground===null||state.ground==='floor'||!standingOnButton()||pendingJump||climb||runGoal!==null||holdingPoint()||clock<waveUntil||clock<landingUntil||power||sleigh||flight||summon||dragging){if(!slipWant)nextSlip=clock+6;return;}
+  if(state.ground===null||stuck||pendingJump||climb||runGoal!==null||holdingPoint()||clock<waveUntil||clock<landingUntil||power||sleigh||flight||summon||dragging){if(!slipWant)nextSlip=clock+6;return;}
   slipWant=false;nextSlip=clock+SLIP_EVERY[0]+Math.random()*(SLIP_EVERY[1]-SLIP_EVERY[0]);
   slip={phase:'wobble',t:0,dir:Math.random()<.5?-1:1};
   runGoal=null;pendingJump=null;nextDecision=clock+99;facing=slip.dir;play('slip');
