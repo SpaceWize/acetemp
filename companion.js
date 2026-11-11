@@ -353,6 +353,16 @@ if(window.ACE_XMAS){
   xmasButton.after(bzButton);
   bzButton.addEventListener('click',()=>{hideChat();if(window.AceSnow&&window.AceSnow.blizzard)window.AceSnow.blizzard();});
 }
+/* The snow banks are fixed to the window, so the very end of the page (the "See the gate again" button under the footer) scrolled
+   in underneath them. A spacer after the page, about as tall as the back bank (it is roughly 1.5x the front drift's height),
+   lets the end of the page scroll up above the snow, and it grows with the snow. */
+if(window.ACE_XMAS){
+  const padStyle=document.createElement('style');padStyle.textContent='html.has-snow body::after{content:"";display:block;height:var(--snow-pad,0px);pointer-events:none}';document.head.append(padStyle);
+  document.documentElement.classList.add('has-snow');
+  let lastPad=-1;
+  const syncPad=()=>{if(!window.AceSnow||!AceSnow.top)return;const c=Math.round(AceSnow.top()*1.55+14);if(c!==lastPad){lastPad=c;document.documentElement.style.setProperty('--snow-pad',c+'px');}};
+  syncPad();setInterval(syncPad,500);
+}
 document.addEventListener('ace:snowfull',()=>{
   if(!window.ACE_XMAS||stuck)return;
   const hold=setInterval(()=>{if(power||sleigh||flight||summon)return;clearInterval(hold);stuck=true;try{sessionStorage.setItem(STUCK_KEY,'1');}catch(e){}},300);   // wait for a big moment to finish first
