@@ -539,6 +539,9 @@ function findPerches(){
        off-screen at left:-9999px until it takes focus. */
     if(el.closest('.site-head,.mnav,.foot,#ace-chat,.sprite,.skip,.portrait__cap,'+
                   '.ace-companion,.ace-shadow,.ace-launcher,[data-hero] .hero__content'))continue;
+    /* Nothing inside the hero is a ledge (its video, its stage, its box): the bottom edge is just where the picture ends, with no line drawn
+       there, so he looked like he was running on air along the foot of the video. */
+    if(el.closest('.hero'))continue;
     const r=el.getBoundingClientRect();
     /* No minimum height: a horizontal rule is the flattest thing on the
        page and one of the most obviously walkable. Only zero is out. */
