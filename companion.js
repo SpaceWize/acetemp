@@ -1319,7 +1319,7 @@ function stepPower(dt){
    him exactly. NV_STEPS is [cell, milliseconds, cover, glow]: cover (0-1) washes his silhouette to white-gold, glow (0-1) is the halo. */
 const NAVI_SHEET='assets/images/ace-navi.webp?v=7',NV_CW=264,NV_CH=300,NV_COLS=6;
 const NV_STEPS=[
-  [0,1100,0,0],[1,250,0,0],[2,250,0,0],[3,330,0,0],[4,330,0,0],[5,400,0,0],[6,290,0,.22],                              // idle, hears it, looks up, the sword is in the ground, reaches, grips, pulls
+  [0,1100,0,0],[1,250,0,0],[2,600,0,0],[3,330,0,0],[4,330,0,0],[5,400,0,0],[6,290,0,.22],                              // idle, hears it, looks up, the sword is in the ground, reaches, grips, pulls
   [7,400,0,.9],[7,100,.5,1],[7,85,.85,1],[8,70,1,1],[8,100,.6,.9],[8,125,.3,.7],[8,500,0,.5],                           // the sword comes free; the glow swells and covers him; the hero is revealed
   [9,330,0,.28],[10,111,0,0],[11,111,0,0],[12,111,0,0],[13,111,0,0],[14,111,0,0],[15,111,0,0],                           // sword lowered, the backflip
   [16,250,0,0],[17,111,0,0],[18,111,0,0],[19,111,0,0],[20,111,0,0],                                                        // wind-up, the big jump and the twirl
@@ -1330,14 +1330,17 @@ const NV_STEPS=[
 const NV_OFF=(()=>{const e={15:-12,16:-28,17:-46,18:-60,19:-68,20:-100,22:-35,23:5,24:35,25:60},o=[];let c=0;for(let i=0;i<NV_STEPS.length;i++){if(i in e)c=e[i];o.push(c);}return o;})();
 // EXTRA height (CSS px, + = higher) added on top of what the drawings already show, at the END of each step, same step numbers as above (0 = as drawn).
 // e.g. to make the backflip go higher, raise 16-19; to make the big jump higher, raise 23-24.
-const NV_UP=(()=>{const e={15:0,16:0,17:0,18:0,19:0,20:0,22:0,23:0,24:0,25:0},o=[];let c=0;for(let i=0;i<NV_STEPS.length;i++){if(i in e)c=e[i];o.push(c);}return o;})();
+const NV_UP=(()=>{const e={15:12,16:34,17:50,18:50,19:30,20:0,22:0,23:0,24:0,25:0},o=[];let c=0;for(let i=0;i<NV_STEPS.length;i++){if(i in e)c=e[i];o.push(c);}return o;})();
+// the sword (assets/images/ace-sword.webp, blade up) is its own picture: it falls from the sky while he looks up and sticks in the ground exactly where the drawn sword stands in the next pose
+const NAVI_SWORD='assets/images/ace-sword.webp?v=1',NV_SW_AT=[213.5,200],NV_SW_H=148.7,NV_SW_SPINS=1;       // landing centre and height in cell px
+const NV_AT=[];{let t=0;for(const st of NV_STEPS){NV_AT.push(t);t+=st[1]/1000;}}
 const NV_LEAVE_FROM=NV_STEPS.length-5;                                                  // the fairy flies off once the last glow begins to clear
 const NAVI_TOTAL=NV_STEPS.reduce((a,s)=>a+s[1],0)/1000;
 const nvCv=document.createElement('canvas');nvCv.width=NV_CW;nvCv.height=NV_CH;nvCv.className='ace-navi';nvCv.setAttribute('aria-hidden','true');
 nvCv.style.cssText='position:fixed;left:0;top:0;width:'+NV_CW/2+'px;height:'+NV_CH/2+'px;pointer-events:none;display:none;will-change:transform;z-index:'+(pwZ==='auto'?'60':pwZ);
 document.body.append(nvCv);
 const nvCtx=nvCv.getContext('2d');
-let navi=null,nvImg=null,nvReady=false;const nvInfo={},nvWhite=document.createElement('canvas');nvWhite.width=NV_CW;nvWhite.height=NV_CH;
+let navi=null,nvImg=null,nvReady=false,nvSw=null,nvSwReady=false;const nvInfo={},nvWhite=document.createElement('canvas');nvWhite.width=NV_CW;nvWhite.height=NV_CH;
 function nvCell(idx){                                                                   // a pose's drawing, its top and head centre, and a gold silhouette of it (cached)
   if(nvInfo[idx])return nvInfo[idx];
   const c=document.createElement('canvas');c.width=NV_CW;c.height=NV_CH;const g=c.getContext('2d');
@@ -1353,15 +1356,16 @@ function nvCell(idx){                                                           
   return (nvInfo[idx]={cv:c,tint,top,hx:n?sx/n:(left+right)/2});
 }
 function beginNavi(){
+  if(!nvSw){nvSw=new Image();nvSw.onload=()=>{nvSwReady=true;};nvSw.src=NAVI_SWORD;}
   if(!nvImg){nvImg=new Image();nvImg.onload=()=>{nvReady=true;};nvImg.src=NAVI_SHEET;}
-  if(!nvReady){powerQueue=true;powerQueueKind='navi';powerQueueUntil=pwClock+10;return;}
+  if(!nvReady||!nvSwReady){powerQueue=true;powerQueueKind='navi';powerQueueUntil=pwClock+10;return;}
   navi={t:0,dir:facing<0?-1:1,fx:-1,fy:0,born:-1,leaveAt:-1};
   waveUntil=clock+NAVI_TOTAL+.3;nextDecision=Math.max(nextDecision,clock+NAVI_TOTAL+1.2);runGoal=null;
-  pet.style.visibility='hidden';nvCv.style.display='block';
+  pet.style.visibility='hidden';nvCv.style.display='block';beamCv.style.display='block';sizeBeam();
 }
 function endNavi(){
   if(navi&&navi.off&&!dragging)state.x=clampX(state.x+navi.dir*navi.off);               // he stays where the jump landed him
-  navi=null;nvCv.style.display='none';
+  navi=null;nvCv.style.display='none';beamCv.style.display='none';bmCtx.setTransform(1,0,0,1,0,0);bmCtx.clearRect(0,0,beamCv.width,beamCv.height);
   pet.style.visibility='';nextAuto=pwClock+POWER_EVERY;waveUntil=Math.min(waveUntil,clock+.1);
 }
 function stepNavi(dt){
@@ -1376,6 +1380,15 @@ function stepNavi(dt){
   navi.off=clampX(state.x+navi.dir*(o0+(o1-o0)*pr))-state.x;navi.off*=navi.dir;            // (clamped so he never leaves the window)
   const u0=si?NV_UP[si-1]:0,up=u0+(NV_UP[si]-u0)*pr;
   nvCv.style.transform='translate3d('+(state.x+navi.dir*navi.off-NV_CW/4).toFixed(1)+'px,'+(state.y-FEET_Y/2-up).toFixed(1)+'px,0)';
+  // the sword falling from the sky, spinning once, point-down into the ground beside him
+  {const ts=NV_AT[1],tl=NV_AT[3],c=bmCtx;
+   if(navi.t>=ts&&navi.t<tl){
+     const u=(navi.t-ts)/(tl-ts),ox=state.x-NV_CW/4,oy=state.y-FEET_Y/2,lx=ox+(navi.dir>0?NV_SW_AT[0]:NV_CW-NV_SW_AT[0])/2,ly=oy+NV_SW_AT[1]/2;
+     const hh=NV_SW_H/2,ww=hh*nvSw.width/nvSw.height,y=-hh+(ly+hh)*u*u,rot=Math.PI+(1-u)*NV_SW_SPINS*6.2832;
+     c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,beamCv.width,beamCv.height);c.setTransform(beamDpr,0,0,beamDpr,0,0);
+     c.save();c.translate(lx,y);c.rotate(rot);c.drawImage(nvSw,-ww/2,-hh/2,ww,hh);c.restore();navi.swDrawn=true;
+   }else if(navi.swDrawn){c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,beamCv.width,beamCv.height);navi.swDrawn=false;}
+  }
   const g=nvCtx;g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,NV_CW,NV_CH);
   if(navi.dir<0)g.setTransform(-1,0,0,1,NV_CW,0);
   // the glow: his gold silhouette, layered a little larger each time at low strength, so it fades softly outward
