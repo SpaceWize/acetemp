@@ -1309,24 +1309,48 @@ function stepPower(dt){
   }
 }
 /* ── NAVI ─────────────────────────────────────────────────────
-   A fourth big moment (Shift + N, A, V, I, or in the 90-second rotation in normal mode): a sword drops out of the sky and sticks in
-   the ground beside him, a little blue fairy turns up, he pulls the sword out, there is a flash, and he is a green-capped hero. He does a
-   backflip, a big jump with a sweep of the sword, a wink and a hop, kneels and sets the sword back in the ground, a second flash, and he
-   is himself again, a bit puzzled, while the fairy flutters off. Thirty-six frames (assets/images/ace-navi.webp, 6x6 cells of 264x300,
-   feet on the same line as the power-up sheet), drawn on a canvas over him while his normal sprite is hidden, played in place; the whole
-   thing is mirrored when he is facing left. Cut from the three ChatGPT sheets in little-ace-sprites/link-transformation. */
-const NAVI_SHEET='assets/images/ace-navi.webp?v=1',NV_CW=264,NV_CH=300,NV_COLS=6;
-const NAVI_MS=[800,240,320,200,300,320,320,280,420,520,150,200,110,170,220,650,320,180,110,100,110,110,170,260,200,100,150,120,300,380,520,520,480,520,200,900];
-const NAVI_TOTAL=NAVI_MS.reduce((a,b)=>a+b,0)/1000;
+   A fourth big moment (Shift + N, A, V, I, or in the 90-second rotation in normal mode): a sword is standing in the ground beside him,
+   a little fairy turns up, he pulls the sword out, a golden glow swells until it covers him completely and, out of sight, he becomes a
+   green-capped hero. He does a backflip and a big jump with a twirl of the sword, sets the sword gently back in the ground, the glow
+   covers him again, and he is himself again, a bit puzzled, while the fairy flutters off. Twenty-four poses (assets/images/ace-navi.webp,
+   6x4 cells of 264x300, feet on the same line as the power-up sheet, drawn by GPT Image 2.6 from his reference images, bodies only),
+   drawn on a canvas over him while his normal sprite is hidden, played in place, mirrored when he is facing left. The GLOW, the
+   white-out and the FAIRY (Navi) are not in the artwork: they are drawn here (the glow from his own silhouette), so they follow
+   him exactly. NV_STEPS is [cell, milliseconds, cover, glow]: cover (0-1) washes his silhouette to white-gold, glow (0-1) is the halo. */
+const NAVI_SHEET='assets/images/ace-navi.webp?v=2',NV_CW=264,NV_CH=300,NV_COLS=6;
+const NV_STEPS=[
+  [0,1100,0,0],[1,250,0,0],[2,250,0,0],[3,330,0,0],[4,330,0,0],[5,400,0,0],[6,290,0,.22],                              // idle, hears it, looks up, the sword is in the ground, reaches, grips, pulls
+  [7,400,0,.9],[7,100,.5,1],[7,85,.85,1],[8,70,1,1],[8,100,.6,.9],[8,125,.3,.7],[8,500,0,.5],                           // the sword comes free; the glow swells and covers him; the hero is revealed
+  [9,330,0,.28],[10,111,0,0],[11,111,0,0],[12,111,0,0],[13,111,0,0],[14,111,0,0],[15,111,0,0],                           // sword lowered, the backflip
+  [16,250,0,0],[17,111,0,0],[18,111,0,0],[19,111,0,0],[20,111,0,0],                                                        // wind-up, the big jump and the twirl
+  [21,400,0,0],[22,330,0,0],[23,830,0,0],                                                                                  // straightening up, turning the sword point-down, kneeling
+  [23,150,.4,.6],[23,110,.85,1],[0,110,1,1],[0,130,.6,.8],[0,150,.3,.5],[0,550,0,.15]                                      // the glow covers him again; he is himself again
+];
+const NV_LEAVE_FROM=NV_STEPS.length-5;                                                  // the fairy flies off once the last glow begins to clear
+const NAVI_TOTAL=NV_STEPS.reduce((a,s)=>a+s[1],0)/1000;
 const nvCv=document.createElement('canvas');nvCv.width=NV_CW;nvCv.height=NV_CH;nvCv.className='ace-navi';nvCv.setAttribute('aria-hidden','true');
 nvCv.style.cssText='position:fixed;left:0;top:0;width:'+NV_CW/2+'px;height:'+NV_CH/2+'px;pointer-events:none;display:none;will-change:transform;z-index:'+(pwZ==='auto'?'60':pwZ);
 document.body.append(nvCv);
 const nvCtx=nvCv.getContext('2d');
-let navi=null,nvImg=null,nvReady=false;
+let navi=null,nvImg=null,nvReady=false;const nvInfo={},nvWhite=document.createElement('canvas');nvWhite.width=NV_CW;nvWhite.height=NV_CH;
+function nvCell(idx){                                                                   // a pose's drawing, its top and head centre, and a gold silhouette of it (cached)
+  if(nvInfo[idx])return nvInfo[idx];
+  const c=document.createElement('canvas');c.width=NV_CW;c.height=NV_CH;const g=c.getContext('2d');
+  g.drawImage(nvImg,(idx%NV_COLS)*NV_CW,Math.floor(idx/NV_COLS)*NV_CH,NV_CW,NV_CH,0,0,NV_CW,NV_CH);
+  let top=NV_CH,bot=0,left=NV_CW,right=NV_CW,sx=0,n=0,d;try{d=g.getImageData(0,0,NV_CW,NV_CH).data;}catch(e){d=null;}
+  if(d){left=NV_CW;right=0;
+    for(let y=0;y<NV_CH;y++)for(let x=0;x<NV_CW;x++)if(d[(y*NV_CW+x)*4+3]>40){if(y<top)top=y;if(y>bot)bot=y;if(x<left)left=x;if(x>right)right=x;}
+    const lim=top+Math.max(10,(bot-top)*.3);
+    for(let y=top;y<lim;y++)for(let x=0;x<NV_CW;x++)if(d[(y*NV_CW+x)*4+3]>40){sx+=x;n++;}
+  }else{top=60;left=70;right=190;}
+  const tint=document.createElement('canvas');tint.width=NV_CW;tint.height=NV_CH;const tg=tint.getContext('2d');
+  tg.drawImage(c,0,0);tg.globalCompositeOperation='source-in';tg.fillStyle='rgb(255,208,104)';tg.fillRect(0,0,NV_CW,NV_CH);
+  return (nvInfo[idx]={cv:c,tint,top,hx:n?sx/n:(left+right)/2});
+}
 function beginNavi(){
   if(!nvImg){nvImg=new Image();nvImg.onload=()=>{nvReady=true;};nvImg.src=NAVI_SHEET;}
   if(!nvReady){powerQueue=true;powerQueueKind='navi';powerQueueUntil=pwClock+10;return;}
-  navi={t:0,dir:facing<0?-1:1};
+  navi={t:0,dir:facing<0?-1:1,fx:-1,fy:0,born:-1,leaveAt:-1};
   waveUntil=clock+NAVI_TOTAL+.3;nextDecision=Math.max(nextDecision,clock+NAVI_TOTAL+1.2);runGoal=null;
   pet.style.visibility='hidden';nvCv.style.display='block';
 }
@@ -1338,14 +1362,47 @@ function stepNavi(dt){
   const h=document.documentElement;
   if(open||dragging||h.classList.contains('gate-locked')){endNavi();return;}
   navi.t+=dt;
-  let acc=0,idx=NAVI_MS.length-1;
-  for(let i=0;i<NAVI_MS.length;i++){const d=NAVI_MS[i]/1000;if(navi.t<acc+d){idx=i;break;}acc+=d;}
+  let acc=0,si=NV_STEPS.length-1;
+  for(let i=0;i<NV_STEPS.length;i++){const d=NV_STEPS[i][1]/1000;if(navi.t<acc+d){si=i;break;}acc+=d;}
   if(navi.t>=NAVI_TOTAL){endNavi();return;}
+  const [idx,,cover,glow]=NV_STEPS[si],inf=nvCell(idx),now=navi.t*1000;
   nvCv.style.transform='translate3d('+(state.x-NV_CW/4).toFixed(1)+'px,'+(state.y-FEET_Y/2).toFixed(1)+'px,0)';
-  nvCtx.clearRect(0,0,NV_CW,NV_CH);
-  const sx=(idx%NV_COLS)*NV_CW,sy=Math.floor(idx/NV_COLS)*NV_CH;
-  if(navi.dir<0){nvCtx.save();nvCtx.translate(NV_CW,0);nvCtx.scale(-1,1);nvCtx.drawImage(nvImg,sx,sy,NV_CW,NV_CH,0,0,NV_CW,NV_CH);nvCtx.restore();}
-  else nvCtx.drawImage(nvImg,sx,sy,NV_CW,NV_CH,0,0,NV_CW,NV_CH);
+  const g=nvCtx;g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,NV_CW,NV_CH);
+  if(navi.dir<0)g.setTransform(-1,0,0,1,NV_CW,0);
+  // the glow: his gold silhouette, layered a little larger each time at low strength, so it fades softly outward
+  if(glow>0){
+    const pulse=.88+.12*Math.sin(now/90),cx=inf.hx,cy=(inf.top+NV_CH*.92)/2;
+    g.save();g.globalCompositeOperation='lighter';
+    for(let k=0;k<8;k++){const s=1+.045*k;g.globalAlpha=Math.min(1,glow*pulse*.16*(1-k/9));g.save();g.translate(cx,cy);g.scale(s,s);g.translate(-cx,-cy);g.drawImage(inf.tint,0,0);g.restore();}
+    g.restore();
+  }
+  // the sprite, washed to white-gold by `cover` while the glow covers him
+  if(cover>0){
+    const w=nvWhite.getContext('2d');w.setTransform(1,0,0,1,0,0);w.clearRect(0,0,NV_CW,NV_CH);w.globalCompositeOperation='source-over';w.drawImage(inf.cv,0,0);
+    w.globalCompositeOperation='source-atop';w.fillStyle='rgba(255,243,212,'+Math.min(1,cover)+')';w.fillRect(0,0,NV_CW,NV_CH);w.globalCompositeOperation='source-over';
+    g.drawImage(nvWhite,0,0);
+  }else g.drawImage(inf.cv,0,0);
+  // Navi: turns up from the corner when the sword is in the ground, then hovers by his head, bobbing, and flies off at the end
+  if(si>=4){
+    if(navi.born<0){navi.born=now;navi.fx=NV_CW+30;navi.fy=-20;}
+    if(si>=NV_LEAVE_FROM&&navi.leaveAt<0)navi.leaveAt=now;
+    const k=Math.min(1,(now-navi.born)/500),leaving=navi.leaveAt>=0,lt=leaving?(now-navi.leaveAt)/1000:0;
+    let tx=inf.hx+62+Math.sin(now/330)*4,ty=inf.top+6+Math.sin(now/210)*5;
+    if(leaving){tx=NV_CW+50;ty=-50;}
+    navi.fx+=(tx-navi.fx)*(leaving?.07:.16);navi.fy+=(ty-navi.fy)*(leaving?.07:.16);
+    const x=navi.fx,y=navi.fy,flap=.35+.65*Math.abs(Math.sin(now/38)),al=k*Math.max(0,1-lt*.9),u=1.1;
+    g.save();g.globalAlpha=al;
+    const gr=g.createRadialGradient(x,y,1,x,y,28*u);gr.addColorStop(0,'rgba(235,246,255,.95)');gr.addColorStop(.25,'rgba(160,205,255,.55)');gr.addColorStop(1,'rgba(120,170,255,0)');
+    g.fillStyle=gr;g.beginPath();g.arc(x,y,28*u,0,6.2832);g.fill();
+    g.fillStyle='rgba(205,228,255,.62)';g.strokeStyle='rgba(255,255,255,.55)';g.lineWidth=.9;
+    for(const w of [[-1,-1,14,6.5,-.5],[1,-1,14,6.5,.5],[-1,1,9,4.2,.45],[1,1,9,4.2,-.45]]){
+      g.save();g.translate(x+w[0]*5.5*u,y+w[1]*2.5*u);g.rotate(w[4]+(w[1]<0?w[0]*-.5:w[0]*.5));g.scale(1,flap);
+      g.beginPath();g.ellipse(w[0]*6*u,0,w[2]*.5*u,w[3]*u,0,0,6.2832);g.fill();g.stroke();g.restore();
+    }
+    g.fillStyle='rgba(255,255,255,.98)';g.beginPath();g.arc(x,y,4.6*u,0,6.2832);g.fill();
+    g.globalAlpha=al*.35;g.fillStyle='rgba(190,220,255,.9)';g.beginPath();g.arc(x,y,6.8*u,0,6.2832);g.fill();
+    g.restore();
+  }
 }
 /* ── SUMMON ─────────────────────────────────────────────────
    Normal mode only (the art has his cap, not the Santa hat). He calls a shield and a hammer in from off the page, catches
