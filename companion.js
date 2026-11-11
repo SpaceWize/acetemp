@@ -1207,9 +1207,9 @@ function storedBig(){try{return sessionStorage.getItem(BIG_KEY)||'';}catch(e){re
 function bigWait(){try{const t=Number(sessionStorage.getItem(BIG_AT_KEY));if(t>0){const since=(Date.now()-t)/1000;if(since>=0&&since<POWER_EVERY)return Math.max(8,POWER_EVERY-since);}}catch(e){}return POWER_EVERY;}
 let power=null,pwImg=null,pwReady=false,pwClock=0,pwLast=0,nextAuto=bigWait(),powerQueue=false,powerQueueKind='power',powerQueueUntil=0,beamDpr=1,lastBig=storedBig();
 /* Everything a big moment needs except the snow: the automatic timer also needs him out of it (powerOk). */
-function powerReady(){
+function powerReady(parkedOk){   // parkedOk: a deliberate trigger (a cheat code, holding the button) works even while he is parked
   const h=document.documentElement;
-  return ready&&!open&&!dragging&&!parked&&!motionPaused&&!calm.matches&&state.ground!==null&&!climb&&!pendingJump&&!visit
+  return ready&&!open&&!dragging&&(parkedOk||!parked)&&!motionPaused&&!calm.matches&&(state.ground!==null||(parkedOk&&parked))&&!climb&&!pendingJump&&!visit
     &&!h.classList.contains('gate-locked')&&!h.classList.contains('intro')&&clock>=waveUntil&&!holdingPoint();
 }
 function powerOk(){return powerReady()&&!stuck&&floorLift===0;}
@@ -1317,7 +1317,7 @@ function stepPower(dt){
    drawn on a canvas over him while his normal sprite is hidden, played in place, mirrored when he is facing left. The GLOW, the
    white-out and the FAIRY (Navi) are not in the artwork: they are drawn here (the glow from his own silhouette), so they follow
    him exactly. NV_STEPS is [cell, milliseconds, cover, glow]: cover (0-1) washes his silhouette to white-gold, glow (0-1) is the halo. */
-const NAVI_SHEET='assets/images/ace-navi.webp?v=2',NV_CW=264,NV_CH=300,NV_COLS=6;
+const NAVI_SHEET='assets/images/ace-navi.webp?v=7',NV_CW=264,NV_CH=300,NV_COLS=6;
 const NV_STEPS=[
   [0,1100,0,0],[1,250,0,0],[2,250,0,0],[3,330,0,0],[4,330,0,0],[5,400,0,0],[6,290,0,.22],                              // idle, hears it, looks up, the sword is in the ground, reaches, grips, pulls
   [7,400,0,.9],[7,100,.5,1],[7,85,.85,1],[8,70,1,1],[8,100,.6,.9],[8,125,.3,.7],[8,500,0,.5],                           // the sword comes free; the glow swells and covers him; the hero is revealed
@@ -1326,6 +1326,11 @@ const NV_STEPS=[
   [21,400,0,0],[22,330,0,0],[23,830,0,0],                                                                                  // straightening up, turning the sword point-down, kneeling
   [23,150,.4,.6],[23,110,.85,1],[0,110,1,1],[0,130,.6,.8],[0,150,.3,.5],[0,550,0,.15]                                      // the glow covers him again; he is himself again
 ];
+// where he is along the floor (CSS px, + = the way he faces) at the END of each step: he leaps BACK through the backflip (steps 15-20) and springs FORWARD through the big jump (22-25)
+const NV_OFF=(()=>{const e={15:-12,16:-28,17:-46,18:-60,19:-68,20:-100,22:-35,23:5,24:35,25:60},o=[];let c=0;for(let i=0;i<NV_STEPS.length;i++){if(i in e)c=e[i];o.push(c);}return o;})();
+// EXTRA height (CSS px, + = higher) added on top of what the drawings already show, at the END of each step, same step numbers as above (0 = as drawn).
+// e.g. to make the backflip go higher, raise 16-19; to make the big jump higher, raise 23-24.
+const NV_UP=(()=>{const e={15:0,16:0,17:0,18:0,19:0,20:0,22:0,23:0,24:0,25:0},o=[];let c=0;for(let i=0;i<NV_STEPS.length;i++){if(i in e)c=e[i];o.push(c);}return o;})();
 const NV_LEAVE_FROM=NV_STEPS.length-5;                                                  // the fairy flies off once the last glow begins to clear
 const NAVI_TOTAL=NV_STEPS.reduce((a,s)=>a+s[1],0)/1000;
 const nvCv=document.createElement('canvas');nvCv.width=NV_CW;nvCv.height=NV_CH;nvCv.className='ace-navi';nvCv.setAttribute('aria-hidden','true');
@@ -1355,6 +1360,7 @@ function beginNavi(){
   pet.style.visibility='hidden';nvCv.style.display='block';
 }
 function endNavi(){
+  if(navi&&navi.off&&!dragging)state.x=clampX(state.x+navi.dir*navi.off);               // he stays where the jump landed him
   navi=null;nvCv.style.display='none';
   pet.style.visibility='';nextAuto=pwClock+POWER_EVERY;waveUntil=Math.min(waveUntil,clock+.1);
 }
@@ -1366,7 +1372,10 @@ function stepNavi(dt){
   for(let i=0;i<NV_STEPS.length;i++){const d=NV_STEPS[i][1]/1000;if(navi.t<acc+d){si=i;break;}acc+=d;}
   if(navi.t>=NAVI_TOTAL){endNavi();return;}
   const [idx,,cover,glow]=NV_STEPS[si],inf=nvCell(idx),now=navi.t*1000;
-  nvCv.style.transform='translate3d('+(state.x-NV_CW/4).toFixed(1)+'px,'+(state.y-FEET_Y/2).toFixed(1)+'px,0)';
+  const o0=si?NV_OFF[si-1]:0,o1=NV_OFF[si],pr=Math.min(1,Math.max(0,(navi.t-acc)/(NV_STEPS[si][1]/1000)));
+  navi.off=clampX(state.x+navi.dir*(o0+(o1-o0)*pr))-state.x;navi.off*=navi.dir;            // (clamped so he never leaves the window)
+  const u0=si?NV_UP[si-1]:0,up=u0+(NV_UP[si]-u0)*pr;
+  nvCv.style.transform='translate3d('+(state.x+navi.dir*navi.off-NV_CW/4).toFixed(1)+'px,'+(state.y-FEET_Y/2-up).toFixed(1)+'px,0)';
   const g=nvCtx;g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,NV_CW,NV_CH);
   if(navi.dir<0)g.setTransform(-1,0,0,1,NV_CW,0);
   // the glow: his gold silhouette, layered a little larger each time at low strength, so it fades softly outward
@@ -1695,7 +1704,7 @@ requestAnimationFrame(function powerLoop(now){
     else if(navi)stepNavi(dt);
     else{
       if(powerQueue&&pwClock>powerQueueUntil)powerQueue=false;
-      if(powerQueue&&powerReady()){powerQueue=false;leaveSnow();startBig(powerQueueKind);}
+      if(powerQueue&&powerReady(true)){powerQueue=false;leaveSnow();startBig(powerQueueKind);}
       else if(pwClock>=nextAuto){if(powerReady()){leaveSnow();startBig(pickBig());}else nextAuto=pwClock+4;}
     }
   }
@@ -1714,7 +1723,7 @@ function pickAce(){return pickBig();}
 function leaveSnow(){if(stuck){stuck=false;nextShiver=shiverUntil=0;floorLift=snowLift();}}
 function askPower(kind){
   if(power||sleigh||flight||summon||navi||powerQueue)return;kind=kind||'power';
-  if(powerReady()){leaveSnow();startBig(kind);}
+  if(powerReady(true)){leaveSnow();startBig(kind);}
   else{powerQueue=true;powerQueueKind=kind;powerQueueUntil=pwClock+20;}
 }   // a deliberate trigger waits up to 20s for him to finish a climb or jump
 /* ── SLIPPING ──────────────────────────────────────────────────
