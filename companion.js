@@ -761,9 +761,9 @@ function think(line){
 }
 /* Now and then the edge of the bubble tears for a third of a second (.is-glitch in companion.css): the bars land somewhere new each time. */
 /* The look of each bubble: the gold plate most of the time, and now and then one of the others (companion.css, THOUGHT BUBBLE):
-   red, electric (neon green and red with sparks), glass (cracked and shattered) and fairy (deep blue with a soft sparkle). The same
-   style never comes up twice running. line.style ('red', 'electric', 'glass', 'fairy', 'gold') forces one, for trying them out. */
-const THINK_STYLES=[['gold',44],['red',14],['electric',15],['glass',14],['fairy',13]];
+   red, electric (neon green and red with sparks) and fairy (deep blue with a soft sparkle). The same
+   style never comes up twice running. line.style ('red', 'electric', 'fairy', 'gold') forces one, for trying them out. */
+const THINK_STYLES=[['gold',50],['red',16],['electric',17],['fairy',17]];
 let lastThinkStyle='gold';
 function pickThinkStyle(force){
   let pick=THINK_STYLES.some(s=>s[0]===force)?force:null;
@@ -797,7 +797,7 @@ requestAnimationFrame(function thinkLoop(now){
   const html=document.documentElement;
   const busy=!ready||open||dragging||html.classList.contains('gate-locked')||html.classList.contains('intro');
   const held=bubble.classList.contains('has-link')&&(bubble.matches(':hover')||bubble.contains(document.activeElement));   // being read or clicked: it stays up and stays put
-  if(thinkUntil>=0){if((busy&&!(thinkHeld&&dragging))||(thinkClock>=thinkUntil&&!held)){quiet();nextThought=thinkClock+thinkGap();}else{if(!held)placeBubble();if(thinkClock>=nextGlitch){if(bubble.dataset.style!=='glass'&&bubble.dataset.style!=='fairy')glitchBubble();nextGlitch=thinkClock+glitchRand(1.2,3.8);}}}
+  if(thinkUntil>=0){if((busy&&!(thinkHeld&&dragging))||(thinkClock>=thinkUntil&&!held)){quiet();nextThought=thinkClock+thinkGap();}else{if(!held)placeBubble();if(thinkClock>=nextGlitch){if(bubble.dataset.style!=='fairy')glitchBubble();nextGlitch=thinkClock+glitchRand(1.2,3.8);}}}
   else if(thinkClock>=nextThought){if(busy)nextThought=thinkClock+5;else think();}
   requestAnimationFrame(thinkLoop);
 });

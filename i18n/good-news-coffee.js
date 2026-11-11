@@ -30,4 +30,6 @@ ACE_I18N({"soon":"Website coming soon!"},
 "sjn":{},
 "tlh":{"soon":"tugh 'Internet Daq tu'lu'!"},
 "en-IE":{"soon":"Website coming soon, so it is!"},
-"en-SC":{}});
+"en-SC":{},
+"nl":{"soon":"Website binnenkort beschikbaar!"},
+"pl":{"soon":"Strona wkrótce!"}});
