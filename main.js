@@ -1479,7 +1479,18 @@
 
   function edgeLight() {
     // small screens: the rings race around on a CSS timer instead (see styles.css)
-    if (!reduce.matches && window.matchMedia('(max-width: 900px)').matches) return;
+    if (!reduce.matches && window.matchMedia('(max-width: 900px)').matches) {
+      /* The rings race round on a CSS timer here, and animating a custom property is repainted on the main thread
+         every frame, for every ring on a page that can be 20,000px tall. Only the ones on (or just off) screen
+         run; the rest wait paused, which is most of what made phones feel laggy. */
+      if ('IntersectionObserver' in window) {
+        var rio = new IntersectionObserver(function (es) {
+          es.forEach(function (e) { e.target.classList.toggle('ring-off', !e.isIntersecting); });
+        }, { rootMargin: '160px 0px' });
+        [].slice.call(document.querySelectorAll(LIT)).forEach(function (el) { rio.observe(el); });
+      }
+      return;
+    }
     var boxes = [].slice.call(document.querySelectorAll(LIT));
     if (!boxes.length) return;
 

@@ -432,3 +432,13 @@ body:has(.ace-companion.is-dragging) .hero__plate{opacity:0}
   .ace-think .ace-think__fx{animation:none}
   .ace-think.is-electric .ace-think__fx--b{opacity:0}
 }
+
+/* Phones: chat controls big enough for a thumb (hit area only for the small ones). */
+@media (max-width:900px),(pointer:coarse){
+  .ace-chat-close{position:relative}
+  .ace-chat-close::after{content:"";position:absolute;inset:-6px}
+  .ace-chat-suggestions button{min-height:40px}
+  .ace-chat-suggestions{gap:8px}
+  .ace-park,.ace-xmas,.ace-flash--chat{position:relative}
+  .ace-park::after,.ace-xmas::after,.ace-flash--chat::after{content:"";position:absolute;inset:-10px -8px}
+}

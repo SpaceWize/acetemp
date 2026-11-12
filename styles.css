@@ -2229,3 +2229,36 @@ html:not([data-depth="flat"]) .hero__line--gold.ll{
 .gnc__panel{display:inline-block;background:#fff;padding:1.25rem 1.75rem;margin:1.5rem 0 1rem;border-radius:2px;max-width:100%}
 .gnc__panel img{display:block;width:min(300px,70vw);height:auto}
 .logos__h{margin-bottom:var(--sp-4)}
+
+/* ═══ PHONES: comfortable tap targets, header that never squeezes ═══
+   Everything here is size only: the look and the copy are untouched. Small controls keep their
+   drawn size and get an invisible hit area of at least 44px around them (Apple/Google guidance). */
+.burger{flex:none}                                           /* it was being squeezed to 30px wide beside the logo and picker */
+@media (max-width:900px),(pointer:coarse){
+  .site-head__in{gap:.6rem}
+  .brand{min-width:0;min-height:44px}
+  .brand__word{white-space:nowrap}
+  .site-head .ace-lang{height:44px;margin-inline:0}
+  .circle__link,.hero__back,.foot__replay,.cta__meta .copy,.foot__grid a,.mnav__sub a{position:relative}
+  .circle__link::after,.hero__back::after,.foot__replay::after,.cta__meta .copy::after{
+    content:"";position:absolute;inset:-12px -8px}
+  .foot__grid a,.mnav__sub a{padding-block:.35rem}
+  .field .check{padding-block:.6rem}                            /* a whole 44px row toggles the box, not just the 17px square */
+}
+@media (max-width:360px){
+  .site-head__in{gap:.4rem}
+  .brand{gap:.5rem}
+  .brand__word{font-size:.85rem}
+}
+@media (max-width:900px),(pointer:coarse){
+  .ace-gate .gate__been{font-size:.75rem}
+  .ace-gate .gate__been::after{content:"";position:absolute;inset:-12px -10px}
+}
+@media (max-width:320px){.brand__word{font-size:.74rem;letter-spacing:0}.brand{gap:.4rem}}
+
+/* Rings that are scrolled well off screen stand still (main.js toggles .ring-off): nothing to see, and each one costs a repaint per frame. */
+.ring-off::before,.ring-off::after{animation-play-state:paused}
+
+/* Phones: the film grain is a 5% noise laid over the playing hero video with a blend mode, which makes the phone re-blend the
+   video on every frame. Plain 5% noise looks the same and costs nothing. */
+@media (max-width:900px){.grain{mix-blend-mode:normal}}

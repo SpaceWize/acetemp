@@ -7,16 +7,17 @@
    Only pages in PAGES are translated so far. Loaded in <head>, so the page stays hidden (1.5s at most) until it is ready. */
 (function () {
   'use strict';
-  var PAGES = ['premium-pickup-transport.html', 'advisory.html', 'private-working-session.html', 'public-speaking.html', 'mastermind-membership.html', 'mastermind-application.html', 'group-activities.html', 'contact.html', 'good-news-coffee.html', 'index.html'], V = 110;
+  var PAGES = ['premium-pickup-transport.html', 'advisory.html', 'private-working-session.html', 'public-speaking.html', 'mastermind-membership.html', 'mastermind-application.html', 'group-activities.html', 'contact.html', 'good-news-coffee.html', 'index.html'], V = 111;
   var LANGS = ['ja', 'da', 'ru', 'ar', 'de', 'he', 'fr', 'yue', 'zh', 'tl', 'es', 'pt', 'la', 'el', 'af', 'pa', 'hi', 'nl', 'pl', 'no', 'sv', 'gd', 'ga', 'cy', 'sjn', 'tlh', 'en-GB', 'en-US', 'en-CA', 'en-NL', 'en-AU', 'en-IE', 'en-SC', 'pig', 'bin', 'egy', 'run', 'ogm'], RTL = { ar: 1, he: 1 }, KEY = 'ace-lang', ALGO = { pig: 1, bin: 1, egy: 1, run: 1, ogm: 1 };   // ALGO: made by rule, not by dictionary
   function pick() {
-    var forced = null;
+    var forced = null, q = null;
     try {
-      var q = new URLSearchParams(location.search).get('lang');
+      q = new URLSearchParams(location.search).get('lang');
       if (q === 'auto') localStorage.removeItem(KEY);
-      else if (LANGS.indexOf(q) >= 0) localStorage.setItem(KEY, q);
+      else if (LANGS.indexOf(q) >= 0 || q === 'orig') localStorage.setItem(KEY, q);
       forced = localStorage.getItem(KEY);
     } catch (e) {}
+    if (!forced && (LANGS.indexOf(q) >= 0 || q === 'orig')) forced = q;     // storage blocked (private browsing): the address still carries the choice
     if (forced === 'orig') return null;                     // chose the original in the picker
     if (LANGS.indexOf(forced) >= 0) return forced;
     var two = (navigator.language || '').toLowerCase().split('-')[0];
@@ -48,7 +49,11 @@
     sel.value = cur;
     sel.addEventListener('change', function () {
       try { localStorage.setItem(KEY, sel.value); } catch (e) {}
-      location.href = location.pathname + location.hash;
+      /* Go to a DIFFERENT address, with the choice in it. Assigning the very same address (what this used to do) is not a
+         load at all on some phones, and when the address had a #section on it the browser only scrolled to it: the page
+         kept its old language until it was refreshed by hand. A new address always loads, and it carries the language
+         even where the browser will not let the page remember it. */
+      location.assign(location.pathname + '?lang=' + encodeURIComponent(sel.value) + location.hash);
     });
     spot.parentNode.insertBefore(box, spot);
   }

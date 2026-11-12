@@ -37,7 +37,7 @@ if(window.ACE_XMAS){const s=document.createElement('script');s.src='xmas.js?v=28
   var KEY = 'ace-waitlist-v1';            // bump (and COOKIE) to ask everyone again: a new list, a new year
   var COOKIE = 'ace_waitlist_v1';
   var ENTERED = 'ace-entered-v1';         // this visit has been through the gates
-  var SCENE_URL = './gate-scene.js?v=16';
+  var SCENE_URL = './gate-scene.js?v=22';
   var ATLAS = window.ACE_ATLAS || 'assets/images/ace-atlas.webp?v=14';
   var POW_BITS = 16;                      // proof of work; the sheet accepts 14 and up
   var POW_BUDGET_MS = 6000;               // a browser slower than this sends without a proof (the sheet still takes it)

@@ -416,6 +416,7 @@ const CLIPS={
   land  :{f:[30,31,32,33],                 fps:17, loop:false,dir:1 },
   /* Back-view climb strip: he faces the wall, so dir:0 — never mirrored. */
   climb :{f:[34,35,36,37,38,39,40,41],fps:11,loop:true, dir:0},
+  climbdown:{f:[41,40,39,38,37,36,35,34],fps:11,loop:true, dir:0},     // the same strip backwards: hand over hand down the face of a block
   /* He points DOWN at the button under his feet, so there is no left or
      right to it — dir:0 keeps it from ever being mirrored. Nine frames at
      6.75fps lean in (cell 86 is the in-between from standing into the lean),
@@ -647,7 +648,7 @@ let surfaces=[],clock=0,last=0,nextDecision=1.8,lastSurfaceUpdate=-1,scroll=scro
 /* climb: {el, x} while he is going up a block of copy.
    textSurface: the block he climbed, standable for as long as he is on it.
    pointUntil: how long he holds the point once he has landed on a button. */
-let climb=null,textSurface=null,pointUntil=0,waveUntil=0,pointKind='point';   // pointKind: 'point' (down at the button he is on) or 'pointup'
+let climb=null,climbTopAt=0,textSurface=null,pointUntil=0,waveUntil=0,pointKind='point';   // pointKind: 'point' (down at the button he is on) or 'pointup'
 /* ── A SCRIPTED VISIT ─────────────────────────────────────────
    The home hero's intro (heroIntro() in main.js) sends him to stand on a
    word and point at it: window.AceCompanion.visit(el,{onPoint,onLeave}).
@@ -817,12 +818,19 @@ requestAnimationFrame(function thinkLoop(now){
    within SETTLE_SECS of the visitor stopping, or within WANDER_SECS of a
    rest ending; whatever he is already doing still finishes. */
 const ACTIVE_WINDOW=1.2,SETTLE_MOVES=3,SETTLE_SECS=4,REST_MIN=2.5,REST_MAX=5,WANDER_SECS=3;
+/* Nobody has touched, scrolled or moved for FREE_ROAM_AFTER seconds: the page is stagnant, so he stops resting between short wanders
+   and runs about and climbs for as long as it stays that way (on a phone the visitor scrolls constantly, which keeps cutting his climbs short). */
+const FREE_ROAM_AFTER=30;
 let lastActive=0,movesLeft=SETTLE_MOVES,wanderUntil=0;
 const markActive=()=>{lastActive=clock;};
 for(const ev of ['pointermove','scroll','wheel','keydown','touchstart'])addEventListener(ev,markActive,{passive:true});
 function busy(){return clock-lastActive<ACTIVE_WINDOW;}
 function decide(){
   if(busy()){movesLeft=SETTLE_MOVES;choose(true);nextDecision=Math.min(nextDecision,clock+.5+Math.random()*.9);return;}
+  if(clock-lastActive>FREE_ROAM_AFTER){
+    if(Math.random()<.18){nextDecision=clock+1.5+Math.random()*2;return;}                // the odd breather
+    choose(true,true);nextDecision=Math.min(nextDecision,clock+.7+Math.random()*1.3);return;
+  }
   const open=Math.max(lastActive+ACTIVE_WINDOW+SETTLE_SECS,wanderUntil);
   if(movesLeft>0&&clock<open){movesLeft--;choose(false);nextDecision=Math.min(nextDecision,clock+1.4+Math.random()*1.4);return;}
   nextDecision=clock+REST_MIN+Math.random()*(REST_MAX-REST_MIN);   // stand in idle
@@ -934,7 +942,8 @@ function textSurfaceNow(){
   if(r.width<100||r.bottom<40||r.top>innerHeight-20)return null;
   return {id:'text',left:r.left,right:r.right,y:r.top,el:textSurface.el};
 }
-function scan(){surfaces=[];for(let i=0;i<perches.length;i++){const p=perches[i],r=p.el.getBoundingClientRect();const y=perchY(p,r);if(r.width>PERCH_MIN_WIDTH&&y>150&&y<innerHeight-60&&r.right>60&&r.left<innerWidth-60){surfaces.push({id:String(i),left:Math.max(20,r.left),right:Math.min(innerWidth-20,r.right),y,el:p.el});}}surfaces=bridge(surfaces);const t=state.ground==='text'&&textSurfaceNow();if(t)surfaces.push(t);const v=visitSurface();if(v)surfaces.push(v);const l=launcherSurface();if(l)surfaces.push(l);surfaces.push({id:'floor',left:0,right:innerWidth,y:floorY()});}
+function scan(){surfaces=[];const sy=scrollY;for(let i=0;i<perches.length;i++){const p=perches[i];const py=p.y-sy;if(py<-700||py>innerHeight+700)continue;   // a ledge that far off screen can't be a surface: don't measure it (the page is up to 20,000px tall and this runs several times a second)
+  const r=p.el.getBoundingClientRect();const y=perchY(p,r);if(r.width>PERCH_MIN_WIDTH&&y>150&&y<innerHeight-60&&r.right>60&&r.left<innerWidth-60){surfaces.push({id:String(i),left:Math.max(20,r.left),right:Math.min(innerWidth-20,r.right),y,el:p.el});}}surfaces=bridge(surfaces);const t=state.ground==='text'&&textSurfaceNow();if(t)surfaces.push(t);const v=visitSurface();if(v)surfaces.push(v);const l=launcherSurface();if(l)surfaces.push(l);surfaces.push({id:'floor',left:0,right:innerWidth,y:floorY()});}
 /* The Ask Little Ace button, as a ledge. Added after the perch filter on
    purpose: it sits in the bottom 60px that filter keeps him out of, and it
    is where he spawns. Gone while the chat is open and the button is hidden. */
@@ -1074,15 +1083,35 @@ function climbTarget(){
   return best[0];
 }
 
+/* Climbing DOWN. On a narrow page a ledge or block of copy runs nearly edge to edge, so there is no way off it
+   but sideways, which looked like him going round it. Instead he walks to its left end and climbs down the face,
+   hand over hand (the climb strip played backwards), onto whatever is below. */
+const CLIMB_DOWN_SPEED=96;
+function descentTarget(ground){
+  const x=Math.min(ground.right-10,Math.max(ground.left+10,clampX(ground.left+16)));
+  let best=null;
+  for(const s of surfaces){
+    if(s.id===ground.id||s.id==='launcher'||s.id==='visit')continue;
+    if(x<s.left+8||x>s.right-8||s.y<state.y+50)continue;
+    if(!best||s.y<best.y)best=s;
+  }
+  return best?{down:true,tid:best.id,x}:null;
+}
 /* busy: the visitor is moving (see PACE). Busy, he hops and climbs more and
    walks less; calm, he prefers the ground he is on. Either way the places
    he picks are pulled toward the pointer — where the visitor is looking —
    and toward buttons, which he can point at. */
-function choose(busy){
+function choose(busy,free){
  const ground=currentSurface();
+ /* Narrow page, or a ledge that spans it: climb down rather than walk off the end. */
+ if(ground&&ground.id!=='floor'&&ground.id!=='launcher'&&ground.id!=='visit'&&clock>climbTopAt+2.5&&
+    (innerWidth<760||ground.right-ground.left>innerWidth-120)&&Math.random()<(ground.id==='text'?.8:.45)){
+   const d=descentTarget(ground);
+   if(d){climb=d;runGoal=d.x;nextDecision=clock+10;return;}
+ }
  /* More climby: a block of copy is tried first on a share of decisions,
     not only when nothing else is in reach. */
- if(Math.random()<(busy?.45:.3)){
+ if(Math.random()<(free?.6:busy?.45:.3)){
    const t=climbTarget();
    if(t){climb=t;runGoal=t.x;nextDecision=clock+8;return;}
  }
@@ -1101,7 +1130,7 @@ function choose(busy){
  }
  /* On the floor: often enough, just walk it. He still explores the page,
     he simply does more of it on foot. */
- if(ground&&ground.id==='floor'&&Math.random()<(busy?.3:FLOOR_ROAM)){
+ if(ground&&ground.id==='floor'&&Math.random()<(free?.45:busy?.3:FLOOR_ROAM)){
    runGoal=roamX(state.x+(Math.random()<.5?-1:1)*(140+Math.random()*220));
    nextDecision=clock+.6;return;
  }
@@ -1852,7 +1881,19 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
       gravity section below is skipped — otherwise physics.step would pull
       him straight back down the paragraph he is trying to climb. */
    let ascending=false;
-   if(climb){
+   if(climb&&climb.down){
+     const tg=surfaces.find(q=>q.id===climb.tid);
+     if(!tg){climb=null;state.ground=null;state.vy=Math.max(60,state.vy);nextDecision=clock+.4;}          // the ledge below has scrolled away: let him drop
+     else if(Math.abs(state.x-climb.x)<12){
+       ascending=true;
+       state.ground=null;state.vy=0;state.vx=0;runGoal=null;pendingJump=null;
+       state.x=climb.x;state.y+=CLIMB_DOWN_SPEED*dt;
+       facing=1;play('climbdown');
+       if(state.y>=tg.y){state.y=tg.y;state.ground=tg.id;climb=null;ascending=false;nextDecision=clock+.6;}
+     }else{
+       runGoal=climb.x;
+     }
+   }else if(climb){
      const r=climb.el.getBoundingClientRect();
      const gone=r.bottom<60||r.top>innerHeight-30||r.width<100;
      if(gone){
@@ -1870,7 +1911,7 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
             having climbed it he has to have somewhere to be. */
          state.y=r.top;textSurface={el:climb.el};state.ground='text';
          const cc=climbables.find(c=>c.el===climb.el);if(cc)cc.rest=clock+25;
-         climb=null;ascending=false;nextDecision=clock+.6;
+         climb=null;ascending=false;nextDecision=clock+1.5;climbTopAt=clock;
        }
      }else{
        runGoal=climb.x;                    // still walking to the foot of it

@@ -15,7 +15,6 @@
      host     the element the canvas goes into (fills it)
      opts     { reduced: bool, atlasUrl: string } */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/+esm';
-import { RoomEnvironment } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/environments/RoomEnvironment.js/+esm';
 
 const OPEN = 1.57;            // rad: each half stands open edge-on to the viewer (90deg), out of sight at the screen edge
 const OUT = 2.3;              // rad: how far they swing when they open for good: past edge-on, out of the frame entirely
@@ -32,7 +31,9 @@ const FALL = [28, 29], LAND = [30, 31, 32, 33], LAND_FPS = 17, GRAVITY_PX = 1650
 export function start(host, opts = {}) {
   const reduced = !!opts.reduced;
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.shadowMap.enabled = true;                           // the bars, rails and straps throw real shadows on each other and on the light behind
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.0;
@@ -54,8 +55,14 @@ export function start(host, opts = {}) {
   // ── light ──────────────────────────────────────────────────────────
   scene.add(new THREE.AmbientLight(0xfff1d6, 0.25));
   const key = new THREE.DirectionalLight(0xfff0dc, 2.2);
-  key.position.set(-6, 7, 9);
+  key.position.set(-1.3, 13, 6.5);                               // high: a shadow thrown by a tall gate lies squashed on the floor, not stretched across it
+  key.castShadow = true;
+  const SHADOW_PX = Math.min(4096, renderer.capabilities.maxTextureSize || 2048, (window.innerWidth < 700 ? 2048 : 4096));
+  key.shadow.mapSize.set(SHADOW_PX, SHADOW_PX);
+  key.shadow.bias = -0.0003; key.shadow.normalBias = 0.012; key.shadow.radius = 2.5;
+  key.shadow.camera.near = 1; key.shadow.camera.far = 70;
   scene.add(key);
+  scene.add(key.target);
   const fill = new THREE.DirectionalLight(0xbfd3ff, 0.45);
   fill.position.set(7, -2, 6);
   scene.add(fill);
@@ -80,7 +87,7 @@ export function start(host, opts = {}) {
   function onPointer(e) {
     const r = host.getBoundingClientRect();
     if (!r.width || !r.height) return;
-    if (!reduced) { parTX = (((e.clientX - r.left) / r.width) * 2 - 1) * 0.22; parTY = -(((e.clientY - r.top) / r.height) * 2 - 1) * 0.12; }
+    if (!reduced) { parTX = (((e.clientX - r.left) / r.width) * 2 - 1) * 0.6; parTY = -(((e.clientY - r.top) / r.height) * 2 - 1) * 0.12; }
     ray.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1, 0.5).unproject(camera).sub(camera.position).normalize();
     const k = (HEAT_Z - camera.position.z) / ray.z;                 // where the pointer's ray meets the heat plane
     heatTX = camera.position.x + ray.x * k; heatTY = camera.position.y + ray.y * k;
@@ -103,11 +110,24 @@ export function start(host, opts = {}) {
   // A warm cream, not white: a white base blew out to a flat white disc under the lights, and the sheen and the
   // pink-green play of colour (iridescence) are what make it read as pearl rather than as a white ball.
   const pearl = new THREE.MeshPhysicalMaterial({
-    color: 0xe6dac4, metalness: 0, roughness: 0.3, clearcoat: 1, clearcoatRoughness: 0.06,
+    color: 0xcdbea8, metalness: 0, roughness: 0.22, clearcoat: 1, clearcoatRoughness: 0.05, envMapIntensity: 0.85,
     sheen: 0.7, sheenColor: new THREE.Color(0xffd9c2), sheenRoughness: 0.4,
     iridescence: 1, iridescenceIOR: 1.4, iridescenceThicknessRange: [260, 480]
   });
   const disposables = [gold, goldDeep, pearl, envRT, pmrem, grain];
+  /* The ground. A flat floor under the gates that shows nothing but the shadow the gates throw on it: with the light in front
+     and above, the bars' shadows fall back and to the right along the floor, getting fainter with distance. */
+  const shadowMat = new THREE.ShadowMaterial({ color: 0x120a02, opacity: 0, transparent: true, depthWrite: false });
+  shadowMat.onBeforeCompile = (sh) => {
+    const NL = String.fromCharCode(10);
+    sh.vertexShader = 'varying float vGz;' + NL + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>' + NL + '  vGz = (modelMatrix * vec4(transformed, 1.0)).z;');
+    sh.fragmentShader = 'varying float vGz;' + NL + sh.fragmentShader.replace('gl_FragColor = vec4( color, opacity * ( 1.0 - getShadowMask() ) );',
+      'gl_FragColor = vec4( color, opacity * ( 1.0 - getShadowMask() ) * smoothstep(-26.0, -2.0, vGz) );');
+  };
+  const shadowCatch = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), shadowMat);
+  shadowCatch.rotation.x = -Math.PI / 2; shadowCatch.receiveShadow = true; shadowCatch.renderOrder = 1;
+  scene.add(shadowCatch);
+  disposables.push(shadowCatch.geometry, shadowCatch.material);
   // The shine is laid on after tone mapping, in screen colour (through the tone mapper it washed into the gold). It
   // adds pale light in proportion to how lit each bit of bar already is, so the bars' own highlights flare and their
   // shaded sides stay dark: polished metal catching the light, not hot metal. uHeatGain: how bright it gets.
@@ -135,6 +155,35 @@ export function start(host, opts = {}) {
   }
   molten(gold);
   molten(goldDeep);
+  /* The spades (the finials along the arch and the big one on the medallion) are flat-faced, and a flat face reflects one
+     single patch of the room: a dead flat colour. So their material bends the normal over each face as if the face were
+     pillowed (a gradient map of a spade-shaped dome, read by the vertex's own x, y). The bevel and the rim are not touched. */
+  const domeTex = domeTexture(spadeOutline(), 2.2, 0.11);
+  const lockDomeTex = domeTexture(roundRectOutline(0.7, 0.56, 0.14), 1.0, 0.12);
+  const domed = (mat, tex, span) => {
+    molten(mat);
+    const prev = mat.onBeforeCompile;
+    mat.onBeforeCompile = (sh) => {
+      prev(sh);
+      sh.uniforms.uDome = { value: tex }; sh.uniforms.uDomeSpan = { value: span };
+      const NL = String.fromCharCode(10);
+      sh.vertexShader = 'varying vec2 vDomeP; varying vec3 vDomeN; varying vec3 vDomeX; varying vec3 vDomeY;' + NL + sh.vertexShader.replace('#include <begin_vertex>',
+        '#include <begin_vertex>' + NL + '  vDomeP = position.xy; vDomeN = normal; vDomeX = normalMatrix * vec3(1.0, 0.0, 0.0); vDomeY = normalMatrix * vec3(0.0, 1.0, 0.0);');
+      sh.fragmentShader = 'uniform sampler2D uDome; uniform float uDomeSpan; varying vec2 vDomeP; varying vec3 vDomeN; varying vec3 vDomeX; varying vec3 vDomeY;' + NL + sh.fragmentShader.replace('#include <normal_fragment_maps>', [
+        '#include <normal_fragment_maps>',
+        '{',
+        '  float cap = smoothstep(0.82, 0.97, abs(normalize(vDomeN).z));',
+        '  vec2 gg = (texture2D(uDome, vDomeP / uDomeSpan + 0.5).rg - 0.5) * 1.6;',
+        '  normal = normalize(normal - (vDomeX * gg.x + vDomeY * gg.y) * cap);',
+        '}'
+      ].join(NL));
+    };
+    mat.customProgramCacheKey = () => 'domed' + span;
+    mat.needsUpdate = true;
+    return mat;
+  };
+  const goldSpade = domed(new THREE.MeshPhysicalMaterial({ color: 0xd8962e, metalness: 1, roughness: 0.34, envMapIntensity: 0.7 }), domeTex, 2.2);
+  disposables.push(domeTex, lockDomeTex, goldSpade);
 
   let veil = 0;                                               // see setVeil() below
   // ── the world behind the gates: a bank of light, drifting motes, Little Ace ──
@@ -211,8 +260,32 @@ export function start(host, opts = {}) {
     const r = gateHalf(half, H);
     r.scale.x = -1;                                           // mirror: hinge on the right edge
     right.add(r);
+    [left, right].forEach((p) => p.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } }));
     layoutLock();
     buildShafts(half, H);
+    buildWalls(half, H);
+  }
+
+  /* The walls either side of the gate. Each is a stone face that runs back from just behind the gate along the edge of what the
+     camera sees, a hair outside it, so with the pointer in the middle nothing of it shows; as the camera drifts toward the pointer
+     (the parallax), the frustum slides over and a sliver of stone comes into view on that side, lit by the same light and
+     carrying the bars' shadows. They fade in and out with the world behind the gates. */
+  const wallTex = stoneTexture();
+  const wallMat = new THREE.MeshStandardMaterial({ map: wallTex, bumpMap: wallTex, bumpScale: 2.2, color: 0x8e7d68, roughness: 0.92, metalness: 0, side: THREE.DoubleSide, transparent: true, opacity: 0 });
+  disposables.push(wallTex, wallMat);
+  const walls = new THREE.Group(); scene.add(walls);
+  let wallGeos = [];
+  function buildWalls(half, H) {
+    wallGeos.forEach((g) => g.dispose()); wallGeos = [];
+    while (walls.children.length) walls.remove(walls.children[0]);
+    const zw = -8.5, EPS = 0.06, yy = H * 2.2, WW = 8;
+    for (const sd of [-1, 1]) {
+      const edge = half * (CAM_Z - zw) / CAM_Z + EPS;                  // where the camera's view ends at the wall's depth
+      const g = new THREE.PlaneGeometry(WW, yy * 2);
+      const uv = g.attributes.uv;
+      for (let k = 0; k < uv.count; k++) uv.setXY(k, uv.getX(k) * WW / 1.4, uv.getY(k) * yy * 2 / 0.7);
+      const m = new THREE.Mesh(g, wallMat); m.position.set(sd * (edge + WW / 2), 0, zw); m.receiveShadow = true; walls.add(m); wallGeos.push(g);
+    }
   }
 
   // ── the lock ────────────────────────────────────────────────────────
@@ -220,7 +293,8 @@ export function start(host, opts = {}) {
      halves meet (the shackle drops closed with a glint), and when someone joins it springs open, falls to the floor,
      bounces and settles there, and only then do the gates swing. Its own materials, so it can be faded if it ever has to. */
   const lockMat = (m) => { m.transparent = true; return m; };
-  const lGold = lockMat(new THREE.MeshPhysicalMaterial({ color: 0xeab04f, metalness: 1, roughness: 0.24, roughnessMap: grain, clearcoat: 0.5, clearcoatRoughness: 0.12 }));
+  const lGold = lockMat(new THREE.MeshPhysicalMaterial({ color: 0xeab04f, metalness: 1, roughness: 0.22, clearcoat: 0.5, clearcoatRoughness: 0.12 }));
+  const lBody = lockMat(domed(new THREE.MeshPhysicalMaterial({ color: 0xeab04f, metalness: 1, roughness: 0.2, clearcoat: 0.55, clearcoatRoughness: 0.1 }), lockDomeTex, 1.0));
   const lDeep = lockMat(new THREE.MeshPhysicalMaterial({ color: 0xb47628, metalness: 1, roughness: 0.36, roughnessMap: grain }));
   const lDark = lockMat(new THREE.MeshPhysicalMaterial({ color: 0x1c1409, metalness: 0.9, roughness: 0.45 }));
   molten(lGold); molten(lDeep);
@@ -229,27 +303,28 @@ export function start(host, opts = {}) {
   const lockGeos = [];
   const lockAdd = (parent, geo, mat, x, y, z = 0, rx = 0, ry = 0, rz = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.rotation.set(rx, ry, rz); parent.add(m); lockGeos.push(geo); return m; };
   {
-    lockAdd(lock, new THREE.CylinderGeometry(0.04, 0.04, 1.0, 14), lDeep, 0, 0, 0, 0, 0, Math.PI / 2);        // the rod across the seam
-    lockAdd(lock, new THREE.SphereGeometry(0.075, 16, 12), lGold, -0.5, 0, 0);
-    lockAdd(lock, new THREE.SphereGeometry(0.075, 16, 12), lGold, 0.5, 0, 0);
-    lockAdd(lock, new THREE.TorusGeometry(0.13, 0.03, 10, 32), lGold, 0, -0.06, 0, 0, Math.PI / 2, 0);        // the ring hung on the rod (its plane faces sideways)
+    lockAdd(lock, new THREE.CylinderGeometry(0.04, 0.04, 1.0, 40), lDeep, 0, 0, 0, 0, 0, Math.PI / 2);        // the rod across the seam
+    lockAdd(lock, new THREE.SphereGeometry(0.075, 40, 28), lGold, -0.5, 0, 0);
+    lockAdd(lock, new THREE.SphereGeometry(0.075, 40, 28), lGold, 0.5, 0, 0);
+    lockAdd(lock, new THREE.TorusGeometry(0.13, 0.03, 28, 96), lGold, 0, -0.06, 0, 0, Math.PI / 2, 0);        // the ring hung on the rod (its plane faces sideways)
     const bodyGeo = roundedBoxGeometry(0.64, 0.5, 0.2, 0.1);
-    lockAdd(lockFall, bodyGeo, lGold, 0, 0, 0);
+    lockAdd(lockFall, bodyGeo, lBody, 0, 0, 0);
     const spade = finialGeometry();
     const sp = lockAdd(lockFall, spade, lDark, 0, -0.02, 0.115); sp.scale.setScalar(0.1);                      // a spade stamped into the face
     lockFall.position.set(0, -0.55, 0);
     lock.add(lockFall);
-    const arc = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.04, 12, 32, Math.PI), lDeep);               // the shackle: an arch whose legs sink into the body
+    const arc = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.04, 32, 96, Math.PI), lDeep);               // the shackle: an arch whose legs sink into the body
     arc.position.set(0.17, 0, 0);                                // shackle group origin = its left leg
     lockGeos.push(arc.geometry);
     shackle.add(arc);
-    lockAdd(shackle, new THREE.CylinderGeometry(0.04, 0.04, 0.3, 12), lDeep, 0, -0.15, 0);      // the long leg: stays in the body even when the loop is lifted
-    lockAdd(shackle, new THREE.CylinderGeometry(0.04, 0.04, 0.08, 12), lDeep, 0.34, -0.04, 0);  // the short leg: its tip comes out of the body, so the ring can slide off it
+    lockAdd(shackle, new THREE.CylinderGeometry(0.04, 0.04, 0.3, 40), lDeep, 0, -0.15, 0);      // the long leg: stays in the body even when the loop is lifted
+    lockAdd(shackle, new THREE.CylinderGeometry(0.04, 0.04, 0.08, 40), lDeep, 0.34, -0.04, 0);  // the short leg: its tip comes out of the body, so the ring can slide off it
     shackle.position.set(-0.17, 0.25, 0);                        // on top of the body (body centre is lockFall's origin)
     lockFall.add(shackle);
   }
+  lock.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   scene.add(lock);
-  disposables.push(lGold, lDeep, lDark);
+  disposables.push(lGold, lBody, lDeep, lDark);
   /* The padlock turns about the centre of its loop (the loop's top sits in the ring, on the ring's own circle), so the ring
      slides along the loop. lockA is that turn: 0 is hanging upright, HOOK_A is turned far enough that the short leg's tip has
      cleared the ring. lockLift is how far the loop stands up out of the body (the body hangs lower while it is): 0 is locked. */
@@ -284,7 +359,7 @@ export function start(host, opts = {}) {
     lockFall.rotation.z = lockA;
     lockFall.position.set(h * Math.sin(lockA), -0.30 - h * Math.cos(lockA) - lockDrop, 0);   // turning about the loop's centre, which sits at (0, -0.30)
     shackle.position.set(-0.17, h, 0);
-    [lGold, lDeep, lDark].forEach((m) => { m.opacity = lockAlpha; });
+    [lGold, lBody, lDeep, lDark].forEach((m) => { m.opacity = lockAlpha; });
     lock.visible = lockAlpha > 0.01;
   }
   applyLock();
@@ -344,19 +419,19 @@ export function start(host, opts = {}) {
     const r = Math.max(0.03, Math.min(0.05, w / 160));
 
     // stiles
-    add(new THREE.CylinderGeometry(0.1, 0.1, topY(0) - bottom + 0.2, 20), gold, 0.1, (topY(0) + bottom) / 2);
-    add(new THREE.CylinderGeometry(0.075, 0.075, topY(w) - bottom + 0.1, 20), gold, w - 0.06, (topY(w) + bottom) / 2);
+    add(new THREE.CylinderGeometry(0.1, 0.1, topY(0) - bottom + 0.2, 48), gold, 0.1, (topY(0) + bottom) / 2);
+    add(new THREE.CylinderGeometry(0.075, 0.075, topY(w) - bottom + 0.1, 48), gold, w - 0.06, (topY(w) + bottom) / 2);
     // rails
     for (const y of [bottom, railLow, railMid, railHigh]) {
-      const rail = add(new THREE.CylinderGeometry(0.055, 0.055, w - 0.1, 16), goldDeep, w / 2, y, 0, Math.PI / 2);
+      const rail = add(new THREE.CylinderGeometry(0.055, 0.055, w - 0.1, 40), goldDeep, w / 2, y, 0, Math.PI / 2);
       rail.material = y === railMid ? gold : goldDeep;
     }
     // the arch, a tube along the top
     const pts = [];
     for (let i = 0; i <= 24; i++) { const x = 0.1 + (w - 0.16) * (i / 24); pts.push(new THREE.Vector3(x, topY(x), 0)); }
-    add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 64, 0.07, 12, false), gold, 0, 0);
+    add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 200, 0.07, 28, false), gold, 0, 0);
     // hinge straps: forged plates riveted across the hinge stile at three rails, which is how a gate this size is really hung
-    const strapGeo = strapGeometry(0.66, 0.15), rivetGeo = new THREE.SphereGeometry(0.03, 14, 10);
+    const strapGeo = strapGeometry(0.66, 0.15), rivetGeo = new THREE.SphereGeometry(0.03, 24, 16);
     geos.push(strapGeo, rivetGeo);
     for (const y of [bottom, railMid, railHigh]) {
       const sp = new THREE.Mesh(strapGeo, goldDeep); sp.position.set(0.0, y, 0.06); g.add(sp);
@@ -367,18 +442,23 @@ export function start(host, opts = {}) {
     const step = (w - 0.3) / n;
     const spadeGeo = finialGeometry();
     geos.push(spadeGeo);
-    const pearlSmall = new THREE.SphereGeometry(0.085, 32, 24);
+    const pearlSmall = new THREE.SphereGeometry(0.085, 48, 32);
     geos.push(pearlSmall);
     // Collars: a rounded gold knuckle wrapping every joint, as forged ironwork has, so no bar is seen cutting
     // straight through a rail (the bare cylinder-through-cylinder seams are what read as parts pushed together).
-    const knuckleGeo = new THREE.SphereGeometry(1, 20, 14);
+    const knuckleGeo = new THREE.SphereGeometry(1, 32, 20);
     geos.push(knuckleGeo);
+    const bobbinGeo = latheShape([[0, -2.6], [1.25, -2.6], [1.5, -2.4], [1.2, -2.15], [1.0, -1.95], [1.3, -1.35], [1.85, -0.65], [2.15, 0], [1.85, 0.65], [1.3, 1.35], [1.0, 1.95], [1.2, 2.15], [1.5, 2.4], [1.25, 2.6], [0, 2.6]]);
+    geos.push(bobbinGeo);
     const knuckle = (x, y, rad) => { const k = new THREE.Mesh(knuckleGeo, gold); k.position.set(x, y, 0); k.scale.set(rad, rad, rad * 0.85); g.add(k); };
     const rails = [bottom, railLow, railMid, railHigh];
     for (let i = 1; i < n; i++) {
       const x = 0.15 + i * step, top = topY(x);
-      add(new THREE.CylinderGeometry(r, r, top - bottom, 10), gold, x, (top + bottom) / 2);
-      const f = new THREE.Mesh(spadeGeo, gold); f.position.set(x, top + 0.03, 0.1); f.scale.setScalar(0.2); g.add(f);   // on the arch's face, not on top of it
+      add(new THREE.CylinderGeometry(r, r, top - bottom, 32), gold, x, (top + bottom) / 2);
+      // turned bobbins: a swelling bead with a ring at each end, mid-way between every pair of rails, as on forged balusters
+      const spans = [bottom, railLow, railMid, railHigh, top];
+      for (let q = 0; q < 4; q++) { const yy = (spans[q] + spans[q + 1]) / 2; if (spans[q + 1] - spans[q] < 0.35) continue; const bb = new THREE.Mesh(bobbinGeo, gold); bb.position.set(x, yy, 0); bb.scale.set(r, r, r); g.add(bb); }
+      const f = new THREE.Mesh(spadeGeo, goldSpade); f.position.set(x, top + 0.03, 0.1); f.scale.setScalar(0.2); g.add(f);   // on the arch's face, not on top of it
       for (const y of rails) knuckle(x, y, 0.074);
       knuckle(x, top, 0.088);
     }
@@ -386,13 +466,14 @@ export function start(host, opts = {}) {
     for (const y of rails) { knuckle(0.1, y, 0.12); knuckle(w - 0.06, y, 0.095); }
     knuckle(0.1, topY(0.1), 0.12);
     knuckle(w - 0.06, topY(w - 0.06), 0.1);
-    knuckle(0.1, topY(0) + 0.2, 0.15);
+    const fin = new THREE.Mesh(finialLathe(), gold); fin.position.set(0.1, topY(0) + 0.08, 0); g.add(fin); geos.push(fin.geometry);   // a turned finial capping the hinge stile
     // rings between the high rail and the arch, every other gap, each holding a pearl
     for (let i = 0; i < n; i += 2) {
       const x = 0.15 + (i + 0.5) * step;
       const y = (railHigh + Math.min(topY(x), railHigh + 1.4)) / 2;
       const rad = Math.min(step * 0.42, 0.42);
-      add(new THREE.TorusGeometry(rad, 0.03, 10, 40), gold, x, y);
+      add(new THREE.TorusGeometry(rad, 0.03, 18, 100), gold, x, y);
+      add(new THREE.TorusGeometry(0.115, 0.024, 16, 56), gold, x, y, 0.02);     // the pearl's bezel
       const p = new THREE.Mesh(pearlSmall, pearl); p.position.set(x, y, 0.02); p.scale.setScalar(1.15); g.add(p);
     }
     // half of the centre medallion: when the halves meet they make a full ring around a full spade
@@ -400,14 +481,17 @@ export function start(host, opts = {}) {
     // behind the card instead of its bottom peeking out underneath.
     const R = Math.min(0.95, w * 0.3), cy = camera.aspect < 0.8 ? railHigh : (railMid + railHigh) / 2;
     medal = { R, cy, w, n, step, r };                           // where the lock hangs, and where the gaps between the bars are (for the light through them)
-    const arc = add(new THREE.TorusGeometry(R, 0.075, 14, 48, Math.PI), gold, w - 0.02, cy, 0.04, Math.PI / 2);
+    const arc = add(new THREE.TorusGeometry(R, 0.075, 30, 140, Math.PI), gold, w - 0.02, cy, 0.04, Math.PI / 2);
     arc.rotation.y = 0;
-    const hs = new THREE.Mesh(halfSpadeGeometry(), gold); hs.position.set(w, cy, 0.05); hs.scale.setScalar(R * 0.62); g.add(hs);
+    add(new THREE.TorusGeometry(R * 0.8, 0.028, 16, 100, Math.PI), gold, w - 0.02, cy, 0.04, Math.PI / 2);   // a second, finer ring inside it
+    const stud = new THREE.SphereGeometry(0.095, 32, 20); geos.push(stud);
+    for (const k of [1, 2, 4, 5]) { const th = Math.PI / 2 + k * Math.PI / 6; const sm = new THREE.Mesh(stud, gold); sm.position.set(w - 0.02 + R * Math.cos(th), cy + R * Math.sin(th), 0.05); g.add(sm); }   // studs round the ring
+    const hs = new THREE.Mesh(halfSpadeGeometry(), goldSpade); hs.position.set(w, cy, 0.05); hs.scale.setScalar(R * 0.62); g.add(hs);
     geos.push(hs.geometry);
     const pc = new THREE.Mesh(pearlSmall, pearl); pc.position.set(w - 0.02 - R, cy, 0.06); pc.scale.setScalar(1.3); g.add(pc);
     // half of a spade crowning the peak where the halves meet, its foot on the arch
     const S2 = Math.min(0.34, w * 0.11) * 0.62, cy2 = topY(w) + S2 * 0.95;
-    const hs2 = new THREE.Mesh(halfSpadeGeometry(), gold); hs2.position.set(w, cy2, 0.05); hs2.scale.setScalar(S2); g.add(hs2);
+    const hs2 = new THREE.Mesh(halfSpadeGeometry(), goldSpade); hs2.position.set(w, cy2, 0.05); hs2.scale.setScalar(S2); g.add(hs2);
     geos.push(hs2.geometry);
     g.dispose = () => geos.forEach((x) => x.dispose());
     built.push(g);
@@ -427,8 +511,12 @@ export function start(host, opts = {}) {
     build(W, H);
     const dSky = CAM_Z - sky.position.z, visSky = 2 * dSky * Math.tan(THREE.MathUtils.degToRad(FOV / 2));
     sky.scale.set(visSky * camera.aspect * 1.08, visSky * 1.08, 1);
+    const ext = Math.max(W, H) * 0.85 + 6, sc = key.shadow.camera;
+    const groundY = -H / 2 + 0.18;                             // the foot of the posts
+    shadowCatch.position.set(0, groundY, -19); shadowCatch.scale.set(W * 5, 44, 1);
+    sc.left = -ext; sc.right = ext; sc.top = ext; sc.bottom = -ext; sc.updateProjectionMatrix();
     const dAce = CAM_Z - ACE_Z, visAce = 2 * dAce * Math.tan(THREE.MathUtils.degToRad(FOV / 2));
-    aceFloor = ace.position.y = -visAce * 0.31;
+    aceFloor = ace.position.y = groundY;                        // he runs on the same ground the shadows fall on
     ace.userData.range = visAce * camera.aspect * 0.42;
     pose(lastAngle);
   }
@@ -443,6 +531,8 @@ export function start(host, opts = {}) {
   function setVeil(v) {
     veil = v;
     sky.material.opacity = v;
+    shadowCatch.material.opacity = 0.55 * v;
+    wallMat.opacity = v;
     moteMat.opacity = 0.3 * v;
     if (handT < 0) { if (aceMat) aceMat.opacity = v; if (aceShadow) aceShadow.material.opacity = 0.35 * v; }
   }
@@ -492,7 +582,7 @@ export function start(host, opts = {}) {
     // the glint when they meet, and a breath of light on the gold the rest of the time
     const since = hitAt < 0 ? 99 : t - hitAt;
     flash.intensity = since < 1.2 ? 22 * Math.exp(-since * 4.5) : 0;
-    key.position.x = -6 + Math.sin(t * 0.35) * 2.5;
+    key.position.x = -1.3 + Math.sin(t * 0.35) * 0.6;
     glow.intensity = 6 + Math.sin(t * 0.8) * 0.6;
     parX += (parTX - parX) * 0.05; parY += (parTY - parY) * 0.05;
     const shake = since < 0.25 && !reduced ? Math.sin(since * 90) * 0.035 * (1 - since / 0.25) : 0;
@@ -604,6 +694,7 @@ export function start(host, opts = {}) {
 
   return {
     closed,
+    stats() { const r = renderer.info.render; return { triangles: r.triangles, calls: r.calls, geometries: renderer.info.memory.geometries }; },
     /* The floor he runs on, as a y in the host's px: where the page's Little Ace is handed over. */
     floorY() {
       const visAce = 2 * (CAM_Z - ACE_Z) * Math.tan(THREE.MathUtils.degToRad(FOV / 2));
@@ -651,6 +742,7 @@ export function start(host, opts = {}) {
       built.forEach((g) => g.dispose());
       lockGeos.forEach((g) => g.dispose());
       if (shaftGeo) shaftGeo.dispose();
+      wallGeos.forEach((g) => g.dispose());
       disposables.forEach((d) => d && d.dispose && d.dispose());
       renderer.dispose();
       try { renderer.forceContextLoss(); } catch (e) {}
@@ -661,20 +753,51 @@ export function start(host, opts = {}) {
 
 // ── shapes and textures ──────────────────────────────────────────────
 
-// The soft studio the gold reflects: the room it had before, plus tall thin strip lights either side and a broad warm
-// panel above. On a round bar a tall strip stretches into the long crisp highlight polished metal really shows; the old
-// room alone gave short blotches.
+// The studio the gold reflects. Polished metal looks real because it reflects CONTRAST: dark room, hard bright light
+// sources. So this is a dark box with a few very bright panels in it (tall strips left, right and front-left/right, a
+// broad warm box overhead, a dim warm bounce below and a faint panel behind). On a round bar each strip becomes a long
+// crisp highlight with true dark reflection between them, the way real gilded ironwork reads.
 function goldStudio() {
-  const s = new RoomEnvironment();
+  const s = new THREE.Scene();
+  const room = new THREE.Mesh(new THREE.BoxGeometry(60, 40, 60), new THREE.MeshBasicMaterial({ color: new THREE.Color(0.05, 0.03, 0.015), side: THREE.BackSide, toneMapped: false }));
+  s.add(room);
   const panel = (w, h, x, y, z, rgb) => {
     const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: new THREE.Color(rgb[0], rgb[1], rgb[2]), side: THREE.DoubleSide, toneMapped: false }));
-    m.position.set(x, y, z); m.lookAt(0, 8, 0); s.add(m);
+    m.position.set(x, y, z); m.lookAt(0, 0, 0); s.add(m);
   };
-  panel(0.9, 16, -11, 8, 5, [9, 7.2, 4.4]);
-  panel(0.9, 16, 11, 8, 5, [4.2, 5.2, 8.5]);
-  panel(0.5, 16, -4, 8, 11, [6, 5, 3.2]);
-  panel(12, 5, 0, 20, -2, [5.5, 4.2, 2.6]);
+  panel(22, 12, 0, 16, 0, [7, 5.6, 3.4]);          // overhead softbox, warm
+  panel(1.6, 22, -14, 3, 5, [11, 8.6, 5.2]);      // tall strip, left: hot warm
+  panel(1.6, 22, 14, 3, 5, [6, 6.8, 9]);            // tall strip, right: cool white
+  panel(0.9, 20, -5.5, 4, 15, [13, 10.5, 7]);       // two thin hot strips in front, either side of the viewer
+  panel(0.9, 20, 5.5, 4, 15, [8, 8, 8]);
+  panel(36, 20, 0, 3, 17, [1.9, 1.3, 0.7]);        // a broad dim warm panel behind the viewer: flat faces turn gold, not dark brown
+  panel(26, 3, 0, -9, 12, [1.6, 1.1, 0.6]);        // dim warm bounce from below
+  panel(18, 10, 0, 3, -18, [3.2, 2.5, 1.5]);       // faint panel behind: lights the backs of things and gives edges a rim
+  panel(2, 20, -17, 2, -6, [6, 4.6, 2.6]);         // warm rim strips, left and right behind
+  panel(2, 20, 17, 2, -6, [4, 4.4, 5.5]);
   return s;
+}
+
+// Dark warm stone blocks in courses, with a little variation and mortar lines: the wall beside the gate.
+function stoneTexture() {
+  const c = document.createElement('canvas'); c.width = 512; c.height = 256;
+  const x = c.getContext('2d');
+  x.fillStyle = '#17120d'; x.fillRect(0, 0, 512, 256);
+  let seed = 5; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  const rows = 4, bh = 256 / rows;
+  for (let r = 0; r < rows; r++) {
+    let px = -(r % 2) * 64 - rnd() * 20;
+    while (px < 512) {
+      const bw = 110 + rnd() * 70, l = 38 + rnd() * 16;
+      x.fillStyle = 'hsl(' + (28 + rnd() * 8) + ',' + (16 + rnd() * 10) + '%,' + l + '%)';
+      x.fillRect(px + 3, r * bh + 3, bw - 6, bh - 6);
+      for (let k = 0; k < 90; k++) { x.fillStyle = 'rgba(' + (rnd() < 0.5 ? '0,0,0' : '255,235,200') + ',' + (0.03 + rnd() * 0.05) + ')'; x.fillRect(px + 3 + rnd() * (bw - 8), r * bh + 3 + rnd() * (bh - 8), 2 + rnd() * 5, 1 + rnd() * 3); }
+      px += bw;
+    }
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+  return t;
 }
 
 // A fine grain that runs along the bars (the canvas's x is around a bar, its y along it), as a roughness map: the roughness
@@ -698,11 +821,83 @@ function grainTexture() {
   return t;
 }
 
+// The gradient of a pillow over a flat shape: red and green hold the slope in x and y (0.5 = flat). The shape's outline (pts,
+// in the shape's own units) is filled, blurred widely (so the swell is smooth, with no ridge down the middle), and read as a
+// height; the map covers -span/2 to span/2 and is looked up with the vertex's own x, y.
+function domeTexture(pts, span, peak) {
+  const N = 256, c = document.createElement('canvas'); c.width = c.height = N;
+  const x = c.getContext('2d');
+  x.fillStyle = '#000'; x.fillRect(0, 0, N, N);
+  x.fillStyle = '#fff'; x.beginPath();
+  pts.forEach((p, k) => { const px = (p[0] / span + 0.5) * N, py = (0.5 - p[1] / span) * N; if (k) x.lineTo(px, py); else x.moveTo(px, py); });
+  x.fill();
+  const m = x.getImageData(0, 0, N, N).data;
+  let h = new Float32Array(N * N);
+  for (let k = 0; k < N * N; k++) h[k] = m[k * 4] / 255;
+  const box = (src, r, horiz) => {                                        // one box-blur pass along a row or a column
+    const o = new Float32Array(N * N), w = 2 * r + 1;
+    for (let a = 0; a < N; a++) {
+      let acc = 0;
+      for (let b = -r; b <= r; b++) acc += src[horiz ? a * N + Math.min(N - 1, Math.max(0, b)) : Math.min(N - 1, Math.max(0, b)) * N + a];
+      for (let b = 0; b < N; b++) {
+        o[horiz ? a * N + b : b * N + a] = acc / w;
+        const add = Math.min(N - 1, b + r + 1), sub = Math.max(0, b - r);
+        acc += src[horiz ? a * N + add : add * N + a] - src[horiz ? a * N + sub : sub * N + a];
+      }
+    }
+    return o;
+  };
+  const R = Math.round(N * 0.085);
+  for (let k = 0; k < 3; k++) h = box(box(h, R, true), R, false);          // three passes: close to a gaussian
+  for (let k = 0; k < N * N; k++) { const t = Math.min(1, Math.max(0, (h[k] - 0.12) / 0.85)); h[k] = peak * t * t * (3 - 2 * t); }
+  const out = new Uint8Array(N * N * 4), px = span / N;
+  for (let y = 0; y < N; y++) for (let xx = 0; xx < N; xx++) {
+    const xl = h[y * N + Math.max(0, xx - 1)], xr = h[y * N + Math.min(N - 1, xx + 1)];
+    const yu = h[Math.max(0, y - 1) * N + xx], yd = h[Math.min(N - 1, y + 1) * N + xx];
+    const gx = (xr - xl) / (2 * px), gy = (yu - yd) / (2 * px);            // the shape's y runs up, the canvas's runs down
+    const o = ((N - 1 - y) * N + xx) * 4;                                  // texture row 0 is the shape's lowest y
+    out[o] = Math.max(0, Math.min(255, Math.round(128 + gx / 0.8 * 127)));
+    out[o + 1] = Math.max(0, Math.min(255, Math.round(128 + gy / 0.8 * 127)));
+    out[o + 2] = 128; out[o + 3] = 255;
+  }
+  const t = new THREE.DataTexture(out, N, N, THREE.RGBAFormat);
+  t.magFilter = t.minFilter = THREE.LinearFilter; t.generateMipmaps = false; t.needsUpdate = true;
+  return t;
+}
+function spadeOutline() {
+  const sh = new THREE.Shape();
+  sh.moveTo(0, 1);
+  sh.bezierCurveTo(-0.15, 0.62, -0.95, 0.25, -0.95, -0.2);
+  sh.bezierCurveTo(-0.95, -0.62, -0.42, -0.78, -0.12, -0.42);
+  sh.lineTo(-0.32, -1); sh.lineTo(0.32, -1); sh.lineTo(0.12, -0.42);
+  sh.bezierCurveTo(0.42, -0.78, 0.95, -0.62, 0.95, -0.2);
+  sh.bezierCurveTo(0.95, 0.25, 0.15, 0.62, 0, 1);
+  return sh.getPoints(48).map((p) => [p.x, p.y]);
+}
+function roundRectOutline(w, h, r) {
+  const o = [];
+  [[w / 2 - r, h / 2 - r, 0], [-w / 2 + r, h / 2 - r, 90], [-w / 2 + r, -h / 2 + r, 180], [w / 2 - r, -h / 2 + r, 270]].forEach(([cx, cy, a0]) => {
+    for (let k = 0; k <= 12; k++) { const a = (a0 + k * 7.5) * Math.PI / 180; o.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]); }
+  });
+  return o;
+}
+
+// A smooth turned shape: pts are [radius, height] pairs through which a spline passes, spun round the y axis.
+function latheShape(pts, seg = 32) {
+  const curve = new THREE.SplineCurve(pts.map((p) => new THREE.Vector2(p[0], p[1])));
+  const v = curve.getPoints(pts.length * 4).map((p) => new THREE.Vector2(Math.max(0, p.x), p.y));
+  return new THREE.LatheGeometry(v, seg);
+}
+// The finial on top of the hinge stile: a ring, a neck, a ball, a point: about 0.5 tall.
+function finialLathe() {
+  return latheShape([[0, 0], [0.1, 0], [0.122, 0.025], [0.124, 0.06], [0.09, 0.09], [0.056, 0.13], [0.052, 0.17], [0.09, 0.22], [0.128, 0.285], [0.134, 0.345], [0.105, 0.415], [0.052, 0.465], [0.014, 0.5], [0, 0.515]], 64);
+}
+
 // A hinge strap: a flat plate with a rounded far end, its hinge end at x = 0.
 function strapGeometry(len, h) {
   const s = new THREE.Shape(), r = h / 2;
   s.moveTo(0, -r); s.lineTo(len - r, -r); s.absarc(len - r, 0, r, -Math.PI / 2, Math.PI / 2, false); s.lineTo(0, r); s.lineTo(0, -r);
-  return new THREE.ExtrudeGeometry(s, { depth: 0.04, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.02, bevelSegments: 2, curveSegments: 14 });
+  return new THREE.ExtrudeGeometry(s, { depth: 0.04, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.02, bevelSegments: 6, curveSegments: 36 });
 }
 
 // A rounded slab, centred on the origin, for the padlock's body.
@@ -712,7 +907,7 @@ function roundedBoxGeometry(w, h, d, r) {
   s.lineTo(x + w, y + h - r); s.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
   s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r);
   s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y);
-  const g = new THREE.ExtrudeGeometry(s, { depth: d, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.03, bevelSegments: 3, curveSegments: 10 });
+  const g = new THREE.ExtrudeGeometry(s, { depth: d, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.03, bevelSegments: 8, curveSegments: 28 });
   g.translate(0, 0, -d / 2);
   return g;
 }
@@ -728,7 +923,7 @@ function finialGeometry() {
   s.lineTo(0.12, -0.42);
   s.bezierCurveTo(0.42, -0.78, 0.95, -0.62, 0.95, -0.2);
   s.bezierCurveTo(0.95, 0.25, 0.15, 0.62, 0, 1);
-  const g = new THREE.ExtrudeGeometry(s, { depth: 0.22, bevelEnabled: true, bevelThickness: 0.08, bevelSize: 0.07, bevelSegments: 3, curveSegments: 14 });
+  const g = new THREE.ExtrudeGeometry(s, { depth: 0.22, bevelEnabled: true, bevelThickness: 0.08, bevelSize: 0.07, bevelSegments: 6, curveSegments: 24 });
   g.center();
   return g;
 }
@@ -742,7 +937,7 @@ function halfSpadeGeometry() {
   s.lineTo(-0.32, -1);
   s.lineTo(0, -1);
   s.lineTo(0, 1);
-  const g = new THREE.ExtrudeGeometry(s, { depth: 0.14, bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.04, bevelSegments: 3, curveSegments: 16 });
+  const g = new THREE.ExtrudeGeometry(s, { depth: 0.14, bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.04, bevelSegments: 6, curveSegments: 24 });
   g.translate(0, 0, -0.07);
   return g;
 }
