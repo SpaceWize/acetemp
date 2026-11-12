@@ -237,7 +237,8 @@ function hideChat(){
  if(innerWidth>=900)chatCloseTimer=setTimeout(()=>{panel.hidden=true;},580);
  else panel.hidden=true;
 }
-pet.addEventListener('click',showChat);launcher.addEventListener('click',showChat);close.addEventListener('click',hideChat);
+if(!matchMedia('(pointer:coarse)').matches)pet.addEventListener('click',showChat);   // on a phone his taps are counted instead (TAP CODES, below), and one tap opens the chat from there
+launcher.addEventListener('click',showChat);close.addEventListener('click',hideChat);
 /* Services without their own page (Advisory, Working Session, On-Site):
    their links open Little Ace, who points to the contact form. */
 const ASK_TOPIC={onsite:'On-Site Assignments'};
@@ -710,6 +711,7 @@ let cursorX=innerWidth/2;document.addEventListener('pointermove',e=>{cursorX=e.c
    while the home intro plays, and tries again a few seconds later.
    A joke is decorative, so it is hidden from screen readers. A link is a real link: while the pointer
    or keyboard focus is on it the bubble stops following him and stays up, so it can be clicked. */
+const TOUCH=matchMedia('(pointer:coarse)').matches;   // a phone or tablet: no keyboard to type the codes on, so the hints say how many times to tap him instead
 const THOUGHTS=[
   {t:'One problem. One meeting with Ace. That’s a Private Working Session.',href:'private-working-session.html'},
   'Ace has meetings. I have buttons.',
@@ -729,12 +731,16 @@ const THOUGHTS=[
   {t:'You can apply to the Invested Aces Mastermind right here.',href:'mastermind-application.html'},
   {t:'Need the unfiltered report on a team, a location or an opportunity? Ask about On-Site Assignments.',href:'contact.html'},
   {t:'Not sure where to start? Everything starts with a 30-minute assessment call.',href:'contact.html'},
-  'Press Shift + ACE and see what happens.',
-  'Press Shift + FLY and see what happens.',
-  {t:'Press Shift + THOR and see what happens.',normal:true},
-  'Press Shift + SANTA and see what happens.',
-  {t:'Press Shift + SLIP and see what happens.',xmas:true},
-].map(l=>typeof l==='string'?{t:l}:l).filter(l=>(!l.xmas||window.ACE_XMAS)&&(!l.normal||!window.ACE_XMAS)&&(!l.href||l.href.split('#')[0]!==(location.pathname.split('/').pop()||'index.html')));
+  {t:'Press Shift + ACE and see what happens.',key:true},
+  {t:'Tap me twice and see what happens.',tap:true},
+  {t:'Press Shift + FLY and see what happens.',key:true},
+  {t:'Tap me three times and see what happens.',tap:true},
+  {t:'Press Shift + THOR and see what happens.',normal:true,key:true},
+  {t:'Tap me four times and see what happens.',normal:true,tap:true},
+  {t:'Tap me five times and see what happens.',normal:true,tap:true},
+  {t:'Press Shift + SANTA and see what happens.',key:true},
+  {t:'Press Shift + SLIP and see what happens.',xmas:true,key:true},
+].map(l=>typeof l==='string'?{t:l}:l).filter(l=>(!l.xmas||window.ACE_XMAS)&&(!l.normal||!window.ACE_XMAS)&&(!l.key||!TOUCH)&&(!l.tap||TOUCH)&&(!l.href||l.href.split('#')[0]!==(location.pathname.split('/').pop()||'index.html')));
 const THINK_GAP_MIN=20,THINK_GAP_MAX=45,thinkGap=()=>THINK_GAP_MIN+Math.random()*(THINK_GAP_MAX-THINK_GAP_MIN),THINK_FOR=7,THINK_LINK_FOR=11,ACE_THOUGHT_KEY='ace-thought';
 const bubble=document.createElement('div');bubble.className='ace-think';bubble.setAttribute('aria-hidden','true');
 bubble.innerHTML='<p></p><i class="ace-think__dot ace-think__dot--a"></i><i class="ace-think__dot ace-think__dot--b"></i><i class="ace-think__tear ace-think__tear--a"></i><i class="ace-think__tear ace-think__tear--b"></i><b class="ace-think__fx ace-think__fx--a"></b><b class="ace-think__fx ace-think__fx--b"></b>';
@@ -1770,6 +1776,25 @@ function askPower(kind){
   if(powerReady(true)){leaveSnow();startBig(kind);}
   else{powerQueue=true;powerQueueKind=kind;powerQueueUntil=pwClock+20;}
 }   // a deliberate trigger waits up to 20s for him to finish a climb or jump
+/* TAP CODES (phones and tablets, which have no keyboard for the Shift codes): tap him 2 times for the power-up (ACE), 3 for the
+   flight (FLY), 4 for the shield and hammer (THOR), 5 for the sword (NAVI). Taps count when each follows the last within
+   TAP_GAP ms; one tap still opens the chat, just that little later, once it is clear no more are coming. At Christmas there is no
+   THOR or NAVI, and the sleigh and the slip happen on their own, so only 2 and 3 do anything. A mouse click opens the chat at once, as ever. */
+const TAP_GAP=430,TAP_KIND={2:'power',3:'flight',4:'summon',5:'navi'};
+let tapN=0,tapTimer=0;
+pet.addEventListener('click',e=>{
+  if(!TOUCH)return;
+  e.stopImmediatePropagation();e.preventDefault();
+  tapN++;clearTimeout(tapTimer);
+  tapTimer=setTimeout(()=>{
+    const n=Math.min(5,tapN);tapN=0;
+    if(n===1){if(!open)showChat();return;}
+    const kind=TAP_KIND[n];
+    if(open||(window.ACE_XMAS&&(kind==='summon'||kind==='navi')))return;
+    if(navigator.vibrate)try{navigator.vibrate(25);}catch(e){}
+    askPower(kind);
+  },TAP_GAP);
+},true);
 /* ── SLIPPING ──────────────────────────────────────────────────
    Christmas only, once the snow is up, and every minute or two: standing on anything he can walk on (a ledge, a button or the floor) he slips. Three frames of wobble (his
    feet go, he tips back), then he falls backwards off the button with the fourth frame, tipped right over (it can be spun as he
