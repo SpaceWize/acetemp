@@ -821,13 +821,13 @@ const ACTIVE_WINDOW=1.2,SETTLE_MOVES=3,SETTLE_SECS=4,REST_MIN=2.5,REST_MAX=5,WAN
 /* Nobody has touched, scrolled or moved for FREE_ROAM_AFTER seconds: the page is stagnant, so he stops resting between short wanders
    and runs about and climbs for as long as it stays that way (on a phone the visitor scrolls constantly, which keeps cutting his climbs short). */
 const FREE_ROAM_AFTER=20;
-let lastActive=0,movesLeft=SETTLE_MOVES,wanderUntil=0;
-const markActive=()=>{lastActive=clock;};
+let lastActive=0,lastActiveMs=performance.now(),movesLeft=SETTLE_MOVES,wanderUntil=0;
+const markActive=()=>{lastActive=clock;lastActiveMs=performance.now();};
 for(const ev of ['pointermove','scroll','wheel','keydown','touchstart'])addEventListener(ev,markActive,{passive:true});
 function busy(){return clock-lastActive<ACTIVE_WINDOW;}
 function decide(){
   if(busy()){movesLeft=SETTLE_MOVES;choose(true);nextDecision=Math.min(nextDecision,clock+.5+Math.random()*.9);return;}
-  if(clock-lastActive>FREE_ROAM_AFTER){
+  if(performance.now()-lastActiveMs>FREE_ROAM_AFTER*1000){   // real seconds: `clock` runs slow on a phone that drops frames
     if(Math.random()<.18){nextDecision=clock+1.5+Math.random()*2;return;}                // the odd breather
     choose(true,true);nextDecision=Math.min(nextDecision,clock+.7+Math.random()*1.3);return;
   }
@@ -857,7 +857,7 @@ const DRAG_SLOP=6;                  // px of travel before a press is a drag
 const DRAG_STEPS=[70,170,340,620];    // px/s between: straight, a little, some, well, fully
 const DRAG_LEFT=[6,3,1,2,0];          // straight → fully left (hand moving right)
 const DRAG_RIGHT=[6,7,9,10];          // straight → well right (hand moving left); fully = 11-12 alternated
-let dragSwingV=0;
+let dragSwingV=0,lastThrowLine=-1e9;   // the "stop throwing me" line: the second pickup, then every sixth, and never twice within 90 seconds (on a phone a swipe that starts on him is a pickup too)
 function dragPoseNow(dt){
   dragSwingV+=(dragVX-dragSwingV)*Math.min(1,dt*12);     // eased, so the frame does not flicker
   const v=dragSwingV,a=Math.abs(v);
@@ -885,7 +885,7 @@ addEventListener('pointermove',e=>{
   if(!dragging){
     if(Math.hypot(e.clientX-dragDownX,e.clientY-dragDownY)<DRAG_SLOP)return;
     dragging=true;suppressClick=true;
-    try{const n=(parseInt(sessionStorage.getItem('ace-pickups'),10)||0)+1;sessionStorage.setItem('ace-pickups',String(n));if(n%2===0){think('Please stop throwing me. …Okay, one more.');thinkHeld=true;}else if(thinkHeld)quiet();}catch(e){}   // every second pickup
+    try{const n=(parseInt(sessionStorage.getItem('ace-pickups'),10)||0)+1;sessionStorage.setItem('ace-pickups',String(n));const nowMs=performance.now();if((n===2||(n>2&&(n-2)%6===0))&&nowMs-lastThrowLine>90000){lastThrowLine=nowMs;think('Please stop throwing me. …Okay, one more.');thinkHeld=true;}else if(thinkHeld)quiet();}catch(e){}   // every second pickup
     try{pet.setPointerCapture(dragPointer);}catch{}
     pet.classList.add('is-dragging');
     climb=null;runGoal=null;pendingJump=null;pointUntil=0;
