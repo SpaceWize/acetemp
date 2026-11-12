@@ -133,7 +133,7 @@
      looping, and only while it is on screen and the tab is visible. The
      matching CSS lives under (max-width:900px) next to .hero__plate. */
   function heroVideoSmall() {
-    if (reduce.matches || !window.matchMedia('(max-width: 900px)').matches) return;
+    if (reduce.matches || !window.matchMedia('(max-width: 900px), (min-width: 901px) and (hover: none)').matches) return;   // phones, and tablets held sideways
     var video = document.querySelector('[data-hero-video]');
     if (!video) return;
     video.muted = true; video.loop = true; video.setAttribute('playsinline', '');

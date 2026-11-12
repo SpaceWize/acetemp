@@ -2262,3 +2262,17 @@ html:not([data-depth="flat"]) .hero__line--gold.ll{
 /* Phones: the film grain is a 5% noise laid over the playing hero video with a blend mode, which makes the phone re-blend the
    video on every frame. Plain 5% noise looks the same and costs nothing. */
 @media (max-width:900px){.grain{mix-blend-mode:normal}}
+
+/* ═══ TABLETS HELD SIDEWAYS (touch, wider than 900px) ═══
+   An iPad on its side is 1024px+ wide, so it got the desktop header, whose menus open on hover, and a hero with no film
+   (the cursor-led spotlight is hover-only). Touch gets the burger menu instead, and the clip simply plays across the
+   whole hero, with the same dark ramp on the left that protects the headline on a desktop. */
+@media (min-width:901px) and (hover:none) and (pointer:coarse){
+  .nav,.site-head__cta{display:none}
+  .burger{display:grid}
+  .site-head{background:rgba(10,9,8,.94);border-bottom-color:var(--line-dark)}
+}
+@media (min-width:901px) and (hover:none) and (prefers-reduced-motion:no-preference){
+  .hero__plate{display:block;opacity:1;object-fit:cover;object-position:70% 50%;
+    -webkit-mask-image:none;mask-image:none;background:#0a0705}
+}
