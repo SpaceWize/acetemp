@@ -820,7 +820,7 @@ requestAnimationFrame(function thinkLoop(now){
 const ACTIVE_WINDOW=1.2,SETTLE_MOVES=3,SETTLE_SECS=4,REST_MIN=2.5,REST_MAX=5,WANDER_SECS=3;
 /* Nobody has touched, scrolled or moved for FREE_ROAM_AFTER seconds: the page is stagnant, so he stops resting between short wanders
    and runs about and climbs for as long as it stays that way (on a phone the visitor scrolls constantly, which keeps cutting his climbs short). */
-const FREE_ROAM_AFTER=30;
+const FREE_ROAM_AFTER=20;
 let lastActive=0,movesLeft=SETTLE_MOVES,wanderUntil=0;
 const markActive=()=>{lastActive=clock;};
 for(const ev of ['pointermove','scroll','wheel','keydown','touchstart'])addEventListener(ev,markActive,{passive:true});
@@ -1217,7 +1217,7 @@ function choose(busy,free){
    own every POWER_EVERY seconds of visible time, but only when he is
    standing about with nothing else going on. Never while the chat is open,
    the gate is up, he is being carried, or the visitor prefers reduced motion. */
-const POWER_SHEET=window.ACE_XMAS?'assets/images/ace-power-xmas.webp?v=1':'assets/images/ace-power.webp?v=1',POWER_EVERY=90,POWER_SLOW=1.25;   // POWER_EVERY: after this much normal roaming, one big moment (power-up, or the sleigh at Christmas)
+const POWER_SHEET=window.ACE_XMAS?'assets/images/ace-power-xmas.webp?v=1':'assets/images/ace-power.webp?v=1',POWER_EVERY=(innerWidth<900||matchMedia('(pointer:coarse)').matches)?40:90,POWER_SLOW=1.25;   // POWER_EVERY: after this much normal roaming, one big moment (power-up, or the sleigh at Christmas)
 const POWER_CW=264,POWER_CH=300,POWER_COLS=6;
 const POWER_MS=[150,120,100,120,100,90,90,90,90,90,80,100,100,100,60,60,60,60,60,60,70,80,100,150];
 const POWER_HANDS=window.ACE_XMAS?{"15": [182, 183], "16": [188, 178], "17": [186, 177], "18": [181, 178], "19": [188, 175], "20": [187, 175], "21": [178, 194]}:{"15": [176, 181], "16": [186, 178], "17": [185, 178], "18": [180, 179], "19": [188, 176], "20": [187, 176], "21": [177, 109]};     // fingertips per beam frame (frame number -> x,y in the cell), side facing right
@@ -1233,7 +1233,9 @@ const pwCtx=pwCv.getContext('2d'),bmCtx=beamCv.getContext('2d');
    moving to another page does not restart the 90 seconds). */
 const BIG_KEY='ace-last-big',BIG_AT_KEY='ace-big-at';
 function storedBig(){try{return sessionStorage.getItem(BIG_KEY)||'';}catch(e){return '';}}
-function bigWait(){try{const t=Number(sessionStorage.getItem(BIG_AT_KEY));if(t>0){const since=(Date.now()-t)/1000;if(since>=0&&since<POWER_EVERY)return Math.max(8,POWER_EVERY-since);}}catch(e){}return POWER_EVERY;}
+/* The clock is stamped on the first page of a visit too, so changing page does not start the wait again: on a phone a visitor rarely stays on
+   one page for the whole of it, and with the stamp only at the end of a big moment none was ever due. Past due on arrival: soon. */
+function bigWait(){try{const t=Number(sessionStorage.getItem(BIG_AT_KEY));if(t>0){const since=(Date.now()-t)/1000;if(since>=0)return since<POWER_EVERY?Math.max(8,POWER_EVERY-since):10;}else sessionStorage.setItem(BIG_AT_KEY,String(Date.now()));}catch(e){}return POWER_EVERY;}
 let power=null,pwImg=null,pwReady=false,pwClock=0,pwLast=0,nextAuto=bigWait(),powerQueue=false,powerQueueKind='power',powerQueueUntil=0,beamDpr=1,lastBig=storedBig();
 /* Everything a big moment needs except the snow: the automatic timer also needs him out of it (powerOk). */
 function powerReady(parkedOk){   // parkedOk: a deliberate trigger (a cheat code, holding the button) works even while he is parked
