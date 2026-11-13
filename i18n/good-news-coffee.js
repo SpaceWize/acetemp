@@ -32,4 +32,5 @@ ACE_I18N({"soon":"Website coming soon!"},
 "en-IE":{"soon":"Website coming soon, so it is!"},
 "en-SC":{},
 "nl":{"soon":"Website binnenkort beschikbaar!"},
-"pl":{"soon":"Strona wkrótce!"}});
+"pl":{"soon":"Strona wkrótce!"},
+"fa":{"soon":"وب‌سایت به‌زودی راه‌اندازی می‌شود!"}});
