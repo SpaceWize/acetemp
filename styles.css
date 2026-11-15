@@ -2276,3 +2276,9 @@ html:not([data-depth="flat"]) .hero__line--gold.ll{
   .hero__plate{display:block;opacity:1;object-fit:cover;object-position:70% 50%;
     -webkit-mask-image:none;mask-image:none;background:#0a0705}
 }
+
+/* ═══ ENDORSES, SUPPORTS AND ADVISES: a second white box straight under the clients strip ═══
+   Same box and gold frame as .logos__row. Tiles are square here (the clubs' logos are badges), fixed width, and the
+   row stays centred however many there are. */
+.logos--lead{padding-bottom:var(--sp-5)}
+.logos--ally .logos__tile{flex:0 0 auto;width:clamp(140px,18vw,210px);height:clamp(140px,18vw,210px);min-width:0}
