@@ -7,8 +7,8 @@
    Only pages in PAGES are translated so far. Loaded in <head>, so the page stays hidden (1.5s at most) until it is ready. */
 (function () {
   'use strict';
-  var PAGES = ['premium-pickup-transport.html', 'advisory.html', 'private-working-session.html', 'public-speaking.html', 'mastermind-membership.html', 'mastermind-application.html', 'group-activities.html', 'contact.html', 'good-news-coffee.html', 'index.html'], V = 114;
-  var LANGS = ['ja', 'da', 'ru', 'ar', 'fa', 'de', 'he', 'fr', 'yue', 'zh', 'tl', 'es', 'pt', 'la', 'el', 'af', 'pa', 'hi', 'nl', 'pl', 'no', 'sv', 'gd', 'ga', 'cy', 'sjn', 'tlh', 'en-GB', 'en-US', 'en-CA', 'en-NL', 'en-AU', 'en-IE', 'en-SC', 'pig', 'bin', 'egy', 'run', 'ogm', 'sux'], RTL = { ar: 1, fa: 1, he: 1 }, KEY = 'ace-lang', ALGO = { pig: 1, bin: 1, egy: 1, run: 1, ogm: 1, sux: 1 };   // ALGO: made by rule, not by dictionary
+  var PAGES = ['premium-pickup-transport.html', 'advisory.html', 'private-working-session.html', 'public-speaking.html', 'mastermind-membership.html', 'mastermind-application.html', 'group-activities.html', 'contact.html', 'good-news-coffee.html', 'index.html'], V = 115;
+  var LANGS = ['ja', 'da', 'ru', 'ar', 'fa', 'de', 'he', 'fr', 'yue', 'zh', 'tl', 'es', 'pt', 'la', 'el', 'af', 'pa', 'hi', 'nl', 'pl', 'no', 'sv', 'gd', 'ga', 'cy', 'sjn', 'tlh', 'en-GB', 'en-US', 'en-CA', 'en-NL', 'en-AU', 'en-IE', 'en-SC', 'pig', 'bin', 'egy', 'run', 'ogm', 'sux', 'elf'], RTL = { ar: 1, fa: 1, he: 1 }, KEY = 'ace-lang', ALGO = { pig: 1, bin: 1, egy: 1, run: 1, ogm: 1, sux: 1, elf: 1 };   // ALGO: made by rule, not by dictionary
   function pick() {
     var forced = null, q = null;
     try {
@@ -41,6 +41,7 @@
   function addPicker() {
     var spot = document.querySelector('.burger');
     if (!spot) return;
+    if (lang === 'elf') PICK.push(['elf', 'Elven', 'ELF']);                       // the secret one: listed only while it is on, so it can be switched off from here
     var cur = lang || 'orig', box = document.createElement('label');
     box.className = 'ace-lang';
     box.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg><span aria-hidden="true">' + PICK.filter(function (o) { return o[0] === cur; })[0][2] + '</span><select aria-label="Language"></select>';
@@ -72,7 +73,7 @@
   var clean = function (s) { return s.replace(/\s+/g, ' ').trim(); };
   /* Pig Latin, Binary and Hieroglyphs are made by rule, not by dictionary: every piece of text on the page, and everything
      Little Ace says, goes through the rule. Emails, links and the street address are left alone. */
-  var LINKISH = /@|:\/\/|^www\.|\.(com|today|dev|ca)\b/i, KEEP_NODE = /1628 W 1st Ave|V6J 1G1|Vancouver, BC/, CODES = /^(ACE|FLY|THOR|SANTA|SLIP)$/;
+  var LINKISH = /@|:\/\/|^www\.|\.(com|today|dev|ca)\b/i, KEEP_NODE = /1628 W 1st Ave|V6J 1G1|Vancouver, BC/, CODES = /^(ACE|FLY|THOR|SANTA|SLIP|NAVI|LANGUAGE)$/;
   var EGY = { a: '𓄿', b: '𓃀', c: '𓎡', d: '𓂧', e: '𓇋', f: '𓆑', g: '𓎼', h: '𓉔', i: '𓇋', j: '𓆓', k: '𓎡', l: '𓃭', m: '𓅓', n: '𓈖', o: '𓅱', p: '𓊪', q: '𓈎', r: '𓂋', s: '𓋴', t: '𓏏', u: '𓅱', v: '𓆑', w: '𓅱', x: '𓎡𓋴', y: '𓇌', z: '𓊃' };
   /* Runes (Elder Futhark) and Ogham are also made by rule: English spelled out, sound for sound where the old alphabets had a letter, with the digraphs TH and NG as their own signs. */
   var RUN = { a: 'ᚨ', b: 'ᛒ', c: 'ᚲ', d: 'ᛞ', e: 'ᛖ', f: 'ᚠ', g: 'ᚷ', h: 'ᚺ', i: 'ᛁ', j: 'ᛃ', k: 'ᚲ', l: 'ᛚ', m: 'ᛗ', n: 'ᚾ', o: 'ᛟ', p: 'ᛈ', q: 'ᚲ', r: 'ᚱ', s: 'ᛊ', t: 'ᛏ', u: 'ᚢ', v: 'ᚠ', w: 'ᚹ', x: 'ᚲᛊ', y: 'ᛇ', z: 'ᛉ' };
@@ -93,6 +94,54 @@
       else out += SUXCV[c + 'a'];
     }
     return out;
+  }
+  /* ELVEN: the easter-egg language (Shift + L, A, N, G, U, A, G, E; it is not in the picker). Made by rule from the spelling rules in the Elven reference:
+     every English word is spelled out letter by letter in the Elven spellings, with the function words and the listed vocabulary swapped in. Word order,
+     verb endings and which words are nouns are not rules a machine can apply to arbitrary text, so those parts of the reference are left out here. */
+  var ELF_L = { b: 'be', c: 'kh', d: 'deh', e: 'ea', f: 'fh', g: 'gi', h: 'ha', i: 'io', j: 'jay', o: 'kio', r: 'ar', s: 'ess', v: 'va' };
+  var ELF_W = { i: 'i', you: 'yio', he: 'heas', she: 'esshea', we: 'wea', they: 'tey', it: 'iot', to: 'tu', 'with': 'wio', 'for': 'fhkioar', from: 'fharkiom', 'in': 'ionen', on: 'kionen', at: 'ayt', about: 'aybekiout',
+    and: 'ayendeh', or: 'kioar', but: 'beut', 'if': 'iofh', what: 'wayt', who: 'wkio', where: 'wearar', when: 'weanen', why: 'wy', how: 'waykio',
+    gold: 'Khionen', site: 'Essiotea', home: 'Hakiome', project: 'Parkiojayeakht', good: 'giodeh', more: 'mkioarea', go: 'gikio', read: 'arearaydeh', walk: 'wayluk', eat: 'earayt', need: 'neneadeh',
+    book: 'Beuok', tree: 'Tarue', goose: 'Giuoessea', geese: 'Giuoessea', wood: 'Wuodeh', food: 'Fhuodeh', cup: 'Khup', computer: 'Khkiomputeaar', bag: 'Beaygi', rice: 'Ariokhea' };
+  var ELF_NOUN = { gold: 1, site: 1, home: 1, project: 1, book: 1, tree: 1, goose: 1, wood: 1, food: 1, cup: 1, computer: 1, bag: 1, rice: 1 }, ELF_VERB = { go: 1, read: 1, walk: 1, eat: 1, need: 1 };
+  var elfEnd = false;                                                              // does the Elven spelling just written end in a vowel? (the extra n carries across words)
+  function elfSpell(w) {
+    var lo = w.toLowerCase(), out = '', i, c, d, one;
+    for (i = 0; i < lo.length; i++) {
+      c = lo[i]; d = lo[i + 1];
+      if (c === 's' && d === 'h') { one = 'essh'; i++; }
+      else if (c === 't' && d === 'h') { one = 'th'; i++; }
+      else if (c === 'p' && d === 'h') { one = 'ph'; i++; }
+      else if (c === 'c' && d === 'h') { one = 'kh'; i++; }
+      else if (c === 'w' && d === 'h') { one = 'w'; i++; }
+      else if ('aeiou'.indexOf(c) >= 0 && d === c) { one = 'u' + c; i++; }                // long vowels: oo = uo, ee = ue
+      else if (c === 'a') one = (i > 0 && 'aeiou'.indexOf(lo[i - 1]) >= 0) ? 'ray' : 'ay';
+      else if (c === 'n') one = /[aeiou]$/.test(out || (elfEnd ? 'a' : '')) ? 'nen' : 'en';
+      else one = ELF_L[c] || c;
+      out += one;
+    }
+    return out;
+  }
+  function elfWord(w) {
+    var lo = w.toLowerCase(), out, m, up = w[0] !== w[0].toLowerCase();
+    if (CODES.test(w) || (w.length > 1 && w.length <= 4 && w === w.toUpperCase())) return w;      // the typed codes and short acronyms (CAD, BC, VIP)
+    if (ELF_W[lo]) out = ELF_W[lo];
+    else if ((m = lo.match(/^(.+)ing$/)) && ELF_VERB[m[1]]) out = ELF_W[m[1]] + 'engi';
+    else if ((m = lo.match(/^(.+)s$/)) && ELF_NOUN[m[1]]) out = 's’' + ELF_W[m[1]];
+    else {
+      out = elfSpell(w);
+      if (w.length > 1 && w === w.toUpperCase()) out = out.toUpperCase();
+      else if (up) out = out[0].toUpperCase() + out.slice(1);
+    }
+    elfEnd = /[aeiouAEIOU]$/.test(out);
+    return out;
+  }
+  function elfText(str) {
+    elfEnd = false;
+    return str.split(/(\s+)/).map(function (t, i) {
+      if (i % 2 || !t || LINKISH.test(t)) return t;
+      return t.replace(/[A-Za-z]+/g, elfWord);
+    }).join('').replace(/\?/g, '⸮').replace(/["“]([^"“”]*)["”]/g, '‘$1’');
   }
   function pigWord(w) {
     if (CODES.test(w) || (w.length > 1 && w.length <= 4 && w === w.toUpperCase())) return w;     // codes and short acronyms (CAD, BC, VIP)
@@ -115,13 +164,14 @@
   }
   function algoText(str) {
     var m = str.match(/^(\s*)([\s\S]*?)(\s*)$/);
+    if (lang === 'elf') return m[1] + elfText(m[2]) + m[3];
     var core = m[2].split(/(\s+)/).map(function (t, i) { return i % 2 ? (lang === 'bin' ? ' 00100000 ' : t) : algoToken(t); }).join('');
     if (lang === 'ogm' && /[ᚁ-ᚚ]/.test(core)) core = '᚛' + core + '᚜';
     return m[1] + core + m[3];
   }
   var produced = Object.create(null);
   function algoApply() {
-    root.lang = { pig: 'en-x-piglatin', bin: 'en-x-binary', egy: 'egy', run: 'en-x-runic', ogm: 'en-x-ogham', sux: 'sux' }[lang];
+    root.lang = { pig: 'en-x-piglatin', bin: 'en-x-binary', egy: 'egy', run: 'en-x-runic', ogm: 'en-x-ogham', sux: 'sux', elf: 'en-x-elven' }[lang];
     root.setAttribute('data-algo', lang);
     window.ACE_TR = function (str) { var o = algoText(String(str)); produced[o] = 1; return o; };   // for text built later, like Little Ace's thoughts
     if (!document.getElementById('algo-css')) {
