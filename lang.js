@@ -7,8 +7,8 @@
    Only pages in PAGES are translated so far. Loaded in <head>, so the page stays hidden (1.5s at most) until it is ready. */
 (function () {
   'use strict';
-  var PAGES = ['premium-pickup-transport.html', 'advisory.html', 'private-working-session.html', 'public-speaking.html', 'mastermind-membership.html', 'mastermind-application.html', 'group-activities.html', 'contact.html', 'good-news-coffee.html', 'index.html'], V = 113;
-  var LANGS = ['ja', 'da', 'ru', 'ar', 'fa', 'de', 'he', 'fr', 'yue', 'zh', 'tl', 'es', 'pt', 'la', 'el', 'af', 'pa', 'hi', 'nl', 'pl', 'no', 'sv', 'gd', 'ga', 'cy', 'sjn', 'tlh', 'en-GB', 'en-US', 'en-CA', 'en-NL', 'en-AU', 'en-IE', 'en-SC', 'pig', 'bin', 'egy', 'run', 'ogm'], RTL = { ar: 1, fa: 1, he: 1 }, KEY = 'ace-lang', ALGO = { pig: 1, bin: 1, egy: 1, run: 1, ogm: 1 };   // ALGO: made by rule, not by dictionary
+  var PAGES = ['premium-pickup-transport.html', 'advisory.html', 'private-working-session.html', 'public-speaking.html', 'mastermind-membership.html', 'mastermind-application.html', 'group-activities.html', 'contact.html', 'good-news-coffee.html', 'index.html'], V = 114;
+  var LANGS = ['ja', 'da', 'ru', 'ar', 'fa', 'de', 'he', 'fr', 'yue', 'zh', 'tl', 'es', 'pt', 'la', 'el', 'af', 'pa', 'hi', 'nl', 'pl', 'no', 'sv', 'gd', 'ga', 'cy', 'sjn', 'tlh', 'en-GB', 'en-US', 'en-CA', 'en-NL', 'en-AU', 'en-IE', 'en-SC', 'pig', 'bin', 'egy', 'run', 'ogm', 'sux'], RTL = { ar: 1, fa: 1, he: 1 }, KEY = 'ace-lang', ALGO = { pig: 1, bin: 1, egy: 1, run: 1, ogm: 1, sux: 1 };   // ALGO: made by rule, not by dictionary
   function pick() {
     var forced = null, q = null;
     try {
@@ -34,7 +34,7 @@
   if (PAGES.indexOf(page) < 0) return;
 
   /* The picker: a globe and a short code, with a real <select> laid invisibly over them, so phones get their own list. */
-  var PICK = [['orig','English (original)','EN'],['en-IE','Irish English','IE'],['en-SC','Scottish English','SC'],['en-CA','Canadian English','CA'],['en-GB','British English','UK'],['en-AU','Australian English','AU'],['en-NL','Newfoundland English','NF'],['en-US','American English','US'],['la','Latin','LA'],['gd','Scottish Gaelic','GD'],['ga','Irish Gaelic','GA'],['cy','Welsh','CY'],['de','German','DE'],['da','Danish','DA'],['pl','Polish','PL'],['ru','Russian','RU'],['nl','Dutch','NL'],['no','Norwegian','NO'],['sv','Swedish','SV'],['he','Hebrew','HE'],['af','Afrikaans','AF'],['fr','French','FR'],['el','Greek','EL'],['es','Spanish','ES'],['pt','Portuguese','PT'],['ja','Japanese','JA'],['yue','Cantonese','YUE'],['zh','Mandarin','ZH'],['tl','Tagalog','TL'],['pig','Pig Latin','PIG'],['bin','Binary','BIN'],['sjn','Elvish (Sindarin)','SJN'],['tlh','Klingon','TLH'],['egy','Hieroglyphs','EGY'],['run','Runes','RUN'],['ogm','Ogham','OGM'],['ar','Arabic','AR'],['fa','Farsi (Persian)','FA'],['pa','Punjabi','PA'],['hi','Hindi','HI']];
+  var PICK = [['orig','English (original)','EN'],['en-IE','Irish English','IE'],['en-SC','Scottish English','SC'],['en-CA','Canadian English','CA'],['en-GB','British English','UK'],['en-AU','Australian English','AU'],['en-NL','Newfoundland English','NF'],['en-US','American English','US'],['la','Latin','LA'],['gd','Scottish Gaelic','GD'],['ga','Irish Gaelic','GA'],['cy','Welsh','CY'],['de','German','DE'],['da','Danish','DA'],['pl','Polish','PL'],['ru','Russian','RU'],['nl','Dutch','NL'],['no','Norwegian','NO'],['sv','Swedish','SV'],['he','Hebrew','HE'],['af','Afrikaans','AF'],['fr','French','FR'],['el','Greek','EL'],['es','Spanish','ES'],['pt','Portuguese','PT'],['ja','Japanese','JA'],['yue','Cantonese','YUE'],['zh','Mandarin','ZH'],['tl','Tagalog','TL'],['pig','Pig Latin','PIG'],['bin','Binary','BIN'],['sjn','Elvish (Sindarin)','SJN'],['tlh','Klingon','TLH'],['egy','Hieroglyphs','EGY'],['sux','Sumerian cuneiform','SUX'],['run','Runes','RUN'],['ogm','Ogham','OGM'],['ar','Arabic','AR'],['fa','Farsi (Persian)','FA'],['pa','Punjabi','PA'],['hi','Hindi','HI']];
   var css = document.createElement('style');
   css.textContent = '.ace-lang{position:relative;display:inline-flex;align-items:center;gap:6px;flex:none;height:38px;padding:0 10px;margin-inline:10px;border:1px solid rgba(217,164,65,.45);color:#F1EDE6;font:600 12px/1 system-ui,sans-serif;letter-spacing:.06em}.ace-lang:hover{border-color:#D9A441}.ace-lang:focus-within{outline:2px solid #D9A441;outline-offset:2px}.ace-lang svg{width:15px;height:15px;fill:none;stroke:#D9A441;stroke-width:1.6}.ace-lang select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:16px}.ace-lang option{background:#121110;color:#F1EDE6}html[dir=rtl] .skip{left:auto;right:-9999px}html[dir=rtl] .skip:focus{left:auto;right:1rem}html[dir=rtl] .hero__back svg{transform:none}';
   document.head.appendChild(css);
@@ -80,6 +80,20 @@
   function spell(tok, map, th, ng) {
     return tok.replace(/[Tt][Hh]|[Nn][Gg]|[A-Za-z]/g, function (c) { var l = c.toLowerCase(); return l === 'th' ? th : l === 'ng' ? ng : map[l]; });
   }
+  /* Sumerian cuneiform is made by rule too, as syllables: English spelled the way the signs sound (consonant + vowel, a vowel on its own, or a vowel + consonant sign where one exists), one wedge sign each. */
+  var SUXCV = {ba:'𒁀',be:'𒁉',bi:'𒁉',bu:'𒁍',da:'𒁕',de:'𒁲',di:'𒁲',du:'𒁺',ga:'𒂵',ge:'𒄀',gi:'𒄀',gu:'𒄖',ha:'𒄩',he:'𒄭',hi:'𒄭',hu:'𒄷',ka:'𒅗',ke:'𒆠',ki:'𒆠',ku:'𒆪',la:'𒆷',le:'𒇷',li:'𒇷',lu:'𒇻',ma:'𒈠',me:'𒈨',mi:'𒈪',mu:'𒈬',na:'𒈾',ne:'𒉈',ni:'𒉌',nu:'𒉡',pa:'𒉺',pe:'𒉿',pi:'𒉿',pu:'𒉺',ra:'𒊏',re:'𒊑',ri:'𒊑',ru:'𒊒',sa:'𒊓',se:'𒋛',si:'𒋛',su:'𒋢',ta:'𒋫',te:'𒋼',ti:'𒋾',tu:'𒌅',za:'𒍝',ze:'𒍣',zi:'𒍣',zu:'𒍪'}, SUXVC = {ab:'𒀊',ad:'𒀜',ak:'𒀝',al:'𒀠',an:'𒀭',el:'𒂖',en:'𒂗',ib:'𒅁',ig:'𒅅',il:'𒅋',im:'𒅎',in:'𒅔',ir:'𒅕',ub:'𒌒',ud:'𒌓',um:'𒌝',un:'𒌦',ur:'𒌨'}, SUXV = {a:'𒀀',e:'𒂊',i:'𒄿',u:'𒌋'};
+  function suxWord(w) {
+    var L = [], i, c, out = '', ST = { o: 'u', y: 'i', c: 'k', q: 'k', v: 'b', w: 'u', f: 'p', j: 'g' };
+    for (i = 0; i < w.length; i++) { c = w[i].toLowerCase(); if (c === 'x') L.push('k', 's'); else L.push(ST[c] || c); }
+    function vow(x) { return 'aeiu'.indexOf(x) >= 0; }
+    for (i = 0; i < L.length; i++) {
+      c = L[i];
+      if (vow(c)) { if (i + 1 < L.length && !vow(L[i + 1]) && (i + 2 >= L.length || !vow(L[i + 2])) && SUXVC[c + L[i + 1]]) { out += SUXVC[c + L[i + 1]]; i++; } else out += SUXV[c]; }
+      else if (i + 1 < L.length && vow(L[i + 1])) { out += SUXCV[c + L[i + 1]]; i++; }
+      else out += SUXCV[c + 'a'];
+    }
+    return out;
+  }
   function pigWord(w) {
     if (CODES.test(w) || (w.length > 1 && w.length <= 4 && w === w.toUpperCase())) return w;     // codes and short acronyms (CAD, BC, VIP)
     var lo = w.toLowerCase(), i = 0;
@@ -93,6 +107,7 @@
   function algoToken(tok) {
     if (LINKISH.test(tok)) return tok;
     if (lang === 'pig') return tok.replace(/[A-Za-z]+(?:['’][A-Za-z]+)*/g, pigWord);
+    if (lang === 'sux') return tok.replace(/[A-Za-z]+/g, suxWord);
     if (lang === 'egy') return tok.replace(/[A-Za-z]/g, function (c) { return EGY[c.toLowerCase()]; });
     if (lang === 'run') return spell(tok, RUN, 'ᚦ', 'ᛜ');
     if (lang === 'ogm') return spell(tok, OGM, 'ᚈᚆ', 'ᚍ');
@@ -106,14 +121,15 @@
   }
   var produced = Object.create(null);
   function algoApply() {
-    root.lang = { pig: 'en-x-piglatin', bin: 'en-x-binary', egy: 'egy', run: 'en-x-runic', ogm: 'en-x-ogham' }[lang];
+    root.lang = { pig: 'en-x-piglatin', bin: 'en-x-binary', egy: 'egy', run: 'en-x-runic', ogm: 'en-x-ogham', sux: 'sux' }[lang];
     root.setAttribute('data-algo', lang);
     window.ACE_TR = function (str) { var o = algoText(String(str)); produced[o] = 1; return o; };   // for text built later, like Little Ace's thoughts
     if (!document.getElementById('algo-css')) {
       var st = document.createElement('style'); st.id = 'algo-css';
-      st.textContent = 'html[data-algo="bin"] body{overflow-wrap:anywhere;word-break:break-all}html[data-algo="egy"] body,html[data-algo="egy"] body *{font-family:"Noto Sans Egyptian Hieroglyphs","Segoe UI Historic","Segoe UI Symbol",sans-serif !important}html[data-algo="run"] body,html[data-algo="run"] body *{font-family:"Noto Sans Runic","Segoe UI Historic","Segoe UI Symbol",sans-serif !important}html[data-algo="ogm"] body,html[data-algo="ogm"] body *{font-family:"Noto Sans Ogham","Segoe UI Historic","Segoe UI Symbol",sans-serif !important}';
+      st.textContent = 'html[data-algo="bin"] body{overflow-wrap:anywhere;word-break:break-all}html[data-algo="egy"] body,html[data-algo="egy"] body *{font-family:"Noto Sans Egyptian Hieroglyphs","Segoe UI Historic","Segoe UI Symbol",sans-serif !important}html[data-algo="run"] body,html[data-algo="run"] body *{font-family:"Noto Sans Runic","Segoe UI Historic","Segoe UI Symbol",sans-serif !important}html[data-algo="ogm"] body,html[data-algo="ogm"] body *{font-family:"Noto Sans Ogham","Segoe UI Historic","Segoe UI Symbol",sans-serif !important}html[data-algo="sux"] body,html[data-algo="sux"] body *{font-family:"Noto Sans Cuneiform","Segoe UI Historic","Segoe UI Symbol",sans-serif !important}';
       document.head.appendChild(st);
       if (lang === 'run' || lang === 'ogm') { var lk2 = document.createElement('link'); lk2.rel = 'stylesheet'; lk2.href = 'https://fonts.googleapis.com/css2?family=' + (lang === 'run' ? 'Noto+Sans+Runic' : 'Noto+Sans+Ogham') + '&display=swap'; document.head.appendChild(lk2); }
+      if (lang === 'sux') { var lk3 = document.createElement('link'); lk3.rel = 'stylesheet'; lk3.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans+Cuneiform&display=swap'; document.head.appendChild(lk3); }
       if (lang === 'egy') { var lk = document.createElement('link'); lk.rel = 'stylesheet'; lk.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans+Egyptian+Hieroglyphs&display=swap'; document.head.appendChild(lk); }
     }
     if (lang === 'pig') document.querySelectorAll('body *').forEach(function (el) {       // a word split into one-letter spans: change the whole word, then deal it back out
