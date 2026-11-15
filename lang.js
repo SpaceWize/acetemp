@@ -7,7 +7,7 @@
    Only pages in PAGES are translated so far. Loaded in <head>, so the page stays hidden (1.5s at most) until it is ready. */
 (function () {
   'use strict';
-  var PAGES = ['premium-pickup-transport.html', 'advisory.html', 'private-working-session.html', 'public-speaking.html', 'mastermind-membership.html', 'mastermind-application.html', 'group-activities.html', 'contact.html', 'good-news-coffee.html', 'index.html'], V = 115;
+  var PAGES = ['premium-pickup-transport.html', 'advisory.html', 'private-working-session.html', 'public-speaking.html', 'mastermind-membership.html', 'mastermind-application.html', 'group-activities.html', 'contact.html', 'good-news-coffee.html', 'index.html'], V = 116;
   var LANGS = ['ja', 'da', 'ru', 'ar', 'fa', 'de', 'he', 'fr', 'yue', 'zh', 'tl', 'es', 'pt', 'la', 'el', 'af', 'pa', 'hi', 'nl', 'pl', 'no', 'sv', 'gd', 'ga', 'cy', 'sjn', 'tlh', 'en-GB', 'en-US', 'en-CA', 'en-NL', 'en-AU', 'en-IE', 'en-SC', 'pig', 'bin', 'egy', 'run', 'ogm', 'sux', 'elf'], RTL = { ar: 1, fa: 1, he: 1 }, KEY = 'ace-lang', ALGO = { pig: 1, bin: 1, egy: 1, run: 1, ogm: 1, sux: 1, elf: 1 };   // ALGO: made by rule, not by dictionary
   function pick() {
     var forced = null, q = null;
@@ -95,15 +95,21 @@
     }
     return out;
   }
-  /* ELVEN: the easter-egg language (Shift + L, A, N, G, U, A, G, E; it is not in the picker). Made by rule from the spelling rules in the Elven reference:
-     every English word is spelled out letter by letter in the Elven spellings, with the function words and the listed vocabulary swapped in. Word order,
-     verb endings and which words are nouns are not rules a machine can apply to arbitrary text, so those parts of the reference are left out here. */
+  /* ELVEN: the easter-egg language (Shift + L, A, N, G, U, A, G, E; it is not in the picker). Made by rule from the Elven Rules Reference: every English word is
+     spelled out letter by letter in the Elven spellings (digraphs, long vowels, the letter-name merges ja/ha/va/ra, the extra n), the particles, pronouns and the
+     listed vocabulary are swapped in, plurals are s' + the singular, Ace's Group Activities becomes Ace lay Group s'Activities, months are the first three letters + -mon,
+     and acronyms are spelled by letters. Verb-first word order, sentence endings, negation and quoting are NOT done: a machine cannot read the grammar of arbitrary text. */
   var ELF_L = { b: 'be', c: 'kh', d: 'deh', e: 'ea', f: 'fh', g: 'gi', h: 'ha', i: 'io', j: 'jay', o: 'kio', r: 'ar', s: 'ess', v: 'va' };
   var ELF_W = { i: 'i', you: 'yio', he: 'heas', she: 'esshea', we: 'wea', they: 'tey', it: 'iot', to: 'tu', 'with': 'wio', 'for': 'fhkioar', from: 'fharkiom', 'in': 'ionen', on: 'kionen', at: 'ayt', about: 'aybekiout',
     and: 'ayendeh', or: 'kioar', but: 'beut', 'if': 'iofh', what: 'wayt', who: 'wkio', where: 'wearar', when: 'weanen', why: 'wy', how: 'waykio',
-    gold: 'Khionen', site: 'Essiotea', home: 'Hakiome', project: 'Parkiojayeakht', good: 'giodeh', more: 'mkioarea', go: 'gikio', read: 'arearaydeh', walk: 'wayluk', eat: 'earayt', need: 'neneadeh',
-    book: 'Beuok', tree: 'Tarue', goose: 'Giuoessea', geese: 'Giuoessea', wood: 'Wuodeh', food: 'Fhuodeh', cup: 'Khup', computer: 'Khkiomputeaar', bag: 'Beaygi', rice: 'Ariokhea' };
-  var ELF_NOUN = { gold: 1, site: 1, home: 1, project: 1, book: 1, tree: 1, goose: 1, wood: 1, food: 1, cup: 1, computer: 1, bag: 1, rice: 1 }, ELF_VERB = { go: 1, read: 1, walk: 1, eat: 1, need: 1 };
+    ace: 'Aykhea', gold: 'Khionen', site: 'Essiotea', home: 'Hakiome', project: 'Parkiojayeakht', group: 'Giarkioup', activity: 'Aykhtiovaioty', good: 'giuodeh', more: 'mkioarea',
+    go: 'gikio', read: 'arearaydeh', walk: 'wayluk', eat: 'earayt', need: 'neneadeh', book: 'Beuok', tree: 'Tarue', goose: 'Giuoessea', wood: 'Wuodeh', food: 'Fhuodeh', cup: 'Khup',
+    computer: 'Khkiomputeaar', bag: 'Beaygi', rice: 'Ariokhea', gum: 'Gium', forest: 'Fhkioareaesst', board: 'Bekiorayardeh', building: 'Beuioldehionengi', painting: 'Payionentionengi',
+    pencil: 'Peanenkhiol', dune: 'Dehunenea', scissors: 'Esskhioessesskioaress', ruler: 'Arulear', calculator: 'Khaylkhulaytkioar', barometer: 'Beayarkiomeateaar', stenograph: 'Essteanenkiogiarpha' };
+  var ELF_NOUN = {}, ELF_VERB = { go: 1, read: 1, walk: 1, eat: 1, need: 1 }, ELF_ADJ = { good: 1, more: 1 }, ELF_PART = { i: 1, you: 1, he: 1, she: 1, we: 1, they: 1, it: 1, to: 1, 'with': 1, 'for': 1, from: 1, 'in': 1, on: 1, at: 1, about: 1, and: 1, or: 1, but: 1, 'if': 1, what: 1, who: 1, where: 1, when: 1, why: 1, how: 1 };
+  Object.keys(ELF_W).forEach(function (k) { if (!ELF_VERB[k] && !ELF_ADJ[k] && !ELF_PART[k]) ELF_NOUN[k] = 1; });
+  var ELF_MONTH = { january: 'Jan', february: 'Feb', april: 'Apr', june: 'Jun', july: 'Jul', august: 'Aug', september: 'Sep', october: 'Oct', november: 'Nov', december: 'Dec' };   // May and March are left alone: they are also ordinary words
+  var ELF_IS = { it: 1, that: 1, what: 1, who: 1, there: 1, here: 1, 'let': 1, he: 1, she: 1, where: 1, how: 1, everything: 1, nothing: 1, something: 1 };       // it’s, that’s: "is", not a possessive
   var elfEnd = false;                                                              // does the Elven spelling just written end in a vowel? (the extra n carries across words)
   function elfSpell(w) {
     var lo = w.toLowerCase(), out = '', i, c, d, one;
@@ -114,7 +120,8 @@
       else if (c === 'p' && d === 'h') { one = 'ph'; i++; }
       else if (c === 'c' && d === 'h') { one = 'kh'; i++; }
       else if (c === 'w' && d === 'h') { one = 'w'; i++; }
-      else if ('aeiou'.indexOf(c) >= 0 && d === c) { one = 'u' + c; i++; }                // long vowels: oo = uo, ee = ue
+      else if ('jhvr'.indexOf(c) >= 0 && d === 'a') { one = ELF_L[c]; i++; }          // letter-name merge: ja = jay, ha = ha, va = va, ra = ar
+      else if ('aeiou'.indexOf(c) >= 0 && d === c) { one = 'u' + c; i++; }              // long vowels: oo = uo, ee = ue, aa = ua, ii = ui
       else if (c === 'a') one = (i > 0 && 'aeiou'.indexOf(lo[i - 1]) >= 0) ? 'ray' : 'ay';
       else if (c === 'n') one = /[aeiou]$/.test(out || (elfEnd ? 'a' : '')) ? 'nen' : 'en';
       else one = ELF_L[c] || c;
@@ -122,25 +129,38 @@
     }
     return out;
   }
+  function elfCap(out, w) { return out ? out[0].toUpperCase() + out.slice(1) : out; }
   function elfWord(w) {
-    var lo = w.toLowerCase(), out, m, up = w[0] !== w[0].toLowerCase();
-    if (CODES.test(w) || (w.length > 1 && w.length <= 4 && w === w.toUpperCase())) return w;      // the typed codes and short acronyms (CAD, BC, VIP)
-    if (ELF_W[lo]) out = ELF_W[lo];
-    else if ((m = lo.match(/^(.+)ing$/)) && ELF_VERB[m[1]]) out = ELF_W[m[1]] + 'engi';
+    var lo = w.toLowerCase(), out, m, up = w[0] !== w[0].toLowerCase(), allCaps = w === w.toUpperCase();
+    if (ELF_MONTH[lo] && up) out = elfCap(elfSpell(ELF_MONTH[lo])) + '-mon';
+    else if (ELF_W[lo]) out = ELF_W[lo];
+    else if (lo === 'geese') out = 's’' + ELF_W.goose;
+    else if ((m = lo.match(/^(.+)ies$/)) && ELF_NOUN[m[1] + 'y']) out = 's’' + ELF_W[m[1] + 'y'];
+    else if ((m = lo.match(/^(.+?)(?:es|s)$/)) && ELF_NOUN[m[1]]) out = 's’' + ELF_W[m[1]];
     else if ((m = lo.match(/^(.+)s$/)) && ELF_NOUN[m[1]]) out = 's’' + ELF_W[m[1]];
+    else if ((m = lo.match(/^(.+)ing$/)) && ELF_VERB[m[1]]) out = ELF_W[m[1]] + 'engi';
     else {
       out = elfSpell(w);
-      if (w.length > 1 && w === w.toUpperCase()) out = out.toUpperCase();
-      else if (up) out = out[0].toUpperCase() + out.slice(1);
+      if (allCaps && w.length > 4) out = out.toUpperCase();                           // a heading set in capitals
+      else if (up || allCaps) out = elfCap(out);                                      // names and acronyms (CAD = Khaydeh) are capitalized
     }
     elfEnd = /[aeiouAEIOU]$/.test(out);
     return out;
   }
+  var ELF_CODE = /^(ACE|FLY|THOR|SANTA|SLIP|NAVI|LANGUAGE)$/;
   function elfText(str) {
     elfEnd = false;
+    var afterPlus = false;
     return str.split(/(\s+)/).map(function (t, i) {
-      if (i % 2 || !t || LINKISH.test(t)) return t;
-      return t.replace(/[A-Za-z]+/g, elfWord);
+      if (i % 2 || !t) return t;
+      var keep = (afterPlus && ELF_CODE.test(t)) || LINKISH.test(t);                  // "Shift + ACE" stays typable
+      afterPlus = t === '+';
+      if (keep) return t;
+      return t.replace(/([A-Za-z]+)(?:[’']s\b)?/g, function (all, word) {
+        var poss = all.length > word.length;
+        var out = elfWord(word);
+        return poss ? out + (ELF_IS[word.toLowerCase()] ? ' ' + elfWord('is') : ' lay') : out;
+      });
     }).join('').replace(/\?/g, '⸮').replace(/["“]([^"“”]*)["”]/g, '‘$1’');
   }
   function pigWord(w) {
