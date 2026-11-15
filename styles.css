@@ -2281,4 +2281,7 @@ html:not([data-depth="flat"]) .hero__line--gold.ll{
    Same box and gold frame as .logos__row. Tiles are square here (the clubs' logos are badges), fixed width, and the
    row stays centred however many there are. */
 .logos--lead{padding-bottom:var(--sp-5)}
-.logos--ally .logos__tile{flex:0 0 auto;width:clamp(140px,18vw,210px);height:clamp(140px,18vw,210px);min-width:0}
+.logos--ally .logos__row{gap:clamp(1rem,2.5vw,2rem) clamp(1.5rem,4vw,3rem)}
+.logos--ally .logos__tile{flex:0 0 auto;width:clamp(190px,28vw,290px);height:clamp(190px,28vw,290px);min-width:0;padding-inline:0}
+.logos__about{flex:1 1 15rem;max-width:32rem;margin:0;color:var(--on-paper);font:400 clamp(1rem,1.6vw,1.2rem)/1.6 var(--f-body)}
+@media (max-width:620px){.logos__about{text-align:center}}
