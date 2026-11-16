@@ -695,7 +695,11 @@ window.AceCompanion={
             returning:!!(visit&&visit.phase==='back')};
   },
   /* Show a thought bubble now (the next line from THOUGHTS, or the text or {t,href} given). For trying it out. */
-  think(line){think(line);}
+  think(line){think(line);},
+  /* Do the laptop bit the next time he is standing on a ledge wide enough (for trying it out). */
+  laptop(){lapWant=true;},
+  /* Do the joy-mode bit the next time he is standing on something (for trying it out). */
+  joy(){joyWant=true;}
 };
 const state={x:Math.max(70,innerWidth-160),y:innerHeight-20,vx:0,vy:0,ground:'floor'};
 let cursorX=innerWidth/2;document.addEventListener('pointermove',e=>{cursorX=e.clientX;},{passive:true});
@@ -895,7 +899,7 @@ addEventListener('pointermove',e=>{
     try{const n=(parseInt(sessionStorage.getItem('ace-pickups'),10)||0)+1;sessionStorage.setItem('ace-pickups',String(n));const nowMs=performance.now();if((n===2||(n>2&&(n-2)%6===0))&&nowMs-lastThrowLine>90000){lastThrowLine=nowMs;think('Please stop throwing me. …Okay, one more.');thinkHeld=true;}else if(thinkHeld)quiet();}catch(e){}   // every second pickup
     try{pet.setPointerCapture(dragPointer);}catch{}
     pet.classList.add('is-dragging');
-    climb=null;runGoal=null;pendingJump=null;pointUntil=0;
+    climb=null;runGoal=null;pendingJump=null;pointUntil=0;if(lap)endLaptop(false);if(joy)endJoy(false);
     state.vx=0;state.vy=0;state.ground=null;state.bouncy=false;dragVX=dragVY=0;
     dragPose=6;dragSwingV=0;
     if(stuck){stuck=false;nextShiver=shiverUntil=0;floorLift=snowLift();}                  // pulled out of the snow: he will be set down on top of it
@@ -1248,7 +1252,7 @@ let power=null,pwImg=null,pwReady=false,pwClock=0,pwLast=0,nextAuto=bigWait(),po
 function powerReady(parkedOk){   // parkedOk: a deliberate trigger (a cheat code, holding the button) works even while he is parked
   const h=document.documentElement;
   return ready&&!open&&!dragging&&(parkedOk||!parked)&&!motionPaused&&!calm.matches&&(state.ground!==null||(parkedOk&&parked))&&!climb&&!pendingJump&&!visit
-    &&!h.classList.contains('gate-locked')&&!h.classList.contains('intro')&&clock>=waveUntil&&!holdingPoint();
+    &&!h.classList.contains('gate-locked')&&!h.classList.contains('intro')&&clock>=waveUntil&&!holdingPoint()&&!lap&&!joy;
 }
 function powerOk(){return powerReady()&&!stuck&&floorLift===0;}
 function sizeBeam(){beamDpr=Math.min(2,window.devicePixelRatio||1);beamCv.style.width=innerWidth+'px';beamCv.style.height=innerHeight+'px';beamCv.width=Math.round(innerWidth*beamDpr);beamCv.height=Math.round(innerHeight*beamDpr);}
@@ -1796,6 +1800,365 @@ pet.addEventListener('click',e=>{
     askPower(kind);
   },TAP_GAP);
 },true);
+/* ── LAPTOP ────────────────────────────────────────────────────
+   Normal mode only (the art has his cap, not the Santa hat). Now and then, when he is standing still on a button, a tray or a card
+   that is wide enough, he runs to its right-hand end and does a little bit of work: he looks both ways, turns to face right, sits down,
+   swings his legs over the edge so they dangle, pulls a laptop out from behind him (his far side), types for a moment, puts it back
+   and hops off the edge. Shift + L, A, P, T, O, P makes it happen the next time he is standing on one; it also runs on its own about
+   every LT_EVERY seconds. Grabbing him or opening the chat ends it.
+   The art is assets/images/ace-laptop.webp: one row of 24 cells of 240 x 336 (cells 0 to 3 are the site's own idle sprites). The
+   standing cells have his feet on y = 273 like every other sprite; the seated cells are dropped so his seat is on that same line, and
+   his legs hang below it. It is drawn on its own canvas over him while his normal sprite is hidden.
+   LT_STEPS is [cell, milliseconds, offset]: offset is how far (CSS px, + = right) the drawing is from his sitting spot, so he can
+   stand a little back from the edge and shuffle up to it as he sits. His sitting spot is LT_EDGE px inside the button's right edge. */
+const LAPTOP_SHEET='assets/images/ace-laptop.webp?v=2',LT_CW=240,LT_CH=336,LT_FIRST=[30,55],LT_EVERY=[100,170],LT_MIN_W=170,LT_EDGE=2,LT_STAND=-30;
+const LT_STEPS=[
+  [0,900,-30],[1,700,-30],[2,700,-30],[3,350,-18],[4,350,-8],                    // standing, looks left, looks right, turns to the right, lowers himself
+  [5,500,0],[6,300,0],[7,700,0],                                                 // sits, legs swing up, legs hang over the edge
+  [8,500,0],[9,500,0],[10,500,0],[11,500,0],                                     // looks round, the laptop comes out, onto his lap, opened
+  [18,160,0],[19,160,0],[20,160,0],[19,160,0],[21,160,0],[22,160,0],[20,160,0],[23,160,0],   // typing: only his hands move
+  [19,160,0],[22,160,0],[18,160,0],[21,160,0],[23,160,0],[20,160,0],[22,160,0],[19,160,0],
+  [18,350,0],[14,600,0],[15,600,0],[16,500,0],[17,500,0]                         // closes it, puts it away, leans to push off
+];
+const LT_AT=[];{let t=0;for(const st of LT_STEPS){LT_AT.push(t);t+=st[1]/1000;}LT_AT.push(t);}   // when each step starts, in seconds
+/* The flybys happen while he looks both ways: the hammer streaks past going left as he looks left, the shield streaks past going
+   right as he looks right (the two objects are the ones from the summon sheet, SUMMON_SHEET). Navi, the fairy, arrives when the
+   laptop comes out and floats around him until the push-off, when she flies off. The flybys and Navi are drawn on the beam canvas. */
+const LT_HAMMER_AT=LT_AT[1]+.3,LT_SHIELD_AT=LT_AT[2]+.3,LT_FLY_SPEED=1500,LT_NAVI_FROM=LT_AT[9],LT_NAVI_LEAVE=LT_AT[LT_STEPS.length-1];
+let lap=null,lapWant=false,nextLap=0,lapImg=null,lapReady=false,lapCell=-1,lapSeekAt=0;
+const lapCv=document.createElement('canvas');lapCv.width=LT_CW;lapCv.height=LT_CH;lapCv.setAttribute('aria-hidden','true');
+lapCv.style.cssText='position:fixed;left:0;top:0;width:'+LT_CW/2+'px;height:'+LT_CH/2+'px;pointer-events:none;display:none;will-change:transform;z-index:'+(pwZ==='auto'?'60':pwZ);
+document.body.append(lapCv);
+const lapCtx=lapCv.getContext('2d');
+function drawFairy(g,x,y,now,al){                      // Navi: a glowing ball with four wings, the drawing from the sword scene at CSS-pixel scale
+  const flap=.35+.65*Math.abs(Math.sin(now/38)),u=.55;
+  g.save();g.globalAlpha=al;
+  const gr=g.createRadialGradient(x,y,.5,x,y,28*u);gr.addColorStop(0,'rgba(235,246,255,.95)');gr.addColorStop(.25,'rgba(160,205,255,.55)');gr.addColorStop(1,'rgba(120,170,255,0)');
+  g.fillStyle=gr;g.beginPath();g.arc(x,y,28*u,0,6.2832);g.fill();
+  g.fillStyle='rgba(205,228,255,.62)';g.strokeStyle='rgba(255,255,255,.55)';g.lineWidth=.5;
+  for(const w of [[-1,-1,14,6.5,-.5],[1,-1,14,6.5,.5],[-1,1,9,4.2,.45],[1,1,9,4.2,-.45]]){
+    g.save();g.translate(x+w[0]*5.5*u,y+w[1]*2.5*u);g.rotate(w[4]+(w[1]<0?w[0]*-.5:w[0]*.5));g.scale(1,flap);
+    g.beginPath();g.ellipse(w[0]*6*u,0,w[2]*.5*u,w[3]*u,0,0,6.2832);g.fill();g.stroke();g.restore();
+  }
+  g.fillStyle='rgba(255,255,255,.98)';g.beginPath();g.arc(x,y,4.6*u,0,6.2832);g.fill();
+  g.globalAlpha=al*.35;g.fillStyle='rgba(190,220,255,.9)';g.beginPath();g.arc(x,y,6.8*u,0,6.2832);g.fill();
+  g.restore();
+}
+function laptopSpot(){                                  // the ledge he is standing on, if it suits (a perch, wide enough, not at the page edge)
+  const cs=currentSurface();
+  if(!cs||!/^\d+$/.test(String(cs.id))||!perches[Number(cs.id)])return null;
+  if(cs.right-cs.left<LT_MIN_W||cs.right>innerWidth-45||cs.y<120||cs.y>innerHeight-90)return null;
+  return cs;
+}
+function maybeLaptop(){
+  if(window.ACE_XMAS||slip||joy||visit||stuck||dragging||open||parked||motionPaused||document.documentElement.classList.contains('gate-locked'))return;
+  if(lap){
+    if(lap.phase!=='go')return;
+    const cs=currentSurface();
+    if(!cs||cs.id!==lap.id||clock>lap.until||power||sleigh||flight||summon||navi){lap=null;return;}
+    nextDecision=clock+99;
+    if(runGoal===null&&!pendingJump&&state.ground===lap.id&&Math.abs(state.x-lap.stand)<14){
+      lap.phase='play';lap.t=0;lap.base=cs.right-LT_EDGE;lap.x0=state.x;lapCell=-1;
+      runGoal=null;state.vx=0;facing=1;nextDecision=clock+99;pointUntil=0;
+      pet.style.visibility='hidden';lapCv.style.display='block';shadow.style.opacity='0';beamCv.style.display='block';sizeBeam();lap.fx=null;
+    }
+    return;
+  }
+  if(!lapWant){
+    if(!nextLap){nextLap=clock+LT_FIRST[0]+Math.random()*(LT_FIRST[1]-LT_FIRST[0]);return;}
+    if(clock<nextLap||clock-lastActive<3)return;
+  }
+  if(state.ground===null||pendingJump||climb||runGoal!==null||holdingPoint()||clock<waveUntil||clock<landingUntil||power||sleigh||flight||summon||navi||!ready){if(!lapWant)nextLap=clock+6;return;}
+  const cs=laptopSpot();
+  if(!cs){
+    if(!lapWant){nextLap=clock+8;return;}
+    /* A deliberate request (the code): if he is not on a ledge that suits, he leaps to the nearest one that does. */
+    if(clock<lapSeekAt)return;lapSeekAt=clock+1.5;
+    let best=null,bd=1e9;
+    for(const q of surfaces){
+      if(!/^\d+$/.test(String(q.id))||q.right-q.left<LT_MIN_W||q.right>innerWidth-45||q.y<150||q.y>innerHeight-120)continue;
+      const d=Math.abs((q.right-LT_EDGE+LT_STAND)-state.x)+Math.abs(q.y-state.y)*.5;
+      if(d<bd){bd=d;best=q;}
+    }
+    if(best){leap(Math.max(best.left+20,best.right-LT_EDGE+LT_STAND),best.y);nextDecision=clock+1.5;}
+    return;
+  }
+  if(!lapImg){lapImg=new Image();lapImg.onload=()=>{lapReady=true;};lapImg.src=LAPTOP_SHEET;}
+  if(!suImg){suImg=new Image();suImg.onload=()=>{suReady=true;};suImg.src=SUMMON_SHEET;}   // the hammer and the shield
+  if(!lapReady||!suReady)return;                        // loaded the first time it is wanted; he tries again next frame
+  lapWant=false;nextLap=clock+LT_EVERY[0]+Math.random()*(LT_EVERY[1]-LT_EVERY[0]);
+  const stand=cs.right-LT_EDGE+LT_STAND;
+  lap={phase:'go',id:cs.id,stand,until:clock+8,t:0};
+  runGoal=clampX(stand);nextDecision=clock+99;pointUntil=0;
+}
+function endLaptop(hop){
+  if(!lap)return;
+  const playing=lap.phase==='play';lap=null;
+  lapCv.style.display='none';pet.style.visibility='';lastCell=-1;
+  if(playing&&!(power||sleigh||flight||summon||navi)){beamCv.style.display='none';bmCtx.setTransform(1,0,0,1,0,0);bmCtx.clearRect(0,0,beamCv.width,beamCv.height);}
+  if(playing&&hop&&!dragging&&!open){state.ground=null;state.bouncy=false;state.vy=-260;state.vx=95;facing=1;nextDecision=clock+1.2;}   // the last frame is the push-off: he hops down
+  else nextDecision=clock+.5;
+}
+function stepLaptop(dt){
+  lap.t+=dt;scroll=scrollY;
+  const cs=currentSurface();
+  if(!cs||cs.id!==lap.id||open||dragging){endLaptop(false);return;}
+  let acc=0,si=-1;
+  for(let i=0;i<LT_STEPS.length;i++){const d=LT_STEPS[i][1]/1000;if(lap.t<acc+d){si=i;break;}acc+=d;}
+  if(si<0){endLaptop(true);return;}
+  const st=LT_STEPS[si],o0=si?LT_STEPS[si-1][2]:LT_STAND,pr=Math.min(1,(lap.t-acc)/(st[1]/1000)*1.6);
+  lap.base=cs.right-LT_EDGE;
+  const blend=Math.max(0,1-lap.t/.4);                    // slides from where he stopped to his proper standing spot
+  state.vx=state.vy=0;state.y=cs.y;facing=1;
+  state.x=clampX(lap.base+o0+(st[2]-o0)*pr+(lap.x0-(lap.base+LT_STAND))*blend);
+  shadow.style.opacity='0';
+  if(si!==lapCell){lapCell=si;lapCtx.clearRect(0,0,LT_CW,LT_CH);lapCtx.drawImage(lapImg,st[0]*LT_CW,0,LT_CW,LT_CH,0,0,LT_CW,LT_CH);}
+  lapCv.style.transform='translate3d('+(state.x-LT_CW/4).toFixed(1)+'px,'+(state.y-FEET_Y/2).toFixed(1)+'px,0)';
+  const c=bmCtx,T=lap.t,now=T*1000;
+  c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,beamCv.width,beamCv.height);c.setTransform(beamDpr,0,0,beamDpr,0,0);
+  const hx=state.x-LT_FLY_SPEED*(T-LT_HAMMER_AT),sx=state.x+LT_FLY_SPEED*(T-LT_SHIELD_AT);
+  if(hx>-90&&hx<innerWidth+90&&T<LT_HAMMER_AT+3)suObject(c,1,hx,state.y-88+Math.sin(T*9)*3,-T*20,40);          // the hammer, going left
+  if(sx>-90&&sx<innerWidth+90&&T>LT_SHIELD_AT-3&&T<LT_SHIELD_AT+3)suObject(c,0,sx,state.y-72+Math.sin(T*8)*3,T*18,34);   // the shield, going right
+  if(T>=LT_NAVI_FROM){                                   // Navi
+    const f=T-LT_NAVI_FROM,leaving=T>=LT_NAVI_LEAVE;
+    if(!lap.fx)lap.fx={x:state.x+150,y:state.y-230};
+    const a=f*1.8+.6,cx=state.x+4,cy=state.y-66,rx=64+9*Math.sin(f*.8),ry=40+6*Math.sin(f*1.1+1);
+    let tx=cx+Math.cos(a)*rx,ty=cy+Math.sin(a)*ry+Math.sin(f*5.3)*4;
+    if(leaving){tx=state.x+170;ty=state.y-300;}
+    const k=Math.min(1,dt*(leaving?3.5:7));lap.fx.x+=(tx-lap.fx.x)*k;lap.fx.y+=(ty-lap.fx.y)*k;
+    const fade=Math.min(1,f/.5)*(leaving?Math.max(0,1-(T-LT_NAVI_LEAVE)/.45):1);
+    if(fade>0)drawFairy(c,lap.fx.x,lap.fx.y,now,fade);
+  }
+}
+/* ── JOY ───────────────────────────────────────────────────────
+   Normal mode only (the art has his cap, not the Santa hat). Rarely, and only when he is standing still on something with room above
+   him, he braces, crouches, squashes and springs: the cap flies off, his hair and clothes turn white in mid-air (white and violet,
+   coral eyes), and he lands laughing. He bounces three times, laughs, the colour drains away in a puff of cloud and he is back to
+   normal, a little sheepish, as his cap comes down from the sky onto his head. Shift + J, O, Y (or AceCompanion.joy()) plays it the next
+   time he is standing on something; it also runs on its own about every JY_EVERY seconds. Grabbing him or opening the chat ends it.
+   The art is assets/images/ace-joy.webp: 17 cells of 240 x 280 in the order of JY_STEPS's cell numbers (0 to 7 the wind-up and the change,
+   8 the cap alone, 9 to 13 one bounce: landing, push-off, rising, apex, falling, 14 the laugh, 15 the colour draining, 16 back to
+   normal), all with his feet on y = 273: the code lifts him for the jumps. The clouds are assets/images/ace-clouds.webp (JY_CLOUD
+   are the rects of the 8 pieces: 0 to 2 and 6 long ribbons, 1 and 5 curls, 3, 4 and 7 puffs). The figure has its own canvas, the cloud
+   trails and the dust go on one behind him and the flash, the rings, the puffs, the gold glints and the cap go on one in front. */
+const JOY_SHEET='assets/images/ace-joy.webp?v=1',JOY_CLOUDS_SHEET='assets/images/ace-clouds.webp?v=1',JY_CW=240,JY_CH=280,JY_CX=114,JY_FEET=273,JY_FIRST=[90,150],JY_EVERY=[240,420];
+const JY_HANDS=[[72,196,155,209],[62,227,168,225],[70,217,160,223],[40,134,189,135],[42,140,193,140],[37,138,189,137],[37,118,198,118],[39,184,192,186],[71,266,158,254],[41,227,186,227],[42,153,182,154],[45,119,183,119],[41,167,187,166],[45,191,181,193],[41,142,186,141],[61,147,166,147],[67,137,156,235]];   // per cell: x, y of the left hand and of the right hand
+const JY_CLOUD=[[0,0,392,137],[396,0,352,138],[752,0,372,89],[1128,0,279,178],[1411,0,316,138],[1731,0,323,156],[2058,0,393,130],[2455,0,345,118]];
+const JY_CAP=[1985,214,100,60],JY_CAP0=[119,61];            // the cap alone in the sheet (x, y, w, h); where it floats in the spring cell (cell x, cell y)
+const JY_STEPS=[[0,.8],[1,.45],[2,.35],[3,.16],[4,.16],[5,.17],[6,.2],[7,.2],[9,.13]];   // [cell, seconds]: braced, crouch, squash, the big jump (3 to 7), the landing
+for(let i=0;i<3;i++)JY_STEPS.push([10,.1],[11,.12],[12,.14],[13,.11],[9,.13]);            // three bounces: push-off, rising, apex, falling, landing
+JY_STEPS.push([14,.7],[15,.45],[16,.9]);                                                   // the laugh, the colour draining, back to normal
+const JY_AT=[];{let t=0;for(const s of JY_STEPS){JY_AT.push(t);t+=s[1];}JY_AT.push(t);}   // when each step starts, in seconds
+const JY_END=JY_AT[JY_STEPS.length],JY_FLASH=JY_AT[6]-.05,JY_CAPGO=JY_AT[4],JY_CAPLEN=1.15,JY_POOF=JY_AT[25]-.1,JY_CAPBACK0=JY_AT[25],JY_CAPBACK1=JY_AT[26]+.52;
+const JY_LITE=matchMedia('(pointer:coarse)').matches;      // phones and tablets: half the clouds
+let joy=null,joyWant=false,nextJoy=0,joySeekAt=0,joyImg=null,joyReady=false,joyCl=null,joyClReady=false,joyCell=-1,jyDpr=1;
+const jyZ=pwZ==='auto'?60:(Number(pwZ)||60);
+const joyCv=document.createElement('canvas');joyCv.width=JY_CW;joyCv.height=JY_CH;joyCv.setAttribute('aria-hidden','true');
+joyCv.style.cssText='position:fixed;left:0;top:0;width:'+JY_CW/2+'px;height:'+JY_CH/2+'px;pointer-events:none;display:none;will-change:transform;transform-origin:'+JY_CX/2+'px '+JY_FEET/2+'px;z-index:'+jyZ;
+const jbCv=document.createElement('canvas'),jfCv=document.createElement('canvas');
+for(const [c,z] of [[jbCv,jyZ-1],[jfCv,jyZ+1]]){c.setAttribute('aria-hidden','true');c.style.cssText='position:fixed;left:0;top:0;pointer-events:none;display:none;z-index:'+z;}
+document.body.append(jbCv,joyCv,jfCv);
+const joyCtx=joyCv.getContext('2d'),jbCtx=jbCv.getContext('2d'),jfCtx=jfCv.getContext('2d');
+function sizeJoy(){jyDpr=Math.min(2,window.devicePixelRatio||1);for(const c of [jbCv,jfCv]){c.style.width=innerWidth+'px';c.style.height=innerHeight+'px';c.width=Math.round(innerWidth*jyDpr);c.height=Math.round(innerHeight*jyDpr);}}
+addEventListener('resize',()=>{if(joy)sizeJoy();});
+const jyEase=u=>u*u*(3-2*u),jyOut=u=>1-(1-u)*(1-u);
+function jySquash(el,amt){                                  // the button he lands on gives under him for a moment (composited onto whatever transform it already has)
+  if(!el||!el.animate||motionPaused)return;
+  try{el.animate([{transform:'scale(1,1)',transformOrigin:'50% 100%'},{transform:'scale('+(1+.012*amt)+','+(1-.045*amt)+')',transformOrigin:'50% 100%',offset:.3},{transform:'scale(1,1)',transformOrigin:'50% 100%'}],{duration:360,easing:'ease-out',composite:'add'});}catch(e){}
+}
+function jyPuff(o){                                         // a cloud piece: back or front canvas, a position, a velocity and how it grows and fades
+  if(joy.puffs.length>(JY_LITE?32:64))joy.puffs.shift();
+  joy.puffs.push(Object.assign({age:0,k:2.5,rot:0,vr:0,al0:.9,in:.06,hold:0,fy:1,tail:false,vx:0,vy:0},o));
+}
+function jyDust(X,gy,n,big){                                // a little cloud kicked up on the ground at each landing and at the spring
+  n=Math.round(n*(JY_LITE?.6:1));
+  for(let i=0;i<n;i++){const d=i%2?1:-1,p=i%3?4:7;
+    jyPuff({b:true,p,x:X+d*(8+Math.random()*10),y:gy-6,vx:d*(90+Math.random()*200)*(big?1.4:1),vy:-(10+Math.random()*40),k:3,s0:.05,s1:(big?.13:.09)+Math.random()*.025,life:.35+Math.random()*.2,al0:.75,rot:Math.random()*6.3,vr:(Math.random()-.5)*2});}
+}
+function jyBurst(X,cy,hy){                                  // the change: a flash, two rings, a ring of puffs and the gold glints
+  joy.flash={t:joy.t,x:X,y:cy};
+  joy.rings.push({x:X,y:cy,t0:joy.t,dur:.5,r0:16,r1:310,lw:8,al:.85,col:'255,255,255'},{x:X,y:cy,t0:joy.t+.06,dur:.6,r0:10,r1:230,lw:5,al:.7,col:'160,130,245'});
+  const n=Math.round(11*(JY_LITE?.65:1));
+  for(let i=0;i<n;i++){const a=i/n*6.2832+Math.random()*.5,sp=300+Math.random()*220,p=[3,4,7][i%3];
+    jyPuff({b:false,p,x:X+Math.cos(a)*22,y:cy+Math.sin(a)*22,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-40,k:3.2,s0:.12,s1:.28+Math.random()*.06,life:.8,al0:.95,rot:Math.random()*6.3,vr:(Math.random()-.5)*2.4});}
+  for(let i=0;i<7;i++)joy.glints.push({dx:(Math.random()-.5)*150,dy:(Math.random()-.8)*80,t0:joy.t+.04*i+Math.random()*.1,life:.5,r:4+Math.random()*4.5});
+}
+function jyPoof(X,cy){                                      // the colour drains away behind a puff of cloud
+  const n=Math.round(12*(JY_LITE?.65:1));
+  for(let i=0;i<n;i++){const a=Math.random()*6.2832,r=Math.random()*38;
+    jyPuff({b:false,p:i%2?3:4,x:X+Math.cos(a)*r,y:cy+Math.sin(a)*r*1.2,vx:Math.cos(a)*50,vy:Math.sin(a)*40-12,k:1.6,s0:.1,s1:.3+Math.random()*.1,life:.85,in:.1,hold:.2,al0:.97,rot:Math.random()*6.3,vr:(Math.random()-.5)});}
+  for(let i=0;i<8;i++){const a=i/8*6.2832;jyPuff({b:false,p:7,x:X,y:cy,vx:Math.cos(a)*260,vy:Math.sin(a)*220,k:3.4,s0:.08,s1:.2,life:.55,al0:.9,rot:Math.random()*6.3});}
+}
+function jyStar(c,x,y,r,al){
+  c.save();c.translate(x,y);c.rotate(.6);c.globalAlpha=al;c.fillStyle='#ffd36a';c.beginPath();
+  for(let i=0;i<8;i++){const rr=i%2?r*.26:r,a=i*Math.PI/4;c.lineTo(Math.cos(a)*rr,Math.sin(a)*rr);}
+  c.closePath();c.fill();c.fillStyle='#fff6d8';c.beginPath();c.arc(0,0,r*.24,0,6.2832);c.fill();c.restore();
+}
+function jyDrawPuff(c,p){
+  const u=Math.min(1,p.age/p.life),r=JY_CLOUD[p.p],s=p.s0+(p.s1-p.s0)*jyOut(u),w=r[2]*s,h=r[3]*s;
+  const al=p.al0*Math.min(1,p.age/Math.max(.001,p.in))*(p.age<p.hold?1:Math.pow(Math.max(0,1-(p.age-p.hold)/(p.life-p.hold)),1.4));
+  if(al<=.01)return;
+  c.globalAlpha=al;c.save();c.translate(p.x,p.y);c.rotate(p.rot);if(p.fy<0)c.scale(1,-1);
+  if(p.tail)c.drawImage(joyCl,r[0],r[1],r[2],r[3],0,-h/2,w,h);else c.drawImage(joyCl,r[0],r[1],r[2],r[3],-w/2,-h/2,w,h);
+  c.restore();
+}
+function jyCap(c,x,y,rot,s){const w=JY_CAP[2]*s/2,h=JY_CAP[3]*s/2;c.globalAlpha=1;c.save();c.translate(x,y);c.rotate(rot);c.drawImage(joyImg,JY_CAP[0],JY_CAP[1],JY_CAP[2],JY_CAP[3],-w/2,-h/2,w,h);c.restore();}
+function maybeJoy(){
+  const h=document.documentElement;
+  if(window.ACE_XMAS||joy||slip||lap||visit||stuck||dragging||open||parked||motionPaused||h.classList.contains('gate-locked')||h.classList.contains('intro'))return;
+  if(!joyWant){
+    if(!nextJoy){nextJoy=clock+JY_FIRST[0]+Math.random()*(JY_FIRST[1]-JY_FIRST[0]);return;}
+    if(clock<nextJoy||clock-lastActive<3)return;
+  }
+  if(state.ground===null||pendingJump||climb||runGoal!==null||holdingPoint()||clock<waveUntil||clock<landingUntil||power||sleigh||flight||summon||navi||!ready){if(!joyWant)nextJoy=clock+6;return;}
+  const cs=currentSurface();
+  if(!cs||!(/^\d+$/.test(String(cs.id))||cs.id==='floor'||cs.id==='text'||cs.id==='launcher')){if(!joyWant)nextJoy=clock+8;return;}
+  if(cs.y<(joyWant?170:200)){                            // not enough room above him: on its own he waits; asked to, he leaps to the nearest ledge that has some
+    if(!joyWant){nextJoy=clock+8;return;}
+    if(clock<joySeekAt)return;joySeekAt=clock+1.5;
+    let best=null,bd=1e9;
+    for(const q of surfaces){
+      if(!/^\d+$/.test(String(q.id))||q.right-q.left<90||q.y<230||q.y>innerHeight-70)continue;
+      const d=Math.abs((q.left+q.right)/2-state.x)+Math.abs(q.y-state.y)*.5;
+      if(d<bd){bd=d;best=q;}
+    }
+    if(best){leap(Math.max(best.left+30,Math.min(best.right-30,state.x)),best.y);nextDecision=clock+1.5;}
+    return;
+  }
+  if(!joyImg){joyImg=new Image();joyImg.onload=()=>{joyReady=true;};joyImg.src=JOY_SHEET;}
+  if(!joyCl){joyCl=new Image();joyCl.onload=()=>{joyClReady=true;};joyCl.src=JOY_CLOUDS_SHEET;}
+  if(!joyReady||!joyClReady)return;                      // loaded the first time it is wanted; he tries again next frame
+  joyWant=false;nextJoy=clock+JY_EVERY[0]+Math.random()*(JY_EVERY[1]-JY_EVERY[0]);
+  /* The plan: the big jump straight up from where he stands, then three bounces that carry him along the ledge. */
+  const lo=cs.left+34,hi=cs.right-34;
+  let x=clampX(state.x);if(hi>lo)x=Math.max(lo,Math.min(hi,x));
+  const room=Math.max(34,Math.min(150,cs.y-135)),fl=[{t0:JY_AT[3],t1:JY_AT[8],H:room,x0:x,x1:x}];
+  let dir=x<(cs.left+cs.right)/2?1:-1,cx=x;
+  for(let i=0;i<3;i++){
+    let nx=cx+dir*88;if(nx>hi||nx<lo){dir=-dir;nx=cx+dir*88;}
+    nx=hi>lo?Math.max(lo,Math.min(hi,nx)):cx;
+    fl.push({t0:JY_AT[9+5*i],t1:JY_AT[13+5*i],H:[78,102,86][i]*Math.min(1,room/120+.35),x0:cx,x1:nx});cx=nx;
+  }
+  joy={t:0,id:cs.id,x,fl,ev:0,puffs:[],rings:[],glints:[],flash:null,cap0:null,vx:0,vy:0,px:x,py:cs.y,cd:0,lastEv:-1};
+  joy.evs=[
+    {t:.95,fn:(X,gy,l)=>joy.rings.push({x:X,y:gy-l-58,t0:joy.t,dur:.3,r0:12,r1:80,lw:3,al:.5,col:'255,255,255'})},      // heartbeat
+    {t:1.25,fn:(X,gy,l)=>joy.rings.push({x:X,y:gy-l-58,t0:joy.t,dur:.3,r0:12,r1:92,lw:3,al:.55,col:'255,255,255'})},
+    {t:JY_AT[3],fn:(X,gy)=>jyDust(X,gy,12,true)},                                                                     // the spring
+    {t:JY_FLASH,fn:(X,gy,l)=>jyBurst(X,gy-l-58,gy-l-90)},                                                             // the change
+    {t:JY_POOF,fn:(X,gy,l)=>jyPoof(X,gy-l-60)}                                                                        // the colour drains away
+  ];
+  for(const f of fl)joy.evs.push({t:f.t1,fn:(X,gy)=>{jyDust(X,gy,7,false);jySquash(joy.el,1);joy.hit=joy.t;}});          // every landing
+  joy.evs.sort((a,b)=>a.t-b.t);
+  runGoal=null;state.vx=0;state.vy=0;nextDecision=clock+99;pointUntil=0;joyCell=-1;
+  pet.style.visibility='hidden';shadow.style.opacity='0';
+  sizeJoy();jbCv.style.display=joyCv.style.display=jfCv.style.display='block';
+}
+function endJoy(settle){
+  if(!joy)return;
+  const x=joy.x;joy=null;
+  joyCv.style.display=jbCv.style.display=jfCv.style.display='none';
+  for(const c of [jbCtx,jfCtx]){c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,jbCv.width,jbCv.height);}
+  pet.style.visibility='';lastCell=-1;
+  if(settle)state.x=clampX(x);
+  nextDecision=clock+.6;
+}
+function stepJoy(dt){
+  joy.t+=dt;scroll=scrollY;
+  const T=joy.t,cs=currentSurface();
+  if(!cs||cs.id!==joy.id||open||dragging){endJoy(false);return;}
+  if(T>=JY_END){endJoy(true);return;}
+  joy.el=cs.el;
+  const gy=cs.y;
+  let si=0;while(si<JY_STEPS.length-1&&T>=JY_AT[si+1])si++;
+  /* Where he is: on the ledge, or in one of the flights (a parabola; the x moves along with the bounces). */
+  let X=joy.fl[0].x0,lift=0;
+  for(const f of joy.fl){
+    if(T>=f.t1)X=f.x1;
+    else{if(T>=f.t0){const u=(T-f.t0)/(f.t1-f.t0);lift=4*f.H*u*(1-u);X=f.x0+(f.x1-f.x0)*jyEase(u);}break;}
+  }
+  /* A little squash when he lands, a little stretch as he leaves, a tremble while he braces. */
+  let sx=1,sy=1,jit=0;
+  if(joy.hit!==undefined){const a=Math.exp(-(T-joy.hit)*13);sx+=.09*a;sy-=.08*a;}
+  if(lift>0&&T-joy.fl.find(f=>T<f.t1&&T>=f.t0).t0<.09){sy+=.05;sx-=.03;}
+  if(si===1||si===2)jit=Math.sin(T*210)*1.1;
+  const bob=si===24?Math.abs(Math.sin(T*17))*3:0;           // the laugh: shoulders bouncing
+  X+=jit;
+  joy.x=X;state.x=X;state.y=gy;state.vx=state.vy=0;shadow.style.opacity='0';
+  const cell=JY_STEPS[si][0];
+  if(cell!==joyCell){joyCell=cell;joyCtx.clearRect(0,0,JY_CW,JY_CH);joyCtx.drawImage(joyImg,cell*JY_CW,0,JY_CW,JY_CH,0,0,JY_CW,JY_CH);}
+  const top=gy-JY_FEET/2-lift-bob;
+  joyCv.style.transform='translate3d('+(X-JY_CX/2).toFixed(1)+'px,'+top.toFixed(1)+'px,0) scale('+sx.toFixed(3)+','+sy.toFixed(3)+')';
+  while(joy.ev<joy.evs.length&&T>=joy.evs[joy.ev].t){joy.evs[joy.ev].fn(X,gy,lift);joy.ev++;}
+  /* His speed (smoothed), for the cloud trails. */
+  const iv=1/Math.max(dt,.001);
+  joy.vx+=((X-joy.px)*iv-joy.vx)*.35;joy.vy+=(((gy-lift)-joy.py)*iv-joy.vy)*.35;joy.px=X;joy.py=gy-lift;
+  const speed=Math.hypot(joy.vx,joy.vy);
+  /* The cloud trails: one ribbon streams from each hand, pointing away from where he is going and longer the faster he goes, and now and
+     then a little curl is let go of and left behind. */
+  const hd=JY_HANDS[cell];
+  if(!joy.rb)joy.rb=[{dx:0,dy:1,al:0,p:0},{dx:0,dy:1,al:0,p:6}];
+  const flying=lift>2;
+  for(let hnd=0;hnd<2;hnd++){
+    const r=joy.rb[hnd],k=Math.min(1,dt*9);
+    const out=hnd?1:-1;                                  // the ribbons stream backwards and out to the side, so they show beside him
+    r.dx+=(-joy.vx+out*(90+.45*Math.abs(joy.vy))-r.dx)*k;r.dy+=(-joy.vy-r.dy)*k;
+    const sp=Math.hypot(r.dx,r.dy);
+    r.al+=((flying?Math.min(.88,sp/230):0)-r.al)*Math.min(1,dt*9);
+    r.hx=X+((hnd?hd[2]:hd[0])-JY_CX)/2;r.hy=top+(hnd?hd[3]:hd[1])/2;
+    r.ang=Math.atan2(r.dy,r.dx)+Math.sin(T*11+hnd*2.3)*.2;
+    r.s=.23*(.5+Math.min(1,sp/600));
+  }
+  joy.cd-=dt;
+  if(flying&&speed>200&&joy.cd<=0){
+    joy.cd=JY_LITE?.2:.12;
+    const r=joy.rb[Math.random()<.5?0:1];
+    jyPuff({b:true,p:Math.random()<.5?1:5,tail:true,x:r.hx,y:r.hy,rot:r.ang,fy:Math.cos(r.ang)<0?-1:1,vx:-joy.vx*.08,vy:-joy.vy*.08-8,k:2,s0:.12,s1:.17,life:.4+Math.random()*.2,al0:.75,in:.04});
+  }
+  /* The cap: up and out of the top of the screen after the spring, back down onto his head at the end. */
+  if(!joy.cap0&&T>=JY_CAPGO)joy.cap0={x:X+(JY_CAP0[0]-JY_CX)/2,y:gy-lift-(JY_FEET-JY_CAP0[1])/2,d:X<innerWidth/2?1:-1};
+  /* ── draw ── */
+  jbCtx.setTransform(1,0,0,1,0,0);jbCtx.clearRect(0,0,jbCv.width,jbCv.height);jbCtx.setTransform(jyDpr,0,0,jyDpr,0,0);
+  jfCtx.setTransform(1,0,0,1,0,0);jfCtx.clearRect(0,0,jfCv.width,jfCv.height);jfCtx.setTransform(jyDpr,0,0,jyDpr,0,0);
+  const sh=Math.max(.45,1-lift/260);                         // his shadow on the ledge: smaller and fainter the higher he is
+  jbCtx.globalAlpha=.2*sh;jbCtx.fillStyle='#000';jbCtx.beginPath();jbCtx.ellipse(X,gy,26*sh,5*sh,0,0,6.2832);jbCtx.fill();
+  for(const r of joy.rb){
+    if(r.al<.02)continue;
+    const rc=JY_CLOUD[r.p],w=rc[2]*r.s,h=rc[3]*r.s;
+    jbCtx.globalAlpha=r.al;jbCtx.save();jbCtx.translate(r.hx,r.hy);jbCtx.rotate(r.ang);if(Math.cos(r.ang)<0)jbCtx.scale(1,-1);
+    jbCtx.drawImage(joyCl,rc[0],rc[1],rc[2],rc[3],0,-h/2,w,h);jbCtx.restore();
+  }
+  for(let i=joy.puffs.length-1;i>=0;i--){
+    const p=joy.puffs[i];p.age+=dt;
+    if(p.age>=p.life){joy.puffs.splice(i,1);continue;}
+    const d=Math.exp(-p.k*dt);p.vx*=d;p.vy*=d;p.x+=p.vx*dt;p.y+=p.vy*dt;p.rot+=p.vr*dt;
+    jyDrawPuff(p.b?jbCtx:jfCtx,p);
+  }
+  const c=jfCtx;
+  if(joy.flash){const u=(T-joy.flash.t)/.3;if(u>=1)joy.flash=null;else{
+    const f=joy.flash,r=260*(.5+.5*jyOut(u)),g=c.createRadialGradient(f.x,f.y,0,f.x,f.y,r);
+    g.addColorStop(0,'rgba(255,255,255,'+(.9*(1-u)*(1-u)).toFixed(3)+')');g.addColorStop(.45,'rgba(236,228,255,'+(.5*(1-u)*(1-u)).toFixed(3)+')');g.addColorStop(1,'rgba(200,185,255,0)');
+    c.globalAlpha=1;c.fillStyle=g;c.beginPath();c.arc(f.x,f.y,r,0,6.2832);c.fill();}}
+  for(let i=joy.rings.length-1;i>=0;i--){
+    const r=joy.rings[i],u=(T-r.t0)/r.dur;
+    if(u>=1){joy.rings.splice(i,1);continue;}if(u<0)continue;
+    c.globalAlpha=1;c.strokeStyle='rgba('+r.col+','+(r.al*(1-u)).toFixed(3)+')';c.lineWidth=Math.max(.5,r.lw*(1-u)+1);c.beginPath();c.arc(r.x,r.y,r.r0+(r.r1-r.r0)*jyOut(u),0,6.2832);c.stroke();
+  }
+  for(let i=joy.glints.length-1;i>=0;i--){
+    const g=joy.glints[i],u=(T-g.t0)/g.life;
+    if(u>=1){joy.glints.splice(i,1);continue;}if(u<0)continue;
+    jyStar(c,X+g.dx,gy-lift-88+g.dy,g.r*(.4+.6*Math.sin(u*Math.PI)),Math.sin(u*Math.PI));
+  }
+  if(joy.cap0&&T<JY_CAPGO+JY_CAPLEN){                        // up and away
+    const p=(T-JY_CAPGO)/JY_CAPLEN,q=joy.cap0;
+    const y=q.y-(q.y+110)*(1-Math.pow(1-p,3));
+    if(y>-70)jyCap(c,q.x+q.d*95*p,y,-.4+9*(T-JY_CAPGO)*q.d,.65+.2*Math.min(1,p*3));
+  }else if(T>=JY_CAPBACK0){                                  // down from the sky onto his head
+    const p=Math.min(1,(T-JY_CAPBACK0)/(JY_CAPBACK1-JY_CAPBACK0)),ty=gy-96;
+    let y=-70+(ty+70)*p*p;const w=T-JY_CAPBACK1;
+    if(w>0)y=ty-(w<.14?5*Math.sin(Math.PI*w/.14):0);
+    jyCap(c,X+36*(1-p)*(1-p),y,5*(1-p)*(1-p),.85);
+  }
+}
 /* ── SLIPPING ──────────────────────────────────────────────────
    Christmas only, once the snow is up, and every minute or two: standing on anything he can walk on (a ledge, a button or the floor) he slips. Three frames of wobble (his
    feet go, he tips back), then he falls backwards off the button with the fourth frame, tipped right over (it can be spun as he
@@ -1839,7 +2202,7 @@ addEventListener('keydown',e=>{
   if(typing(e.target)||e.repeat)return;
   pwKeys.add(e.code);
   if(!e.shiftKey)return;
-  const ch={KeyA:'a',KeyC:'c',KeyE:'e',KeyS:'s',KeyN:'n',KeyT:'t',KeyL:'l',KeyI:'i',KeyP:'p',KeyH:'h',KeyO:'o',KeyR:'r',KeyF:'f',KeyY:'y',KeyV:'v',KeyG:'g',KeyU:'u',KeyD:'d'}[e.code]||'';
+  const ch={KeyA:'a',KeyC:'c',KeyE:'e',KeyS:'s',KeyN:'n',KeyT:'t',KeyL:'l',KeyI:'i',KeyP:'p',KeyH:'h',KeyO:'o',KeyR:'r',KeyF:'f',KeyY:'y',KeyV:'v',KeyG:'g',KeyU:'u',KeyD:'d',KeyJ:'j'}[e.code]||'';
   if(!ch){pwSeq=[];return;}
   const now=performance.now();pwSeq=pwSeq.filter(s=>now-s.t<5000);pwSeq.push({ch,t:now});
   const typed=pwSeq.slice(-3).map(s=>s.ch).join('')==='ace';
@@ -1851,10 +2214,12 @@ addEventListener('keydown',e=>{
   else if(pwSeq.slice(-4).map(s=>s.ch).join('')==='navi'){pwSeq=[];askPower('navi');}            // Shift + N, A, V, I: the green-capped hero
   else if(pwSeq.slice(-8).map(s=>s.ch).join('')==='language'){pwSeq=[];toggleElven();}           // Shift + L, A, N, G, U, A, G, E: the secret language (not in CHEATS on purpose)
   else if(pwSeq.slice(-4).map(s=>s.ch).join('')==='slip'){pwSeq=[];slipWant=true;}            // Shift + S, L, I, P: slips the next time he is on a button
+  else if(pwSeq.slice(-6).map(s=>s.ch).join('')==='laptop'&&!window.ACE_XMAS){pwSeq=[];lapWant=true;}   // Shift + L, A, P, T, O, P: the laptop, the next time he is on a ledge wide enough
+  else if(pwSeq.slice(-3).map(s=>s.ch).join('')==='joy'&&!window.ACE_XMAS){pwSeq=[];joyWant=true;}   // Shift + J, O, Y: the white form, the next time he is standing on something
 });
 addEventListener('keyup',e=>{pwKeys.delete(e.code);});
 addEventListener('blur',()=>{pwKeys.clear();pwSeq=[];});
-addEventListener('resize',()=>{if(power||sleigh||flight||summon)sizeBeam();});
+addEventListener('resize',()=>{if(power||sleigh||flight||summon||(lap&&lap.phase==='play'))sizeBeam();});
 /* Touch and mouse: hold the "Ask Little Ace" button for 2 seconds. A normal tap
    still opens the chat; a hold that sets it off swallows the click that follows
    the release so the chat does not open as well. Moving the finger or letting
@@ -1897,6 +2262,8 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
     if(shiverUntil&&clock>=shiverUntil){shiverUntil=0;nextShiver=clock+99;if(!(power||sleigh||summon||navi)&&beginFlight(true)!==false){}else nextShiver=clock+1;}   // then he flies up out of the drift
     play(shiverUntil?'shiver':'stuck');renderSprite(facing);
   }
+  else if(lap&&lap.phase==='play'){stepLaptop(dt);}
+  else if(joy){stepJoy(dt);}
   else if(slip){stepSlip(dt);}
   else if(sleigh){scroll=scrollY;facing=sleigh.facing;play(sleigh.clip);renderSprite(facing);}   // the sleigh sequence moves him (stepSleigh); this only draws
   else if(flight){scroll=scrollY;}   // flying: drawn by stepFlight on its own canvas, the page sprite is hidden
@@ -1904,7 +2271,7 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
    const dy=scrollY-scroll;scroll=scrollY;
    if(floorLift>0&&state.ground==='floor'){const r=stuckLift();floorLift=Math.max(r,floorLift-SINK_PX_S*dt);if(floorLift<=r){floorLift=r;stuck=true;}}   // on top of the snow he slowly sinks back in
    if(clock-lastSurfaceUpdate>.12||dy){scan();lastSurfaceUpdate=clock;}
-   maybeSlip();
+   maybeSlip();maybeLaptop();maybeJoy();
 
    /* ── CLIMBING ────────────────────────────────────────────────
       He walks to the left edge of the block first, then goes up its face.
@@ -2062,6 +2429,8 @@ function tick(ts){const dt=Math.min(.035,Math.max(0,(ts-last)/1000||.016));last=
      15s cap means 15s of the chat actually being looked at rather than 15s
      of wall clock. */
   if(slip){slip=null;slipRot=0;}
+  if(lap)endLaptop(false);
+  if(joy)endJoy(false);
   const t=chatLayout();
   if(t){
     const cw=t.w.toFixed(1)+'px',ch=t.h.toFixed(1)+'px';
