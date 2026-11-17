@@ -218,6 +218,22 @@
     document.querySelectorAll('[placeholder]').forEach(function (el) { var v = el.getAttribute('placeholder'); if (!produced[v]) { var o = algoText(v); produced[o] = 1; el.setAttribute('placeholder', o); } });
     show();
   }
+  /* The hero's ASSET is forged a letter at a time (heroIntro in main.js): each letter is its own steel span, registered with the heat effect. A
+     translation must not flatten that into plain text, so the translated word is written back into the SAME letter spans (more are cloned if the word
+     is longer, spare ones dropped), with each word kept whole so a long phrase wraps between words, never inside one. */
+  function forgeWord(el, word) {
+    var old = [].slice.call(el.querySelectorAll('.hero__forge')), last = old[old.length - 1];
+    el.textContent = '';
+    var wrap = null;
+    word.split('').forEach(function (ch) {
+      if (/\s/.test(ch)) { el.appendChild(document.createTextNode(' ')); wrap = null; return; }
+      if (!wrap) { wrap = document.createElement('span'); wrap.style.whiteSpace = 'nowrap'; el.appendChild(wrap); }
+      var l = old.shift();
+      if (!l) { l = last.cloneNode(false); l.style.transition = 'opacity .5s'; }   // an extra letter: hidden like the rest until the intro ends, then it fades in
+      l.textContent = ch; wrap.appendChild(l);
+    });
+    el.setAttribute('aria-label', word);
+  }
   function apply() {
     if (ALGO[lang]) { algoApply(); return; }
     var map = Object.create(null);
@@ -238,6 +254,7 @@
         for (var i = el.childNodes.length - 1; i >= 0; i--) if (el.childNodes[i].nodeType === 3 && clean(el.childNodes[i].nodeValue)) { el.childNodes[i].nodeValue = ' ' + t; break; }
         return;
       }
+      if (el.classList.contains('hero__asset') && el.querySelector('.hero__forge')) { forgeWord(el, t); return; }   // keep the forged steel letters
       el.innerHTML = t.replace(/\{M\}/g, link);
     });
     /* Names inside sentences, and headings that have no key of their own: swap in the translated name, longest first. */

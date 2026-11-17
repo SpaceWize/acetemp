@@ -1098,7 +1098,7 @@
       removeEventListener('touchmove', hold, { passive: false });
       root.classList.remove('intro', 'intro-lock');
       anims.forEach(function (a) { a.cancel(); });
-      letters.forEach(function (l) { l.style.opacity = ''; });
+      [].slice.call(asset.querySelectorAll('.hero__forge')).forEach(function (l) { l.style.opacity = ''; l.removeAttribute('data-heat-lock'); });   // every letter, including any a translation added (lang.js forgeWord): a letter cloned during the intro carries the lock and is not in the list above
       if (gold) {
         gold.style.clipPath = '';
         gold.style.removeProperty('--dir');
