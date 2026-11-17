@@ -8,14 +8,16 @@
 (function () {
   'use strict';
   var PAGES = ['premium-pickup-transport.html', 'advisory.html', 'private-working-session.html', 'public-speaking.html', 'mastermind-membership.html', 'mastermind-application.html', 'group-activities.html', 'contact.html', 'good-news-coffee.html', 'index.html'], V = 120;
-  var LANGS = ['ja', 'ko', 'da', 'ru', 'ar', 'fa', 'de', 'he', 'fr', 'yue', 'zh', 'tl', 'es', 'pt', 'la', 'el', 'af', 'pa', 'hi', 'nl', 'pl', 'no', 'sv', 'gd', 'ga', 'cy', 'sjn', 'tlh', 'en-GB', 'en-US', 'en-CA', 'en-NL', 'en-AU', 'en-IE', 'en-SC', 'pig', 'bin', 'egy', 'run', 'ogm', 'sux', 'elf'], RTL = { ar: 1, fa: 1, he: 1 }, KEY = 'ace-lang', ALGO = { pig: 1, bin: 1, egy: 1, run: 1, ogm: 1, sux: 1, elf: 1 };   // ALGO: made by rule, not by dictionary
+  var LANGS = ['ja', 'ko', 'da', 'ru', 'ar', 'fa', 'de', 'he', 'fr', 'yue', 'zh', 'tl', 'es', 'pt', 'la', 'el', 'af', 'pa', 'hi', 'nl', 'pl', 'no', 'sv', 'gd', 'ga', 'cy', 'sjn', 'tlh', 'en-GB', 'en-US', 'en-CA', 'en-NL', 'en-AU', 'en-IE', 'en-SC', 'pig', 'bin', 'egy', 'run', 'ogm', 'sux', 'rel', 'relr'], RTL = { ar: 1, fa: 1, he: 1 }, KEY = 'ace-lang', ALGO = { pig: 1, bin: 1, egy: 1, run: 1, ogm: 1, sux: 1, rel: 1, relr: 1 };   // ALGO: made by rule, not by dictionary
   function pick() {
     var forced = null, q = null;
     try {
       q = new URLSearchParams(location.search).get('lang');
+      if (q === 'elf') q = 'rel';                           // the secret language was called Elven before it was Relian
       if (q === 'auto') localStorage.removeItem(KEY);
       else if (LANGS.indexOf(q) >= 0 || q === 'orig') localStorage.setItem(KEY, q);
       forced = localStorage.getItem(KEY);
+      if (forced === 'elf') forced = 'rel';
     } catch (e) {}
     if (!forced && (LANGS.indexOf(q) >= 0 || q === 'orig')) forced = q;     // storage blocked (private browsing): the address still carries the choice
     if (forced === 'orig') return null;                     // chose the original in the picker
@@ -41,7 +43,7 @@
   function addPicker() {
     var spot = document.querySelector('.burger');
     if (!spot) return;
-    if (lang === 'elf') PICK.push(['elf', 'Elven', 'ELF']);                       // the secret one: listed only while it is on, so it can be switched off from here
+    if (lang === 'rel' || lang === 'relr') PICK.push(['rel', 'Relian', 'REL'], ['relr', 'Relian romanized', 'REL']);   // the secret one: listed only while it is on, so it can be switched off from here
     var cur = lang || 'orig', box = document.createElement('label');
     box.className = 'ace-lang';
     box.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg><span aria-hidden="true">' + PICK.filter(function (o) { return o[0] === cur; })[0][2] + '</span><select aria-label="Language"></select>';
@@ -95,73 +97,114 @@
     }
     return out;
   }
-  /* ELVEN: the easter-egg language (Shift + L, A, N, G, U, A, G, E; it is not in the picker). Made by rule from the Elven Rules Reference: every English word is
+  /* RELIAN (called Elven until Nov 2026; the spec is tools/relian_spec.html): the easter-egg language (Shift + L, A, N, G, U, A, G, E; it is not in the picker). Made by rule from the Elven Rules Reference: every English word is
      spelled out letter by letter in the Elven spellings (digraphs, long vowels, the letter-name merges ja/ha/va/ra, the extra n), the particles, pronouns and the
      listed vocabulary are swapped in, plurals are s' + the singular, Ace's Group Activities becomes Ace lay Group s'Activities, months are the first three letters + -mon,
      and acronyms are spelled by letters. Verb-first word order, sentence endings, negation and quoting are NOT done: a machine cannot read the grammar of arbitrary text. */
   var ELF_L = { b: 'be', c: 'kh', d: 'deh', e: 'ea', f: 'fh', g: 'gi', h: 'ha', i: 'io', j: 'jay', o: 'kio', r: 'ar', s: 'ess', v: 'va' };
   var ELF_W = { i: 'i', you: 'yio', he: 'heas', she: 'esshea', we: 'wea', they: 'tey', it: 'iot', to: 'tu', 'with': 'wio', 'for': 'fhkioar', from: 'fharkiom', 'in': 'ionen', on: 'kionen', at: 'ayt', about: 'aybekiout',
-    and: 'ayendeh', or: 'kioar', but: 'beut', 'if': 'iofh', what: 'wayt', who: 'wkio', where: 'wearar', when: 'weanen', why: 'wy', how: 'waykio',
+    and: 'ayendeh', or: 'kioar', but: 'beut', 'if': 'iofh', what: 'wayt', who: 'wkio', where: 'wearar', when: 'weanen', why: 'wy', how: 'waykio', is: 'essea', was: 'essea',
     ace: 'Aykhea', gold: 'Khionen', site: 'Essiotea', home: 'Hakiome', project: 'Parkiojayeakht', group: 'Giarkioup', activity: 'Aykhtiovaioty', good: 'giuodeh', more: 'mkioarea',
     go: 'gikio', read: 'arearaydeh', walk: 'wayluk', eat: 'earayt', need: 'neneadeh', book: 'Beuok', tree: 'Tarue', goose: 'Giuoessea', wood: 'Wuodeh', food: 'Fhuodeh', cup: 'Khup',
     computer: 'Khkiomputeaar', bag: 'Beaygi', rice: 'Ariokhea', gum: 'Gium', forest: 'Fhkioareaesst', board: 'Bekiorayardeh', building: 'Beuioldehionengi', painting: 'Payionentionengi',
     pencil: 'Peanenkhiol', dune: 'Dehunenea', scissors: 'Esskhioessesskioaress', ruler: 'Arulear', calculator: 'Khaylkhulaytkioar', barometer: 'Beayarkiomeateaar', stenograph: 'Essteanenkiogiarpha' };
   var ELF_NOUN = {}, ELF_VERB = { go: 1, read: 1, walk: 1, eat: 1, need: 1 }, ELF_ADJ = { good: 1, more: 1 }, ELF_PART = { i: 1, you: 1, he: 1, she: 1, we: 1, they: 1, it: 1, to: 1, 'with': 1, 'for': 1, from: 1, 'in': 1, on: 1, at: 1, about: 1, and: 1, or: 1, but: 1, 'if': 1, what: 1, who: 1, where: 1, when: 1, why: 1, how: 1 };
   Object.keys(ELF_W).forEach(function (k) { if (!ELF_VERB[k] && !ELF_ADJ[k] && !ELF_PART[k]) ELF_NOUN[k] = 1; });
+  delete ELF_NOUN['is']; delete ELF_NOUN['was'];                                    // the copula is not a noun (no plural)
   var ELF_MONTH = { january: 'Jan', february: 'Feb', april: 'Apr', june: 'Jun', july: 'Jul', august: 'Aug', september: 'Sep', october: 'Oct', november: 'Nov', december: 'Dec' };   // May and March are left alone: they are also ordinary words
   var ELF_IS = { it: 1, that: 1, what: 1, who: 1, there: 1, here: 1, 'let': 1, he: 1, she: 1, where: 1, how: 1, everything: 1, nothing: 1, something: 1 };       // it’s, that’s: "is", not a possessive
-  var elfEnd = false;                                                              // does the Elven spelling just written end in a vowel? (the extra n carries across words)
-  function elfSpell(w) {
-    var lo = w.toLowerCase(), out = '', i, c, d, one;
+  var elfEnd = false;                                                              // does the Relian spelling just written end in a vowel? (the extra n carries across words)
+  /* A word is a list of units [glyph, letter-name]: the glyph is the letter in the Relian script (assets/fonts/relian.woff, private-use code points), the
+     letter-name is how it is spelled in the romanized form (a = ay / ray, n = en / nen depend on what comes before, so their name is null until it is rendered).
+     lang 'rel' shows the glyphs, 'relr' the romanized spelling. */
+  var REL_NAMES = ['essh', 'ess', 'jay', 'ray', 'kio', 'deh', 'nen', 'ea', 'ay', 'be', 'kh', 'fh', 'gi', 'ha', 'io', 'en', 'ar', 'va', 'th', 'ng'];
+  var REL_NAME_G = { essh: 'sh', ess: 's', jay: 'j', ray: 'a', kio: 'o', deh: 'd', nen: 'n', ea: 'e', ay: 'a', be: 'b', kh: 'c', fh: 'f', gi: 'g', ha: 'h', io: 'i', en: 'n', ar: 'r', va: 'v', th: 'th', ng: 'ng' };
+  var REL_G = { sh: 0xE01A, th: 0xE01B, ng: 0xE01C, plural: 0xE020, ing: 0xE021, past: 0xE022, neg: 0xE023, question: 0xE024, poss: 0xE025 };
+  function relGlyph(g) { return REL_G[g] ? String.fromCharCode(REL_G[g]) : /^[a-z]$/.test(g) ? String.fromCharCode(0xE000 + g.charCodeAt(0) - 97) : g; }
+  var REL_P = { dash: 0xE030, plus: 0xE031, excl: 0xE032, colon: 0xE033, openq: 0xE034, closeq: 0xE035 };
+  function relCap(g) { var c = g.charCodeAt(0); return c >= 0xE000 && c <= 0xE01C ? String.fromCharCode(c + 0x100) + g.slice(1) : g; }   // the capital mark: a tick on the first letter
+  function relPunct(str) {
+    return str.replace(/\.(?=\s|$|["”’])/g, String.fromCharCode(REL_P.dash)).replace(/,(?=\s|$)/g, String.fromCharCode(REL_P.plus)).replace(/!/g, String.fromCharCode(REL_P.excl)).replace(/[:;](?=\s|$)/g, String.fromCharCode(REL_P.colon)).replace(/\?/g, relGlyph('question'))
+      .replace(/["“]([^"“”]*)["”]/g, String.fromCharCode(REL_P.openq) + '$1' + String.fromCharCode(REL_P.closeq));
+  }
+  function relParse(rom) {                                                         // a vocabulary spelling (letter names run together) -> the glyph keys, longest name first
+    var lo = rom.toLowerCase(), out = [], i = 0, k, hit;
+    while (i < lo.length) {
+      hit = null;
+      for (k = 0; k < REL_NAMES.length; k++) if (lo.substr(i, REL_NAMES[k].length) === REL_NAMES[k]) { hit = REL_NAMES[k]; break; }
+      if (hit) { out.push(REL_NAME_G[hit]); i += hit.length; } else { out.push(lo[i]); i++; }
+    }
+    return out;
+  }
+  function relUnits(w) {
+    var lo = w.toLowerCase(), out = [], i, c, d;
     for (i = 0; i < lo.length; i++) {
       c = lo[i]; d = lo[i + 1];
-      if (c === 's' && d === 'h') { one = 'essh'; i++; }
-      else if (c === 't' && d === 'h') { one = 'th'; i++; }
-      else if (c === 'p' && d === 'h') { one = 'ph'; i++; }
-      else if (c === 'c' && d === 'h') { one = 'kh'; i++; }
-      else if (c === 'w' && d === 'h') { one = 'w'; i++; }
-      else if ('jhvr'.indexOf(c) >= 0 && d === 'a') { one = ELF_L[c]; i++; }          // letter-name merge: ja = jay, ha = ha, va = va, ra = ar
-      else if ('aeiou'.indexOf(c) >= 0 && d === c) { one = 'u' + c; i++; }              // long vowels: oo = uo, ee = ue, aa = ua, ii = ui
-      else if (c === 'a') one = (i > 0 && 'aeiou'.indexOf(lo[i - 1]) >= 0) ? 'ray' : 'ay';
-      else if (c === 'n') one = /[aeiou]$/.test(out || (elfEnd ? 'a' : '')) ? 'nen' : 'en';
-      else one = ELF_L[c] || c;
-      out += one;
+      if (c === 's' && d === 'h') { out.push(['sh', 'essh']); i++; }
+      else if (c === 't' && d === 'h') { out.push(['th', 'th']); i++; }
+      else if (c === 'n' && d === 'g') { out.push(['ng', 'ng']); i++; }
+      else if (c === 'p' && d === 'h') { out.push(['f', 'fh']); i++; }                  // ph and ch have no symbol of their own yet: they are f and c
+      else if (c === 'c' && d === 'h') { out.push(['c', 'kh']); i++; }
+      else if (c === 'w' && d === 'h') { out.push(['w', 'w']); i++; }
+      else if ('jhvr'.indexOf(c) >= 0 && d === 'a') { out.push([c, ELF_L[c]]); i++; }  // letter-name merge: ja = jay, ha = ha, va = va, ra = ar
+      else if ('aeiou'.indexOf(c) >= 0 && d === c) { out.push(['u', 'u'], [c, c]); i++; }   // long vowels: oo = uo, ee = ue, aa = ua, ii = ui
+      else if (c === 'a') out.push(['a', null]);
+      else if (c === 'n') out.push(['n', null]);
+      else out.push([c, ELF_L[c] || c]);
     }
     return out;
   }
-  function elfCap(out, w) { return out ? out[0].toUpperCase() + out.slice(1) : out; }
-  function elfWord(w) {
-    var lo = w.toLowerCase(), out, m, up = w[0] !== w[0].toLowerCase(), allCaps = w === w.toUpperCase();
-    if (ELF_MONTH[lo] && up) out = elfCap(elfSpell(ELF_MONTH[lo])) + '-mon';
-    else if (ELF_W[lo]) out = ELF_W[lo];
-    else if (lo === 'geese') out = 's’' + ELF_W.goose;
-    else if ((m = lo.match(/^(.+)ies$/)) && ELF_NOUN[m[1] + 'y']) out = 's’' + ELF_W[m[1] + 'y'];
-    else if ((m = lo.match(/^(.+?)(?:es|s)$/)) && ELF_NOUN[m[1]]) out = 's’' + ELF_W[m[1]];
-    else if ((m = lo.match(/^(.+)s$/)) && ELF_NOUN[m[1]]) out = 's’' + ELF_W[m[1]];
-    else if ((m = lo.match(/^(.+)ing$/)) && ELF_VERB[m[1]]) out = ELF_W[m[1]] + 'engi';
-    else {
-      out = elfSpell(w);
-      if (allCaps && w.length > 4) out = out.toUpperCase();                           // a heading set in capitals
-      else if (up || allCaps) out = elfCap(out);                                      // names and acronyms (CAD = Khaydeh) are capitalized
+  function relRender(units, ctxVowel) {                                            // ctxVowel: the spelling before this word ends in a vowel
+    var r = '', g = '', prevG = '', k, u, name;
+    for (k = 0; k < units.length; k++) {
+      u = units[k]; name = u[1];
+      if (name === null) {
+        if (u[0] === 'a') name = (k > 0 && 'aeiou'.indexOf(prevG) >= 0) ? 'ray' : 'ay';
+        else name = /[aeiou]$/.test(r || (ctxVowel ? 'a' : '')) ? 'nen' : 'en';
+      }
+      r += name; g += relGlyph(u[0]); prevG = u[0];
     }
-    elfEnd = /[aeiouAEIOU]$/.test(out);
-    return out;
+    return { r: r, g: g };
+  }
+  function elfCap(out) { return out ? out[0].toUpperCase() + out.slice(1) : out; }
+  function relVocab(key) { return { r: ELF_W[key], g: relParse(ELF_W[key]).map(relGlyph).join('') }; }
+  function relWord(w) {
+    var lo = w.toLowerCase(), res, m, up = w[0] !== w[0].toLowerCase(), allCaps = w === w.toUpperCase();
+    function plural(key) { var v = relVocab(key); return { r: 's’' + v.r, g: relGlyph('plural') + v.g }; }
+    if (ELF_MONTH[lo] && up) { res = relRender(relUnits(ELF_MONTH[lo]), elfEnd); res.r = elfCap(res.r) + '-mon'; res.g += '-' + relRender(relUnits('mon'), false).g; }
+    else if (ELF_W[lo]) res = relVocab(lo);
+    else if (lo === 'geese') res = plural('goose');
+    else if ((m = lo.match(/^(.+)ies$/)) && ELF_NOUN[m[1] + 'y']) res = plural(m[1] + 'y');
+    else if ((m = lo.match(/^(.+?)(?:es|s)$/)) && ELF_NOUN[m[1]]) res = plural(m[1]);
+    else if ((m = lo.match(/^(.+)s$/)) && ELF_NOUN[m[1]]) res = plural(m[1]);
+    else if ((m = lo.match(/^(.+)ing$/)) && ELF_VERB[m[1]]) { var v = relVocab(m[1]); res = { r: v.r + 'engi', g: v.g + relGlyph('ing') }; }
+    else {
+      res = relRender(relUnits(w), elfEnd);
+      if (allCaps && w.length > 4) res.r = res.r.toUpperCase();                         // a heading set in capitals
+      else if (up || allCaps) res.r = elfCap(res.r);                                    // names and acronyms (CAD = Khaydeh) are capitalized
+    }
+    if (up) res.g = relCap(res.g);
+    elfEnd = /[aeiouAEIOU]$/.test(res.r);
+    return res;
   }
   var ELF_CODE = /^(ACE|FLY|THOR|SANTA|SLIP|NAVI|LANGUAGE)$/;
-  function elfText(str) {
+  function relText(str) {
+    var rom = lang === 'relr';
     elfEnd = false;
     var afterPlus = false;
-    return str.split(/(\s+)/).map(function (t, i) {
+    var out = str.split(/(\s+)/).map(function (t, i) {
       if (i % 2 || !t) return t;
       var keep = (afterPlus && ELF_CODE.test(t)) || LINKISH.test(t);                  // "Shift + ACE" stays typable
       afterPlus = t === '+';
       if (keep) return t;
       return t.replace(/([A-Za-z]+)(?:[’']s\b)?/g, function (all, word) {
-        var poss = all.length > word.length;
-        var out = elfWord(word);
-        return poss ? out + (ELF_IS[word.toLowerCase()] ? ' ' + elfWord('is') : ' lay') : out;
+        var poss = all.length > word.length, out = relWord(word), o = rom ? out.r : out.g;
+        if (!poss) return o;
+        if (ELF_IS[word.toLowerCase()]) { var be = relWord('is'); return o + ' ' + (rom ? be.r : be.g); }   // it’s, that’s: "is", not a possessive
+        return o + (rom ? ' lay' : ' ' + relGlyph('poss'));
       });
-    }).join('').replace(/\?/g, '⸮').replace(/["“]([^"“”]*)["”]/g, '‘$1’');
+    }).join('');
+    return rom ? out.replace(/\?/g, '⸮').replace(/["“]([^"“”]*)["”]/g, '‘$1’') : relPunct(out);
   }
   function pigWord(w) {
     if (CODES.test(w) || (w.length > 1 && w.length <= 4 && w === w.toUpperCase())) return w;     // codes and short acronyms (CAD, BC, VIP)
@@ -184,14 +227,14 @@
   }
   function algoText(str) {
     var m = str.match(/^(\s*)([\s\S]*?)(\s*)$/);
-    if (lang === 'elf') return m[1] + elfText(m[2]) + m[3];
+    if (lang === 'rel' || lang === 'relr') return m[1] + relText(m[2]) + m[3];
     var core = m[2].split(/(\s+)/).map(function (t, i) { return i % 2 ? (lang === 'bin' ? ' 00100000 ' : t) : algoToken(t); }).join('');
     if (lang === 'ogm' && /[ᚁ-ᚚ]/.test(core)) core = '᚛' + core + '᚜';
     return m[1] + core + m[3];
   }
   var produced = Object.create(null);
   function algoApply() {
-    root.lang = { pig: 'en-x-piglatin', bin: 'en-x-binary', egy: 'egy', run: 'en-x-runic', ogm: 'en-x-ogham', sux: 'sux', elf: 'en-x-elven' }[lang];
+    root.lang = { pig: 'en-x-piglatin', bin: 'en-x-binary', egy: 'egy', run: 'en-x-runic', ogm: 'en-x-ogham', sux: 'sux', rel: 'en-x-relian', relr: 'en-x-relian' }[lang];
     root.setAttribute('data-algo', lang);
     window.ACE_TR = function (str) { var o = algoText(String(str)); produced[o] = 1; return o; };   // for text built later, like Little Ace's thoughts
     if (!document.getElementById('algo-css')) {
@@ -201,6 +244,13 @@
       if (lang === 'run' || lang === 'ogm') { var lk2 = document.createElement('link'); lk2.rel = 'stylesheet'; lk2.href = 'https://fonts.googleapis.com/css2?family=' + (lang === 'run' ? 'Noto+Sans+Runic' : 'Noto+Sans+Ogham') + '&display=swap'; document.head.appendChild(lk2); }
       if (lang === 'sux') { var lk3 = document.createElement('link'); lk3.rel = 'stylesheet'; lk3.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans+Cuneiform&display=swap'; document.head.appendChild(lk3); }
       if (lang === 'egy') { var lk = document.createElement('link'); lk.rel = 'stylesheet'; lk.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans+Egyptian+Hieroglyphs&display=swap'; document.head.appendChild(lk); }
+    }
+    if (lang === 'rel' && !document.getElementById('rel-css')) {                          // the Relian script: its font for everything but the language picker
+      var rc = document.createElement('style'); rc.id = 'rel-css';
+      rc.textContent = '@font-face{font-family:"Relian";src:url(assets/fonts/relian.woff?v=2) format("woff");font-display:block}' +
+        'html[data-algo="rel"] body,html[data-algo="rel"] body *{font-family:"Relian",system-ui,sans-serif !important;letter-spacing:.02em}' +
+        'html[data-algo="rel"] .ace-lang,html[data-algo="rel"] .ace-lang *{font-family:system-ui,sans-serif !important;letter-spacing:.06em}';
+      document.head.appendChild(rc);
     }
     if (lang === 'pig') document.querySelectorAll('body *').forEach(function (el) {       // a word split into one-letter spans: change the whole word, then deal it back out
       var k = el.children; if (el.__algo || k.length < 2 || k.length > 24) return;

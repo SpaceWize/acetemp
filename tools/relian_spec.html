@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Relian: full spec</title>
+<style>
+  body { font-family: Georgia, serif; color: #1a1a1a; background: #fff; max-width: 880px; margin: 40px auto; padding: 0 20px; line-height: 1.55; }
+  h1 { font-size: 28px; margin-bottom: 4px; }
+  h2 { font-size: 19px; margin-top: 34px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; }
+  .card { border: 1px solid #d0d0d0; border-radius: 8px; padding: 8px 6px; text-align: center; }
+  .ltr { font-size: 13px; color: #555; }
+  .sp { font-size: 15px; margin-top: 2px; }
+  .glyph { width: 56px; height: 115px; display: block; margin: 4px auto; fill: none; stroke: #1a1a1a; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+  .sym { width: 76px; height: 76px; display: block; margin: 0 auto; fill: none; stroke: #1a1a1a; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+  .fill { fill: #1a1a1a; stroke: none; }
+  ul li { margin-bottom: 4px; }
+  .open { color: #555; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+<g id="g-a"><path d="M0 26 Q-10 100 0 150"/><path d="M0 150 C26 164 30 120 14 110" style="stroke-width:3.5"/></g>
+<g id="g-b"><path d="M0 26 L0 174"/><path d="M0 52 L26 30" style="stroke-width:3.5"/><path d="M0 112 L26 92" style="stroke-width:3.5"/></g>
+<g id="g-c"><path d="M0 26 Q-10 100 0 174"/><path d="M0 60 C-22 40 -24 80 -4 92" style="stroke-width:3.5"/></g>
+<g id="g-d"><path d="M0 26 L0 174"/><path d="M0 56 L30 80 L0 104"/><path d="M0 150 L16 170"/></g>
+<g id="g-e"><path d="M0 26 Q-10 90 0 150"/><circle cx="14" cy="130" r="14"/></g>
+<g id="g-f"><path d="M0 26 L0 174"/><path d="M0 40 L22 22" style="stroke-width:3"/><path d="M-10 76 L14 76"/><path d="M0 150 L18 166"/></g>
+<g id="g-g"><path d="M0 26 Q-10 100 0 174"/><path d="M0 52 C-24 30 -26 66 -2 72" style="stroke-width:3.5"/><path d="M0 112 C-24 94 -26 128 -2 134" style="stroke-width:3.5"/></g>
+<g id="g-h"><path d="M0 26 Q-10 100 0 174"/><circle cx="12" cy="10" r="4.5" class="fill"/></g>
+<g id="g-i"><path d="M0 26 L0 174"/><path d="M0 98 L30 116 L12 138" style="stroke-width:3.5"/></g>
+<g id="g-j"><path d="M0 26 L0 150 L-22 172"/></g>
+<g id="g-k"><path d="M0 26 Q-10 100 0 174"/><path d="M0 60 C-22 40 -24 80 -4 92" style="stroke-width:3.5"/><path d="M0 124 C22 124 24 150 4 160"/></g>
+<g id="g-l"><path d="M0 100 L24 128 L10 172"/></g>
+<g id="g-m"><path d="M0 26 Q-10 100 0 174"/><path d="M0 40 C30 22 32 64 4 70" style="stroke-width:3.5"/><path d="M0 118 C30 100 32 144 4 150" style="stroke-width:3.5"/></g>
+<g id="g-n"><path d="M0 26 Q-10 100 0 174"/><path d="M0 90 C24 80 26 120 4 130" style="stroke-width:3"/></g>
+<g id="g-o"><circle cx="12" cy="110" r="14"/></g>
+<g id="g-p"><path d="M0 26 L0 174"/><path d="M0 40 L26 40 L26 72 L0 72" style="stroke-width:3.5"/></g>
+<g id="g-q"><path d="M0 26 Q-10 100 0 174"/><path d="M0 56 C-22 38 -24 74 -4 82" style="stroke-width:3"/><path d="M0 150 C10 152 14 160 22 166"/></g>
+<g id="g-r"><path d="M0 26 L0 174"/><path d="M0 52 L24 52 L24 72" style="stroke-width:3"/></g>
+<g id="g-s"><path d="M12 42 C-6 24 -14 52 0 66 C14 80 24 100 6 118 C-6 130 -16 146 -4 160" style="stroke-width:3"/></g>
+<g id="g-t"><path d="M0 26 Q-10 100 0 174"/><path d="M-8 52 C4 46 10 48 14 50" style="stroke-width:3"/></g>
+<g id="g-u"><path d="M-14 30 C-14 110 14 110 14 30" style="stroke-width:3.5"/></g>
+<g id="g-v"><path d="M0 26 Q-10 100 0 174"/><path d="M0 46 C30 56 26 124 2 146" style="stroke-width:3.5"/></g>
+<g id="g-w"><path d="M0 26 Q-10 100 0 174"/><path d="M0 30 C26 40 26 80 2 90" style="stroke-width:3.5"/><path d="M0 110 C26 120 26 160 2 170" style="stroke-width:3.5"/></g>
+<g id="g-x"><path d="M0 26 Q-10 100 0 174"/><path d="M-18 40 C4 70 -4 130 18 160" style="stroke-width:3"/><path d="M18 40 C-4 70 4 130 -18 160" style="stroke-width:3"/></g>
+<g id="g-y"><path d="M-16 40 L-2 100 L6 174" style="stroke-width:3"/><path d="M16 40 L4 62" style="stroke-width:3"/></g>
+<g id="g-z"><path d="M-16 36 L16 36 L-16 160 L16 160" style="stroke-width:3"/></g>
+</defs>
+</svg>
+
+<h1>Relian</h1>
+<p class="open">Working spec. Items marked open are still undecided.</p>
+
+<h2>Letters</h2>
+<div class="grid">
+<div class="card"><div class="ltr">a</div><svg class="glyph" viewBox="-40 14 84 172"><use href="#g-a"/></svg><div class="sp">ay / ray</div></div>
+<div class="card"><div class="ltr">b</div><svg class="glyph" viewBox="-40 14 84 172"><use href="#g-b"/></svg><div class="sp">be</div></div>
+<div class="card"><div class="ltr">c</div><svg class="glyph" viewBox="-40 14 84 172"><use href="#g-c"/></svg><div class="sp">kh</div></div>
+<div class="card"><div class="ltr">d</div><svg class="glyph" viewBox="-40 14 84 172"><use href="#g-d"/></svg><div class="sp">deh</div></div>
+<div class="card"><div class="ltr">e</div><svg class="glyph" viewBox="-40 14 84 172"><use href="#g-e"/></svg><div class="sp">ea</div></div>
+<div class="card"><div class="ltr">f</div><svg class="glyph" viewBox="-40 14 84 172"><use href="#g-f"/></svg><div class="sp">fh</div></div>
+<div class="card"><div class="ltr">g</div><svg class="glyph" viewBox="-40 14 84 172"><use href="#g-g"/></svg><div class="sp">gi</div></div>
+<div class="card"><div class="ltr">h</div><svg class="glyph" viewBox="-40 14 84 172"><use href="#g-h"/></svg><div class="sp">ha</div></div>
+<div class="card"><div class="ltr">i</div><svg class="glyph" viewBox="-40 14 84 172"><use href="#g-i"/></svg><div class="sp">io</div></div>
+<div class="card"><div class="ltr">j</div><svg class="glyph" viewBox="-40 14 84 172"><use href="#g-j"/></svg><div class="sp">jay</div></div>
+<div class="card"><div class="ltr">k</div><svg class="glyph" viewBox="-40 14 84 172"><use href="#g-k"/></svg><div class="sp">k</div></div>
+<div class="card"><div class="ltr">l</div><svg class="glyph" viewBox="-40 14 84 172"><use href="#g-l"/></svg><div class="sp">l</div></div>
+<div class="card"><div class="ltr">m</div><svg class="glyph" viewBox="-40 14 84 172"><use href="#g-m"/></svg><div class="sp">m</div></div>
+<div class="card"><div class="ltr">n</div><svg class="glyph" viewBox="-40 14 84 172"><use href="#g-n"/></svg><div class="sp">en</div></div>
+<div class="card"><div class="ltr">o</div><svg class="glyph" viewBox="-40 14 84 172"><use href="#g-o"/></svg><div class="sp">kio</div></div>
+<div class="card"><div class="ltr">p</div><svg class="glyph" viewBox="-40 14 84 172"><use href="#g-p"/></svg><div class="sp">p</div></div>
+<div class="card"><div class="ltr">q</div><svg class="glyph" viewBox="-40 14 84 172"><use href="#g-q"/></svg><div class="sp">q</div></div>
+<div class="card"><div class="ltr">r</div><svg class="glyph" viewBox="-40 14 84 172"><use href="#g-r"/></svg><div class="sp">ar</div></div>
+<div class="card"><div class="ltr">s</div><svg class="glyph" viewBox="-40 14 84 172"><use href="#g-s"/></svg><div class="sp">ess</div></div>
+<div class="card"><div class="ltr">t</div><svg class="glyph" viewBox="-40 14 84 172"><use href="#g-t"/></svg><div class="sp">t</div></div>
+<div class="card"><div class="ltr">u</div><svg class="glyph" viewBox="-40 14 84 172"><use href="#g-u"/></svg><div class="sp">u</div></div>
+<div class="card"><div class="ltr">v</div><svg class="glyph" viewBox="-40 14 84 172"><use href="#g-v"/></svg><div class="sp">va</div></div>
+<div class="card"><div class="ltr">w</div><svg class="glyph" viewBox="-40 14 84 172"><use href="#g-w"/></svg><div class="sp">w</div></div>
+<div class="card"><div class="ltr">x</div><svg class="glyph" viewBox="-40 14 84 172"><use href="#g-x"/></svg><div class="sp">x</div></div>
+<div class="card"><div class="ltr">y</div><svg class="glyph" viewBox="-40 14 84 172"><use href="#g-y"/></svg><div class="sp">y</div></div>
+<div class="card"><div class="ltr">z</div><svg class="glyph" viewBox="-40 14 84 172"><use href="#g-z"/></svg><div class="sp">z</div></div>
+</div>
+
+<h2>Digraphs</h2>
+<div class="grid">
+<div class="card"><svg class="sym" viewBox="-30 -40 60 80"><path d="M12 42 C-6 24 -14 52 0 66 C14 80 24 100 6 118 C-6 130 -16 146 -4 160" transform="translate(-6 -80)" style="stroke-width:3"/><path d="M-22 101 L22 101" transform="translate(-6 -80)" style="stroke-width:3"/></svg><div class="sp">sh = essh</div></div>
+<div class="card"><svg class="sym" viewBox="-30 -40 60 80"><path d="M-8 -28 C4 -34 10 -32 14 -30"/><path d="M0 -40 L0 40"/><path d="M-20 0 L20 0" style="stroke-width:3"/></svg><div class="sp">th = th</div></div>
+<div class="card"><div class="sp">ph = fh (covered by f)</div></div>
+<div class="card"><div class="sp">ch = kh (covered by c)</div></div>
+<div class="card"><div class="ltr">ng</div><svg class="glyph" viewBox="-40 14 84 172"><use href="#g-n"/><path d="M0 150 C-14 150 -18 166 -4 172" style="stroke-width:3"/></svg><div class="sp">ng</div></div>
+</div>
+
+<h2>Grammar marks</h2>
+<div class="grid">
+<div class="card"><div class="ltr">plural (s')</div><svg class="sym" viewBox="-30 -40 60 80"><path d="M-6 -22 C6 -30 12 -14 4 -6 C-2 0 -2 10 -10 18"/><circle cx="14" cy="28" r="3" class="fill"/></svg></div>
+<div class="card"><div class="ltr">-ing (-engi)</div><svg class="sym" viewBox="-30 -40 60 80"><path d="M-16 -12 C-16 16 16 16 16 -12"/><path d="M16 -12 C16 -22 6 -24 0 -18"/></svg></div>
+<div class="card"><div class="ltr">past (ayaru)</div><svg class="sym" viewBox="-30 -40 60 80"><path d="M14 -18 C-14 -18 -14 18 10 18"/><path d="M10 18 L2 10 M10 18 L4 24"/></svg></div>
+<div class="card"><div class="ltr">negation (nenayio)</div><svg class="sym" viewBox="-30 -40 60 80"><path d="M-16 0 L16 0"/><path d="M-10 -14 C0 -4 0 4 10 14"/></svg></div>
+<div class="card"><div class="ltr">question</div><svg class="sym" viewBox="-30 -40 60 80"><path d="M-10 -10 C-10 -26 14 -26 14 -10 C14 2 0 4 0 14"/><circle cx="0" cy="26" r="3" class="fill"/></svg></div>
+<div class="card"><div class="ltr">possessive (lay)</div><svg class="sym" viewBox="-30 -40 60 80"><path d="M-14 -14 C-30 -14 -30 14 -14 14 C-2 14 2 0 14 0"/><path d="M14 0 L24 -8 M14 0 L24 8"/></svg></div>
+</div>
+
+<h2>Spelling and grammar rules</h2>
+<ul>
+<li>Spell words by sound. Names and acronyms are spelled letter by letter.</li>
+<li>Long vowels: u + vowel (uo, ue, ua, ui). e = ea or ee. g = gi.</li>
+<li>a is "ay" after a consonant or at the start, and "ray" after a vowel.</li>
+<li>Extra-n: en after a vowel sound becomes nen, across word boundaries. y is a consonant and does not trigger it.</li>
+<li>Letter-name merges: consonant + vowel already in the name merges (ja = jay).</li>
+<li>Verbs are either active or stative. Active verbs are actions: go, push, eat, live, fight, write, read. Stative verbs are not movement or physical: need, do, want, have. Stative verbs always follow the active verb.</li>
+<li>Word order: action verb first, then subject, except with i. Noun pairs put the modifier first.</li>
+<li>Prepositions go before the noun. Conjunctions are particles.</li>
+<li>Possessive: owner + lay + noun phrase. Plural s' attaches to the singular spelling.</li>
+<li>Question word first, then active verb, then subject, then any stative verb, then suffixes. The reversed ? goes at the very end, after all endings.</li>
+<li>Basic word order is verb, subject, object. The object goes at the end of the sentence.</li>
+<li>A sentence needs an active verb.</li>
+<li>Adjectives come before the noun. Numbers are Arabic numerals.</li>
+<li>Words not yet in the vocabulary (want, need, carry, write, eat, read, push, live, fight, articles, with, because) are built with the translation method: English to romanized, then romanized to symbol.</li>
+<li>Long vowels are two joined glyphs: the u glyph and the vowel glyph. y is a consonant.</li>
+<li>Word spacing is a space.</li>
+<li>Capital mark: a short tick at the top-left of the letter's spine marks a capital. It can be added to any letter.</li>
+<li>Present: ru, sentence-final. Past: ayaru, sentence-final. Future: ruya, sentence-final. Negation: nenayio after a vowel sound (a, e, i, o, u; not y), otherwise enayio. -ing: -engi.</li>
+<li>Months: first three letters + hyphen + -mon (Jayen-mon = January).</li>
+</ul>
+
+<h2>Pronouns</h2>
+<ul>
+<li>I = i (pronounced "ee")</li>
+<li>You = yio</li>
+<li>He = heas</li>
+<li>She = esshea</li>
+<li>We = wea</li>
+<li>They = tey</li>
+<li>It = iot</li>
+</ul>
+
+<h2>Question words</h2>
+<ul>
+<li>What = wayt</li>
+<li>Who = wkio</li>
+<li>Where = wearar</li>
+<li>When = weanen</li>
+<li>Why = wy</li>
+<li>How = waykio</li>
+</ul>
+
+<h2>Punctuation</h2>
+<ul>
+<li>Sentence end: horizontal dash</li>
+<li>Comma: plus sign</li>
+<li>Exclamation: inverted triangle with a filled dot above it</li>
+<li>Colon: two circles joined by a solid line</li>
+<li>Semicolon: same mark as the colon (confirm)</li>
+<li>Open quote: hard C facing forward</li>
+<li>Close quote: hard C facing backward</li>
+<li>Hyphen: kept in the glyphs as written (Jayen-mon, pronounced the same as spelled); symbol to be drawn</li>
+</ul>
+
+<h2>Particles and copula</h2>
+<ul>
+<li>To = tu</li>
+<li>And = aynendeh</li>
+<li>Is / was = essea (either tense)</li>
+<li>Have = shown with the possessive lay mark</li>
+</ul>
+
+<h2>Vocabulary so far</h2>
+<ul>
+<li>Home = hakiome</li>
+<li>Gold = Khionen</li>
+<li>Wood = Wuodeh</li>
+<li>Food = Fhuodeh</li>
+<li>Book = beuok</li>
+<li>Goose = giuoessea</li>
+<li>Go = gikio</li>
+<li>Good = giuodeh</li>
+<li>Ace = Aykhea</li>
+</ul>
+
+<h2>Still open</h2>
+<ul class="open">
+<li>Vocabulary for most nouns and verbs on the site, including walk, lake, old, and man</li>
+<li>How clauses are joined</li>
+<li>Which prepositions are defined</li>
+<li>The copula beyond essea</li>
+<li>The length of the sh and th bars</li>
+<li>Own symbols for ph and ch (currently covered by f and c)</li>
+<li>Separate glyphs for ea and ee</li>
+<li>Whether o and u sit on the spine line</li>
+</ul>
+
+</body>
+</html>

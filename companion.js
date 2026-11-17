@@ -2196,8 +2196,8 @@ function stepSlip(dt){
     if(window.AceSnow&&AceSnow.splash){AceSnow.splash(state.x,state.y,1500);AceSnow.kick(state.x,150,{v:2,clouds:26,w:150,size:2.4,h:120,al:.85,drag:2,spread:3.1});}   // a big poof that hides the swap into the stuck pose
   }
 }
-/* The secret language (Elven, made by rule in lang.js): the code switches it on, and typing it again switches it off. Like the picker, it goes to a NEW address that carries the choice. */
-function toggleElven(){if(document.documentElement.classList.contains('gate-locked'))return;const to=window.ACE_LANG==='elf'?'orig':'elf';try{localStorage.setItem('ace-lang',to);}catch(e){}location.assign(location.pathname+'?lang='+to+location.hash);}
+/* The secret language (Relian, made by rule in lang.js; it was Elven before): the code switches it on, and typing it again switches it off. Like the picker, it goes to a NEW address that carries the choice. */
+function toggleRelian(){if(document.documentElement.classList.contains('gate-locked'))return;const to=(window.ACE_LANG==='rel'||window.ACE_LANG==='relr')?'orig':'rel';try{localStorage.setItem('ace-lang',to);}catch(e){}location.assign(location.pathname+'?lang='+to+location.hash);}
 addEventListener('keydown',e=>{
   if(typing(e.target)||e.repeat)return;
   pwKeys.add(e.code);
@@ -2212,7 +2212,7 @@ addEventListener('keydown',e=>{
   else if(pwSeq.slice(-4).map(s=>s.ch).join('')==='thor'&&!window.ACE_XMAS){pwSeq=[];askPower('summon');}   // Shift + T, H, O, R
   else if(pwSeq.slice(-3).map(s=>s.ch).join('')==='fly'){pwSeq=[];askPower('flight');}       // Shift + F, L, Y   (SHIFT CODES)
   else if(pwSeq.slice(-4).map(s=>s.ch).join('')==='navi'){pwSeq=[];askPower('navi');}            // Shift + N, A, V, I: the green-capped hero
-  else if(pwSeq.slice(-8).map(s=>s.ch).join('')==='language'){pwSeq=[];toggleElven();}           // Shift + L, A, N, G, U, A, G, E: the secret language (not in CHEATS on purpose)
+  else if(pwSeq.slice(-8).map(s=>s.ch).join('')==='language'){pwSeq=[];toggleRelian();}           // Shift + L, A, N, G, U, A, G, E: the secret language (not in CHEATS on purpose)
   else if(pwSeq.slice(-4).map(s=>s.ch).join('')==='slip'){pwSeq=[];slipWant=true;}            // Shift + S, L, I, P: slips the next time he is on a button
   else if(pwSeq.slice(-6).map(s=>s.ch).join('')==='laptop'&&!window.ACE_XMAS){pwSeq=[];lapWant=true;}   // Shift + L, A, P, T, O, P: the laptop, the next time he is on a ledge wide enough
   else if(pwSeq.slice(-3).map(s=>s.ch).join('')==='joy'&&!window.ACE_XMAS){pwSeq=[];joyWant=true;}   // Shift + J, O, Y: the white form, the next time he is standing on something
