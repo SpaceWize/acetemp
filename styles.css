@@ -1337,6 +1337,34 @@ html.intro .hero__cue{opacity:0}
 .circle__link:hover{border-bottom-color:#281B0A}
 /* Explore and Apply side by side, wrapping to two lines when narrow. */
 .circle__copy .circle__links{display:flex;flex-wrap:wrap;gap:0 var(--sp-4);max-width:none}
+/* Newsletter box under the I-AM band. Dark and quiet on purpose: the gold
+   band above is the loud one, so this is a smaller ink tray with a gold
+   hairline, one line of type and a spade tick that slides on hover. The
+   edge light comes from the .lit class like every other box. */
+.news{
+  display:flex;align-items:center;justify-content:center;gap:.9rem;
+  margin-top:var(--sp-3);
+  padding:clamp(1rem,2vw,1.4rem) var(--sp-3);
+  background:linear-gradient(180deg,var(--ink-700),var(--ink-800));
+  border:1px solid var(--line-dark);
+  box-shadow:0 14px 30px rgba(0,0,0,.45),inset 0 1px 0 rgba(238,190,99,.12);
+  text-align:center;
+  transition:border-color var(--t-fast) var(--ease),transform var(--t-fast) var(--ease);
+}
+.news__t{
+  font-family:var(--f-util);font-variation-settings:"wdth" 112;
+  font-size:var(--fs-lead);font-weight:600;letter-spacing:.02em;
+  color:var(--gold-hi);
+}
+/* the ::after is the edge-light ring, so the tick lives on ::before only */
+.news::before{
+  content:"";flex:none;width:.5rem;height:.5rem;background:var(--gold-hi);
+  transform:rotate(45deg);transition:transform var(--t-fast) var(--ease);
+}
+.news:hover{border-color:#9B7332;transform:translateY(-2px)}
+.news:hover::before{transform:rotate(45deg) scale(1.5)}
+.news:focus-visible{outline:2px solid var(--gold-hi);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){.news,.news::before{transition:none}.news:hover{transform:none}}
 /* The schedule and its link share one wrapper so the band stays a single
    row of three columns — align-items:center then has one row to centre,
    and the column rule runs past the list to the link below it. */
